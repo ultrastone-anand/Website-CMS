@@ -1,25 +1,99 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import MenuItem from '@mui/material/MenuItem';
-import Container from '@mui/material/Container';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
+import {
+  Box,
+  Card,
+  Grid,
+  Stack,
+  Table,
+  Button,
+  Select,
+  MenuItem,
+  TableRow,
+  Container,
+  TableBody,
+  TableCell,
+  TableHead,
+  Typography,
+  InputLabel,
+  FormControl,
+  TableContainer,
+  CircularProgress,
+} from '@mui/material';
+
+import { getCategories } from 'src/services/category.service';
+import {
+  getProductAuditReport,
+  getCategoryProductsReport,
+} from 'src/services/report.service';
 
 export default function ReportView() {
-  const [reportType, setReportType] =
+  const [categories, setCategories] = useState([]);
+  const [categorySlug, setCategorySlug] =
     useState('');
+  const [reportType, setReportType] =
+    useState('product-audit');
 
-  const handleShowReport = () => {
-    console.log('SHOW REPORT', reportType);
+  const [loading, setLoading] =
+    useState(false);
+
+  const [reportData, setReportData] =
+    useState(null);
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const response =
+        await getCategories();
+
+      const activeCategories = (
+        response?.data || []
+      ).filter((cat) => cat.is_active);
+
+      setCategories(activeCategories);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const handleDownload = () => {
-    console.log('DOWNLOAD REPORT', reportType);
-  };
+  const handleShowReport =
+    async () => {
+      if (!categorySlug) {
+        alert('Please select category');
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        let response;
+
+        if (
+          reportType ===
+          'product-audit'
+        ) {
+          response =
+            await getProductAuditReport(
+              categorySlug
+            );
+        } else {
+          response =
+            await getCategoryProductsReport(
+              categorySlug
+            );
+        }
+
+        setReportData(response);
+      } catch (error) {
+        console.error(error);
+        alert(error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
   return (
     <Container maxWidth={false}>
@@ -27,112 +101,346 @@ export default function ReportView() {
         <Typography
           variant="h4"
           fontWeight={700}
-          sx={{ mb: 1 }}
+          mb={1}
         >
           Reports
         </Typography>
 
         <Typography
-          variant="body2"
           color="text.secondary"
-          sx={{ mb: 4 }}
+          mb={4}
         >
-          Generate and download system reports
+          Generate category reports
         </Typography>
 
         <Stack spacing={3}>
-          <TextField
-            select
-            fullWidth
-            label="Report Type"
-            value={reportType}
-            onChange={(e) =>
-              setReportType(e.target.value)
-            }
-          >
-            <MenuItem value="products">
-              Products Report
-            </MenuItem>
+          <FormControl fullWidth>
+            <InputLabel>
+              Category
+            </InputLabel>
 
-            <MenuItem value="categories">
-              Categories Report
-            </MenuItem>
+            <Select
+              value={categorySlug}
+              label="Category"
+              onChange={(e) =>
+                setCategorySlug(
+                  e.target.value
+                )
+              }
+            >
+              {categories.map(
+                (category) => (
+                  <MenuItem
+                    key={category.id}
+                    value={
+                      category.slug
+                    }
+                  >
+                    {category.name}
+                  </MenuItem>
+                )
+              )}
+            </Select>
+          </FormControl>
 
-            <MenuItem value="featured">
-              Featured Products
-            </MenuItem>
+          <FormControl fullWidth>
+            <InputLabel>
+              Report Type
+            </InputLabel>
 
-            <MenuItem value="trending">
-              Trending Products
-            </MenuItem>
+            <Select
+              value={reportType}
+              label="Report Type"
+              onChange={(e) =>
+                setReportType(
+                  e.target.value
+                )
+              }
+            >
+              <MenuItem value="product-audit">
+                Product Audit Report
+              </MenuItem>
 
-            <MenuItem value="new-arrivals">
-              New Arrivals
-            </MenuItem>
+              <MenuItem value="category-products">
+                Category Products Report
+              </MenuItem>
+            </Select>
+          </FormControl>
 
-            <MenuItem value="active">
-              Active Products
-            </MenuItem>
-
-            <MenuItem value="inactive">
-              Inactive Products
-            </MenuItem>
-          </TextField>
-
-          <Stack
-            direction="row"
-            spacing={2}
-          >
-            <TextField
-              type="date"
-              label="From Date"
-              InputLabelProps={{
-                shrink: true,
-              }}
-              fullWidth
-            />
-
-            <TextField
-              type="date"
-              label="To Date"
-              InputLabelProps={{
-                shrink: true,
-              }}
-              fullWidth
-            />
-          </Stack>
-
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 2,
-            }}
-          >
+          <Box>
             <Button
               variant="contained"
-              size="large"
-              onClick={handleShowReport}
+              onClick={
+                handleShowReport
+              }
+              disabled={loading}
             >
-              Show Report
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="large"
-              onClick={handleDownload}
-            >
-              Download Excel
-            </Button>
-
-            <Button
-              variant="outlined"
-              size="large"
-            >
-              Download PDF
+              {loading ? (
+                <CircularProgress
+                  size={22}
+                />
+              ) : (
+                'Generate Report'
+              )}
             </Button>
           </Box>
         </Stack>
       </Card>
+
+      {/* PRODUCT AUDIT REPORT */}
+      {reportType ===
+        'product-audit' &&
+        reportData?.data && (
+          <>
+            <Grid
+              container
+              spacing={2}
+              sx={{ mt: 3 }}
+            >
+              {Object.entries(
+                reportData.data.summary
+              ).map(
+                ([key, value]) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={3}
+                    key={key}
+                  >
+                    <Card
+                      sx={{
+                        p: 2,
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {key
+                          .replaceAll(
+                            '_',
+                            ' '
+                          )
+                          .toUpperCase()}
+                      </Typography>
+
+                      <Typography
+                        variant="h5"
+                        fontWeight={
+                          700
+                        }
+                      >
+                        {value}
+                      </Typography>
+                    </Card>
+                  </Grid>
+                )
+              )}
+            </Grid>
+
+            <Card
+              sx={{
+                mt: 3,
+                p: 2,
+              }}
+            >
+              <Typography
+                variant="h6"
+                mb={2}
+              >
+                Product Audit
+              </Typography>
+
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>
+                        Product
+                      </TableCell>
+
+                      <TableCell>
+                        Slug
+                      </TableCell>
+
+                      <TableCell>
+                        Completion %
+                      </TableCell>
+
+                      <TableCell>
+                        Missing Fields
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+
+                  <TableBody>
+                    {reportData.data.products.map(
+                      (
+                        product
+                      ) => (
+                        <TableRow
+                          key={
+                            product.product_id
+                          }
+                        >
+                          <TableCell>
+                            {
+                              product.name
+                            }
+                          </TableCell>
+
+                          <TableCell>
+                            {
+                              product.slug
+                            }
+                          </TableCell>
+
+                          <TableCell>
+                            {
+                              product.completion_percentage
+                            }
+                            %
+                          </TableCell>
+
+                          <TableCell>
+                            {product.missing_fields.join(
+                              ', '
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      )
+                    )}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Card>
+          </>
+        )}
+
+      {/* CATEGORY PRODUCTS REPORT */}
+      {reportType ===
+        'category-products' &&
+        reportData?.products && (
+          <Card
+            sx={{
+              mt: 3,
+              p: 2,
+            }}
+          >
+            <Typography
+              variant="h6"
+              mb={2}
+            >
+              Products (
+              {
+                reportData.total_products
+              }
+              )
+            </Typography>
+
+            <TableContainer>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      Name
+                    </TableCell>
+
+                    <TableCell>
+                      Country
+                    </TableCell>
+
+                    <TableCell>
+                      Stone Group
+                    </TableCell>
+
+                    <TableCell>
+                      Featured
+                    </TableCell>
+
+                    <TableCell>
+                      New
+                    </TableCell>
+
+                    <TableCell>
+                      Trending
+                    </TableCell>
+
+                    <TableCell>
+                      Images
+                    </TableCell>
+
+                    <TableCell>
+                      Videos
+                    </TableCell>
+                  </TableRow>
+                </TableHead>
+
+                <TableBody>
+                  {reportData.products.map(
+                    (
+                      product
+                    ) => (
+                      <TableRow
+                        key={
+                          product.product_id
+                        }
+                      >
+                        <TableCell>
+                          {
+                            product.name
+                          }
+                        </TableCell>
+
+                        <TableCell>
+                          {product.origin_country ||
+                            '-'}
+                        </TableCell>
+
+                        <TableCell>
+                          {
+                            product.stone_group
+                          }
+                        </TableCell>
+
+                        <TableCell>
+                          {product.is_featured
+                            ? 'Yes'
+                            : 'No'}
+                        </TableCell>
+
+                        <TableCell>
+                          {product.is_new_arrival
+                            ? 'Yes'
+                            : 'No'}
+                        </TableCell>
+
+                        <TableCell>
+                          {product.is_trending
+                            ? 'Yes'
+                            : 'No'}
+                        </TableCell>
+
+                        <TableCell>
+                          {
+                            product.gallery_image_count
+                          }
+                        </TableCell>
+
+                        <TableCell>
+                          {
+                            product.video_count
+                          }
+                        </TableCell>
+                      </TableRow>
+                    )
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Card>
+        )}
     </Container>
   );
 }
