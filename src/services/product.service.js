@@ -2,7 +2,7 @@ const API_URL =
   import.meta.env.VITE_API_URL;
 
 const getHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   return {
     'Content-Type': 'application/json',
@@ -13,7 +13,7 @@ const getHeaders = () => {
 };
 
 const getMultipartHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   return {
     ...(token && {

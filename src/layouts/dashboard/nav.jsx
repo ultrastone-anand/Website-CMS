@@ -20,16 +20,17 @@ import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
 import { NAV } from './config-layout';
-import navConfig from './config-navigation';
+import { getNavConfig } from './config-navigation';
 
 // ----------------------------------------------------------------------
 
 export default function Nav({ openNav, onCloseNav }) {
   const pathname = usePathname();
-const user = JSON.parse(localStorage.getItem('user') || '{}');
+const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const upLg = useResponsive('up', 'lg');
 
-  const [miniNav, setMiniNav] = useState(false);
+  const [miniNav, setMiniNav] = useState(true);
+  const [navConfig, setNavConfig] = useState([]);
 
   const navWidth = miniNav ? 88 : NAV.WIDTH;
 
@@ -39,6 +40,12 @@ const user = JSON.parse(localStorage.getItem('user') || '{}');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  useEffect(() => {
+  setNavConfig(getNavConfig());
+}, [pathname]);
+
+  
 
   const renderAccount = (
     <Box

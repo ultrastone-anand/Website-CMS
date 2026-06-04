@@ -14,7 +14,7 @@ export const CategorysPage = lazy(() => import('src/pages/category'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 export default function Router() {
-  const token = localStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   const routes = useRoutes([
     {

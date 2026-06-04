@@ -11,6 +11,8 @@ import {
   getCategories,
 } from 'src/services/category.service';
 import {
+  createProduct,
+  updateProduct,
   getProductDetail,
   getProductsByCategory,
 } from 'src/services/product.service';
@@ -38,6 +40,13 @@ export default function ProductsView() {
 
   const [currentProduct, setCurrentProduct] =
     useState(null);
+  const user = JSON.parse(
+    sessionStorage.getItem('user') || '{}'
+  );
+
+  const canAddProducts = [1, 3, 4].includes(
+    Number(user?.role_id)
+  );
 
   useEffect(() => {
     loadCategories();
@@ -60,11 +69,11 @@ export default function ProductsView() {
         const data =
           response.data || [];
 
-const activeCategories = data
-  .filter((item) => item.is_active)
-  .sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+        const activeCategories = data
+          .filter((item) => item.is_active)
+          .sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
 
         setCategories(
           activeCategories
@@ -90,13 +99,13 @@ const activeCategories = data
             slug
           );
 
-const sortedProducts = (
-  response.products || []
-).sort((a, b) =>
-  a.name.localeCompare(b.name)
-);
+        const sortedProducts = (
+          response.products || []
+        ).sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
 
-setProducts(sortedProducts);
+        setProducts(sortedProducts);
       } catch (error) {
         console.error(error);
       }
@@ -131,46 +140,208 @@ setProducts(sortedProducts);
       setCurrentProduct(null);
     };
 
-  const handleSubmit =
-    async (payload) => {
-      try {
-        if (currentProduct) {
-          console.log(
-            'UPDATE PRODUCT',
-            payload
+  const handleSubmit = async (payload) => {
+
+    try {
+
+      if (currentProduct?.id) {
+
+        const data = new FormData();
+
+        // =========================
+        // BASIC
+        // =========================
+
+        [
+          "name",
+          "slug",
+          "small_description",
+          "long_description",
+          "category_id",
+          "pattern",
+          "stone_group",
+          "origin_country",
+          "pantone_colour",
+          "variation_level",
+        ].forEach((key) => {
+          data.append(key, payload[key] ?? "");
+        });
+
+        // =========================
+        // ARRAYS
+        // =========================
+
+        [
+          "finishes_available",
+          "thicknesses_cm",
+          "average_sizes_inches",
+        ].forEach((key) => {
+          data.append(
+            key,
+            JSON.stringify(payload[key] || [])
           );
+        });
 
-          // await updateProduct(
-          //   currentProduct.id,
-          //   payload
-          // );
-        } else {
-          console.log(
-            'CREATE PRODUCT',
-            payload
+        // =========================
+        // BOOLEANS
+        // =========================
+
+        [
+          "translucent",
+          "cut_to_size",
+
+          "color_enhancing",
+          "countertops_vanities",
+          "interior_floor",
+          "shower_wall",
+          "shower_floor",
+          "exterior_floor",
+          "exterior_wall",
+          "pool_fountain",
+          "fireplace",
+          "furniture_top",
+
+          "is_featured",
+          "is_trending",
+          "is_new_arrival",
+          "is_active",
+        ].forEach((key) => {
+          data.append(
+            key,
+            payload[key] || false
           );
+        });
 
-          // await createProduct(
-          //   payload
-          // );
-        }
+        // =========================
+        // SPECIFICATIONS
+        // =========================
 
-        handleCloseModal();
-
-        if (selectedCategory) {
-          loadProducts(
-            selectedCategory.slug
+        [
+          "abrasion_resistance",
+          "stain_resistance",
+          "etching_resistance",
+          "heat_resistance",
+          "uv_resistance",
+          "color_range",
+          "movement_index",
+        ].forEach((key) => {
+          data.append(
+            key,
+            payload[key] ?? ""
           );
-        }
-      } catch (error) {
-        console.error(error);
+        });
+
+        // =========================
+        // FEATURED IMAGES
+        // =========================
+
+        (payload.featured_images || []).forEach(
+          (file) => {
+            if (file instanceof File) {
+              data.append(
+                "featured_images",
+                file
+              );
+            }
+          }
+        );
+
+        // =========================
+        // GALLERY IMAGES
+        // =========================
+
+        (payload.gallery_images || []).forEach(
+          (file) => {
+            if (file instanceof File) {
+              data.append(
+                "gallery_images",
+                file
+              );
+            }
+          }
+        );
+
+        // =========================
+        // VIDEOS
+        // =========================
+
+        (payload.featured_videos || []).forEach(
+          (file) => {
+            if (file instanceof File) {
+              data.append(
+                "featured_videos",
+                file
+              );
+            }
+          }
+        );
+
+        // =========================
+        // APPLICATION IMAGES
+        // =========================
+
+        (payload.application_images || []).forEach(
+          (file) => {
+            if (file instanceof File) {
+              data.append(
+                "application_images",
+                file
+              );
+            }
+          }
+        );
+
+        // =========================
+        // BOOKMATCH / SLIPMATCH
+        // =========================
+
+        (payload.bookmatch_slipmatch || []).forEach(
+          (file) => {
+            if (file instanceof File) {
+              data.append(
+                "bookmatch_slipmatch",
+                file
+              );
+            }
+          }
+        );
+
+        await updateProduct(
+          currentProduct.id,
+          data
+        );
+
+      } else {
+
+        await createProduct(
+          payload
+        );
+
       }
-    };
+
+      handleCloseModal();
+
+      if (selectedCategory) {
+        await loadProducts(
+          selectedCategory.slug
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Product Save Error:",
+        error
+      );
+
+    }
+
+  };
 
   return (
     <Container maxWidth={false}>
 
-  <Stack
+      <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
@@ -180,14 +351,14 @@ setProducts(sortedProducts);
           Products
         </Typography>
 
-        <Button
-  variant="contained"
-  color="inherit"
-  startIcon={<Iconify icon="eva:plus-fill" />}
-  onClick={handleAddProduct}
->
-  New Product
-</Button>
+        {canAddProducts && <Button
+          variant="contained"
+          color="inherit"
+          startIcon={<Iconify icon="eva:plus-fill" />}
+          onClick={handleAddProduct}
+        >
+          New Product
+        </Button>}
       </Stack>
       <Typography
         variant="h6"

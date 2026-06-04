@@ -8,6 +8,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
 
+import { canView } from './role-access';
+
 export default function ShopProductCard({
   product,
   onEdit,
@@ -113,7 +115,7 @@ export default function ShopProductCard({
           variant="contained"
           onClick={() => onEdit(product)}
         >
-          Edit Product
+          {canView ? "View Product" : "Edit Product"}
         </Button>
       </CardActions>
     </Card>

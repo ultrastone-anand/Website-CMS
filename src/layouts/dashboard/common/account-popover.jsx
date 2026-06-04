@@ -25,7 +25,7 @@ const MENU_OPTIONS = [
 
 export default function AccountPopover() {
   const [open, setOpen] = useState(null);
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
   const router = useRouter();
 
@@ -34,7 +34,7 @@ export default function AccountPopover() {
   };
 
 const handleLogout = () => {
-  localStorage.clear();
+  sessionStorage.clear();
 
   setOpen(null);
 

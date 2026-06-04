@@ -21,6 +21,7 @@ import Scrollbar from 'src/components/scrollbar';
 
 import TableNoData from '../table-no-data';
 import TableEmptyRows from '../table-empty-rows';
+import { canAddCategory } from '../category-access';
 import CategoryTableRow from '../category-table-row';
 import CategoryQuickEdit from '../category-quick-edit';
 import CategoryTableHead from '../category-table-head';
@@ -202,18 +203,18 @@ export default function CategoryPage() {
           Categories
         </Typography>
 
-        <Button
-          variant="contained"
-          color="inherit"
-          startIcon={
-            <Iconify icon="eva:plus-fill" />
-          }
-          onClick={
-            handleAddCategory
-          }
-        >
-          New Category
-        </Button>
+        {canAddCategory && (
+          <Button
+            variant="contained"
+            color="inherit"
+            startIcon={
+              <Iconify icon="eva:plus-fill" />
+            }
+            onClick={handleAddCategory}
+          >
+            New Category
+          </Button>
+        )}
       </Stack>
 
       <Card>
@@ -292,10 +293,10 @@ export default function CategoryPage() {
                 {dataFiltered
                   .slice(
                     page *
-                      rowsPerPage,
+                    rowsPerPage,
                     page *
-                      rowsPerPage +
-                      rowsPerPage
+                    rowsPerPage +
+                    rowsPerPage
                   )
                   .map((row) => (
                     <CategoryTableRow
