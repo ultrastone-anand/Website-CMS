@@ -106,12 +106,12 @@ position: 'absolute',
         variant="contained"
         onClick={() => onEdit(product)}
       >
-        {canView
+        {canView()
           ? 'View Product'
           : 'Edit Product'}
       </Button>
 
-      {canEditIdentity && (
+      {canEditIdentity() && (
         <Button
           fullWidth
           variant="contained"

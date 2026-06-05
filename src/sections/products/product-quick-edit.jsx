@@ -24,7 +24,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { getCategories } from 'src/services/category.service';
 import { getLookupDetails } from 'src/services/lookup.service';
 
-import { canEditMedia, canEditIdentity, canEditDescription, canEditStoneDetails, canEditApplications, canEditSpecifications } from './role-access';
+import { canEditMedia, canEditIdentity, canEditDescription, canEditStoneDetails, canEditApplications } from './role-access';
 
 // ---------------------------------------------------------------------------
 
@@ -402,11 +402,9 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
         }
     };
 
-    const handleChange = (field, value) =>
-        setFormData((prev) => ({ ...prev, [field]: value }));
+    const handleChange = (field, value) =>setFormData((prev) => ({ ...prev, [field]: value }));
 
-    const handleCommaSplit = (field, raw) =>
-        handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
+    const handleCommaSplit = (field, raw) =>handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
 
     // ── Media handlers ────────────────────────────────────────────────────────
 
@@ -533,11 +531,11 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                         <Grid container spacing={2.5} sx={{ width: '100%', m: 0 }}>
                             <Grid item xs={12} md={6}>
                                 <TextField fullWidth label="Product Name" value={formData.name}
-                                    onChange={(e) => handleChange('name', e.target.value)} disabled={!canEditIdentity} />
+                                    onChange={(e) => handleChange('name', e.target.value)} disabled={!canEditIdentity()} />
                             </Grid>
                             <Grid item xs={12} md={6}>
                                 <TextField fullWidth label="Slug" value={formData.slug}
-                                    onChange={(e) => handleChange('slug', e.target.value)} disabled={!canEditIdentity}
+                                    onChange={(e) => handleChange('slug', e.target.value)} disabled={!canEditIdentity()}
                                     InputProps={{
                                         startAdornment: (
                                             <Typography variant="body2" color="text.disabled" sx={{ mr: 0.5 }}>/</Typography>
@@ -557,7 +555,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                                 formData.category_id
                                         ) || null
                                     }
-                                    disabled={!canEditIdentity}
+                                    disabled={!canEditIdentity()}
                                     onChange={(_, value) =>
                                         handleChange(
                                             'category_id',
@@ -589,7 +587,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                                 formData.origin_country
                                         ) || null
                                     }
-                                    disabled={!canEditIdentity}
+                                    disabled={!canEditIdentity()}
                                     onChange={(_, value) =>
                                         handleChange(
                                             'origin_country',
@@ -619,7 +617,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                     multiline
                                     rows={2}
                                     label="Short Description"
-                                    disabled={!canEditDescription}
+                                    disabled={!canEditDescription()}
                                     value={formData.small_description}
                                     onChange={(e) =>
                                         handleChange(
@@ -653,7 +651,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                     multiline
                                     rows={5}
                                     label="Full Description"
-                                    disabled={!canEditDescription}
+                                    disabled={!canEditDescription()}
                                     value={formData.long_description}
                                     onChange={(e) =>
                                         handleChange(
@@ -692,7 +690,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                         'Slipmatch',
                                     ]}
                                     value={formData.pattern || null}
-                                    disabled={!canEditStoneDetails}
+                                    disabled={!canEditStoneDetails()}
                                     onChange={(_, value) =>
                                         handleChange('pattern', value || '')
                                     }
@@ -709,7 +707,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                             <Grid item xs={12} md={6}>
                                 <Autocomplete
                                     options={stone_group}
-                                    disabled={!canEditStoneDetails}
+                                    disabled={!canEditStoneDetails()}
                                     value={
                                         stone_group.find(
                                             (item) =>
@@ -739,11 +737,11 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                 />
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <TextField fullWidth label="Pantone Colour" value={formData.pantone_colour} disabled={!canEditStoneDetails}
+                                <TextField fullWidth label="Pantone Colour" value={formData.pantone_colour} disabled={!canEditStoneDetails()}
                                     onChange={(e) => handleChange('pantone_colour', e.target.value)} />
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <TextField select fullWidth label="Variation Level" value={formData.variation_level} disabled={!canEditStoneDetails}
+                                <TextField select fullWidth label="Variation Level" value={formData.variation_level} disabled={!canEditStoneDetails()}
                                     onChange={(e) => handleChange('variation_level', e.target.value)}>
                                     {['V1', 'V2', 'V3', 'V4'].map((v) => (
                                         <MenuItem key={v} value={v}>{v}</MenuItem>
@@ -751,7 +749,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                 </TextField>
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <TextField select fullWidth label="Translucent" disabled={!canEditStoneDetails}
+                                <TextField select fullWidth label="Translucent" disabled={!canEditStoneDetails()}
                                     value={formData.translucent ? 'YES' : 'NO'}
                                     onChange={(e) => handleChange('translucent', e.target.value === 'YES')}>
                                     <MenuItem value="YES">Yes</MenuItem>
@@ -759,7 +757,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                 </TextField>
                             </Grid>
                             <Grid item xs={12} md={6}>
-                                <TextField select fullWidth label="Cut To Size" disabled={!canEditStoneDetails}
+                                <TextField select fullWidth label="Cut To Size" disabled={!canEditStoneDetails()}
                                     value={formData.cut_to_size ? 'YES' : 'NO'}
                                     onChange={(e) => handleChange('cut_to_size', e.target.value === 'YES')}>
                                     <MenuItem value="YES">Yes</MenuItem>
@@ -771,7 +769,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                     multiple
                                     disableCloseOnSelect
                                     options={finishes_available}
-                                    disabled={!canEditStoneDetails}
+                                    disabled={!canEditStoneDetails()}
                                     value={finishes_available.filter((item) =>
                                         formData.finishes_available?.includes(
                                             item.value_name
@@ -815,7 +813,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                     multiple
                                     disableCloseOnSelect
                                     options={thicknesses_cm}
-                                    disabled={!canEditStoneDetails}
+                                    disabled={!canEditStoneDetails()}
                                     value={thicknesses_cm.filter((item) =>
                                         formData.thicknesses_cm?.includes(
                                             item.value_name
@@ -855,7 +853,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                 />
                             </Grid>
                             <Grid item xs={12} md={4}>
-                                <TextField fullWidth label="Average Sizes (inches)" disabled={!canEditStoneDetails}
+                                <TextField fullWidth label="Average Sizes (inches)" disabled={!canEditStoneDetails()}
                                     value={formData.average_sizes_inches?.join(', ')}
                                     onChange={(e) => handleCommaSplit('average_sizes_inches', e.target.value)}
                                     helperText="Comma-separated (e.g. 12x12, 24x24)" />
@@ -867,7 +865,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                 {/* ── TAB 1: Media ──────────────────────────────────────────── */}
                 {activeTab === 1 && (
                     <Stack spacing={3}>
-                        {canEditMedia && <><SectionLabel>Upload New Files</SectionLabel>
+                        {canEditMedia() && <><SectionLabel>Upload New Files</SectionLabel>
 
                             <Grid
                                 container
@@ -907,7 +905,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                 )}
                             </Grid> </>}
 
-                        {!canEditMedia && (
+                        {!canEditMedia() && (
                             <Alert severity="info">
                                 You have view-only access to
                                 product media.
@@ -1085,13 +1083,13 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                                 <Checkbox
                                                     size="small"
                                                     disabled={
-                                                        !canEditApplications
+                                                        !canEditApplications()
                                                     }
                                                     checked={Boolean(
                                                         formData[key]
                                                     )}
                                                     onChange={(e) =>
-                                                        canEditApplications &&
+                                                        canEditApplications() &&
                                                         handleChange(
                                                             key,
                                                             e.target.checked
@@ -1110,7 +1108,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                             )}
                         </Grid>
 
-                        {!canEditApplications && (
+                        {!canEditApplications() && (
                             <Alert
                                 severity="info"
                             >
@@ -1146,7 +1144,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                             select
                                             fullWidth
                                             disabled={
-                                                !canEditSpecifications
+                                                !canEditApplications()
                                             }
                                             label={
                                                 <Stack
@@ -1163,7 +1161,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                             }
                                             value={formData[key]}
                                             onChange={(e) =>
-                                                canEditSpecifications &&
+                                                canEditApplications() &&
                                                 handleChange(
                                                     key,
                                                     e.target.value
@@ -1187,7 +1185,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                             )}
                         </Grid>
 
-                        {!canEditSpecifications && (
+                        {!canEditApplications() && (
                             <Alert
                                 severity='info'
                             >

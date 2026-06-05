@@ -1,23 +1,28 @@
-const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+export const getRoleId = () => {
+    const user = JSON.parse(
+        sessionStorage.getItem('user') || '{}'
+    );
 
-export const roleId = Number(user?.role_id);
+    return Number(user?.role_id);
+};
 
-// Identity Section
-export const canEditIdentity = [1, 3].includes(roleId);
+export const canEditIdentity = () =>
+    [1, 3].includes(getRoleId());
 
-// Description Section
-export const canEditDescription = [1, 5].includes(roleId);
+export const canEditDescription = () =>
+    [1, 5].includes(getRoleId());
 
-// Stone Details Section
-export const canEditStoneDetails = [1, 3, 4].includes(roleId);
+export const canEditStoneDetails = () =>
+    [1, 3, 4].includes(getRoleId());
 
-// Media
-export const canEditMedia = [1, 3].includes(roleId);
+export const canEditMedia = () =>
+    [1, 3].includes(getRoleId());
 
-// Applications
-export const canEditApplications = [1, 3, 4].includes(roleId);
+export const canEditApplications = () =>
+    [1, 3, 4].includes(getRoleId());
 
-// Specifications
-export const canEditSpecifications = [1, 3, 4].includes(roleId);
+export const canEditSpecifications = () =>
+    [1, 3, 4].includes(getRoleId());
 
-export const canView = [2].includes(roleId);
+export const canView = () =>
+    [2].includes(getRoleId());
