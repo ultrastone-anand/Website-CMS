@@ -35,8 +35,8 @@ const defaultForm = {
     long_description: '',
     category_id: '',
 
-    featured_images: [],
-    gallery_images: [],
+    closeup_images: [],
+    slab_images: [],
     featured_videos: [],
     application_images: [],
     bookmatch_slipmatch: [],
@@ -290,8 +290,8 @@ MediaUploadField.propTypes = {
 // ---------------------------------------------------------------------------
 
 const defaultPreviews = {
-    featured_images: [],
-    gallery_images: [],
+    closeup_images: [],
+    slab_images: [],
     featured_videos: [],
     application_images: [],
     bookmatch_slipmatch: [],
@@ -449,8 +449,8 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
     ];
 
     const MEDIA_FIELDS = [
-        { label: 'Closeup Images', field: 'featured_images', accept: 'image/*', icon: '🔍' },
-        { label: 'Slab Images', field: 'gallery_images', accept: 'image/*', icon: '🪨' },
+        { label: 'Closeup Images', field: 'closeup_images', accept: 'image/*', icon: '🔍' },
+        { label: 'Slab Images', field: 'slab_images', accept: 'image/*', icon: '🪨' },
         { label: 'Application Images (3D)', field: 'application_images', accept: 'image/*', icon: '🏢' },
         { label: 'Bookmatch/Slipmatch', field: 'bookmatch_slipmatch', accept: 'image/*', icon: '🪞' },
         { label: 'Featured Videos', field: 'featured_videos', accept: 'video/*', icon: '🎬' },
@@ -952,8 +952,8 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                                     }}
                                                 >
                                                     {[
-                                                        'FEATURED_IMAGE',
-                                                        'GALLERY_IMAGE',
+                                                    'SLAB_IMAGE',
+                                                        'CLOSEUP_IMAGE',
                                                         'APPLICATION_IMAGE',
                                                         'BOOKMATCH_SLIPMATCH',
                                                     ].includes(item.media_type) ? (
@@ -1015,10 +1015,10 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
 
                         {!formData.media?.length &&
                             mediaPreviews
-                                .featured_images
+                                .closeup_images
                                 .length === 0 &&
                             mediaPreviews
-                                .gallery_images
+                                .slab_images
                                 .length === 0 &&
                             mediaPreviews
                                 .application_images

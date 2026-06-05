@@ -186,8 +186,8 @@ export default function ProductsView() {
 
     // FILES
     [
-      "featured_images",
-      "gallery_images",
+      "closeup_images",
+      "slab_images",
       "featured_videos",
       "application_images",
       "bookmatch_slipmatch",

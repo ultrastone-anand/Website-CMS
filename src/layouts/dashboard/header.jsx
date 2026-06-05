@@ -13,7 +13,7 @@ import { bgBlur } from 'src/theme/css';
 
 import Iconify from 'src/components/iconify';
 
-import { NAV, HEADER } from './config-layout';
+import {  HEADER } from './config-layout';
 import AccountPopover from './common/account-popover';
 
 // ----------------------------------------------------------------------
@@ -51,10 +51,6 @@ export default function Header({ onOpenNav }) {
         }),
         transition: theme.transitions.create(['height'], {
           duration: theme.transitions.duration.shorter,
-        }),
-        ...(lgUp && {
-          width: `calc(100% - ${NAV.WIDTH + 1}px)`,
-          height: HEADER.H_DESKTOP,
         }),
       }}
     >

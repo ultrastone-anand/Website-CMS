@@ -54,7 +54,7 @@ position: 'relative',
 component="img"
 alt={product.name}
 src={
-product.featured_image ||
+product.closeup_image ||
 '/assets/placeholder.png'
 }
 sx={{
