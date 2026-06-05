@@ -156,6 +156,7 @@ export default function ProductsView() {
       "color_enhancing",
       "countertops_vanities",
       "interior_floor",
+      "interior_wall",
       "shower_wall",
       "shower_floor",
       "exterior_floor",
