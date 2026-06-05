@@ -12,6 +12,7 @@ import {
 } from 'src/services/category.service';
 import {
   createProduct,
+  deleteProduct,
   updateProduct,
   getProductDetail,
   getProductsByCategory,
@@ -24,29 +25,13 @@ import CategoryCard from '../category-card';
 import ProductQuickEdit from '../product-quick-edit';
 
 export default function ProductsView() {
-  const [categories, setCategories] =
-    useState([]);
-
-  const [
-    selectedCategory,
-    setSelectedCategory,
-  ] = useState(null);
-
-  const [products, setProducts] =
-    useState([]);
-
-  const [productModalOpen, setProductModalOpen] =
-    useState(false);
-
-  const [currentProduct, setCurrentProduct] =
-    useState(null);
-  const user = JSON.parse(
-    sessionStorage.getItem('user') || '{}'
-  );
-
-  const canAddProducts = [1, 3, 4].includes(
-    Number(user?.role_id)
-  );
+  const [categories, setCategories] =useState([]);
+  const [selectedCategory,setSelectedCategory,] = useState(null);
+  const [products, setProducts] =useState([]);
+  const [productModalOpen, setProductModalOpen] =useState(false);
+  const [currentProduct, setCurrentProduct] =useState(null);
+  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+  const canAddProducts = [1, 3, 4].includes(Number(user?.role_id));
 
   useEffect(() => {
     loadCategories();
@@ -60,282 +45,190 @@ export default function ProductsView() {
     }
   }, [selectedCategory]);
 
-  const loadCategories =
-    async () => {
-      try {
-        const response =
-          await getCategories();
+  const loadCategories = async () => {
+    try {
+      const response =
+        await getCategories();
 
-        const data =
-          response.data || [];
+      const data =
+        response.data || [];
 
-        const activeCategories = data
-          .filter((item) => item.is_active)
-          .sort((a, b) =>
-            a.name.localeCompare(b.name)
-          );
-
-        setCategories(
-          activeCategories
-        );
-
-        if (
-          activeCategories.length > 0
-        ) {
-          setSelectedCategory(
-            activeCategories[0]
-          );
-        }
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-  const loadProducts =
-    async (slug) => {
-      try {
-        const response =
-          await getProductsByCategory(
-            slug
-          );
-
-        const sortedProducts = (
-          response.products || []
-        ).sort((a, b) =>
+      const activeCategories = data
+        .filter((item) => item.is_active)
+        .sort((a, b) =>
           a.name.localeCompare(b.name)
         );
 
-        setProducts(sortedProducts);
-      } catch (error) {
-        console.error(error);
+      setCategories(
+        activeCategories
+      );
+
+      if (
+        activeCategories.length > 0
+      ) {
+        setSelectedCategory(
+          activeCategories[0]
+        );
       }
-    };
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const loadProducts = async (slug) => {
+    try {
+      const response =
+        await getProductsByCategory(
+          slug
+        );
+
+      const sortedProducts = (
+        response.products || []
+      ).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+
+      setProducts(sortedProducts);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleAddProduct = () => {
     setCurrentProduct(null);
     setProductModalOpen(true);
   };
 
-  const handleEditProduct =
-    async (product) => {
-      try {
-        const response =
-          await getProductDetail(
-            product.slug
-          );
-
-        setCurrentProduct(
-          response.product
+  const handleEditProduct = async (product) => {
+    try {
+      const response =
+        await getProductDetail(
+          product.slug
         );
 
-        setProductModalOpen(true);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+      setCurrentProduct(
+        response.product
+      );
 
-  const handleCloseModal =
-    () => {
-      setProductModalOpen(false);
-      setCurrentProduct(null);
-    };
+      setProductModalOpen(true);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setProductModalOpen(false);
+    setCurrentProduct(null);
+  };
+
+  const buildProductFormData = (payload) => {
+    const data = new FormData();
+
+    // BASIC
+    [
+      "name",
+      "slug",
+      "small_description",
+      "long_description",
+      "category_id",
+      "pattern",
+      "stone_group",
+      "origin_country",
+      "pantone_colour",
+      "variation_level",
+    ].forEach((key) => {
+      data.append(key, payload[key] ?? "");
+    });
+
+    // ARRAYS
+    [
+      "finishes_available",
+      "thicknesses_cm",
+      "average_sizes_inches",
+    ].forEach((key) => {
+      data.append(key, JSON.stringify(payload[key] || []));
+    });
+
+    // BOOLEANS
+    [
+      "translucent",
+      "cut_to_size",
+      "color_enhancing",
+      "countertops_vanities",
+      "interior_floor",
+      "shower_wall",
+      "shower_floor",
+      "exterior_floor",
+      "exterior_wall",
+      "pool_fountain",
+      "fireplace",
+      "furniture_top",
+      "is_featured",
+      "is_trending",
+      "is_new_arrival",
+      "is_active",
+    ].forEach((key) => {
+      data.append(key, payload[key] || false);
+    });
+
+    // SPECIFICATIONS
+    [
+      "abrasion_resistance",
+      "stain_resistance",
+      "etching_resistance",
+      "heat_resistance",
+      "uv_resistance",
+      "color_range",
+      "movement_index",
+    ].forEach((key) => {
+      data.append(key, payload[key] ?? "");
+    });
+
+    // FILES
+    [
+      "featured_images",
+      "gallery_images",
+      "featured_videos",
+      "application_images",
+      "bookmatch_slipmatch",
+    ].forEach((field) => {
+      (payload[field] || []).forEach((file) => {
+        if (file instanceof File) {
+          data.append(field, file);
+        }
+      });
+    });
+
+    return data;
+  };
 
   const handleSubmit = async (payload) => {
-
     try {
+      const formData = buildProductFormData(payload);
 
       if (currentProduct?.id) {
-
-        const data = new FormData();
-
-        // =========================
-        // BASIC
-        // =========================
-
-        [
-          "name",
-          "slug",
-          "small_description",
-          "long_description",
-          "category_id",
-          "pattern",
-          "stone_group",
-          "origin_country",
-          "pantone_colour",
-          "variation_level",
-        ].forEach((key) => {
-          data.append(key, payload[key] ?? "");
-        });
-
-        // =========================
-        // ARRAYS
-        // =========================
-
-        [
-          "finishes_available",
-          "thicknesses_cm",
-          "average_sizes_inches",
-        ].forEach((key) => {
-          data.append(
-            key,
-            JSON.stringify(payload[key] || [])
-          );
-        });
-
-        // =========================
-        // BOOLEANS
-        // =========================
-
-        [
-          "translucent",
-          "cut_to_size",
-
-          "color_enhancing",
-          "countertops_vanities",
-          "interior_floor",
-          "shower_wall",
-          "shower_floor",
-          "exterior_floor",
-          "exterior_wall",
-          "pool_fountain",
-          "fireplace",
-          "furniture_top",
-
-          "is_featured",
-          "is_trending",
-          "is_new_arrival",
-          "is_active",
-        ].forEach((key) => {
-          data.append(
-            key,
-            payload[key] || false
-          );
-        });
-
-        // =========================
-        // SPECIFICATIONS
-        // =========================
-
-        [
-          "abrasion_resistance",
-          "stain_resistance",
-          "etching_resistance",
-          "heat_resistance",
-          "uv_resistance",
-          "color_range",
-          "movement_index",
-        ].forEach((key) => {
-          data.append(
-            key,
-            payload[key] ?? ""
-          );
-        });
-
-        // =========================
-        // FEATURED IMAGES
-        // =========================
-
-        (payload.featured_images || []).forEach(
-          (file) => {
-            if (file instanceof File) {
-              data.append(
-                "featured_images",
-                file
-              );
-            }
-          }
-        );
-
-        // =========================
-        // GALLERY IMAGES
-        // =========================
-
-        (payload.gallery_images || []).forEach(
-          (file) => {
-            if (file instanceof File) {
-              data.append(
-                "gallery_images",
-                file
-              );
-            }
-          }
-        );
-
-        // =========================
-        // VIDEOS
-        // =========================
-
-        (payload.featured_videos || []).forEach(
-          (file) => {
-            if (file instanceof File) {
-              data.append(
-                "featured_videos",
-                file
-              );
-            }
-          }
-        );
-
-        // =========================
-        // APPLICATION IMAGES
-        // =========================
-
-        (payload.application_images || []).forEach(
-          (file) => {
-            if (file instanceof File) {
-              data.append(
-                "application_images",
-                file
-              );
-            }
-          }
-        );
-
-        // =========================
-        // BOOKMATCH / SLIPMATCH
-        // =========================
-
-        (payload.bookmatch_slipmatch || []).forEach(
-          (file) => {
-            if (file instanceof File) {
-              data.append(
-                "bookmatch_slipmatch",
-                file
-              );
-            }
-          }
-        );
-
-        await updateProduct(
-          currentProduct.id,
-          data
-        );
-
+        await updateProduct(currentProduct.id, formData);
       } else {
-
-        await createProduct(
-          payload
-        );
-
+        await createProduct(formData);
       }
 
       handleCloseModal();
 
       if (selectedCategory) {
-        await loadProducts(
-          selectedCategory.slug
-        );
+        await loadProducts(selectedCategory.slug);
       }
-
     } catch (error) {
-
-      console.error(
-        "Product Save Error:",
-        error
-      );
-
+      console.error("Product Save Error:", error);
     }
+  };
 
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await deleteProduct(productId);
+      if (selectedCategory) { await loadProducts(selectedCategory.slug); }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
@@ -445,6 +338,9 @@ export default function ProductsView() {
                 }
                 onEdit={
                   handleEditProduct
+                }
+                onDelete={
+                  handleDeleteProduct
                 }
               />
             </Grid>

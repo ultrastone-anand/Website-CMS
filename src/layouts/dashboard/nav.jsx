@@ -32,7 +32,10 @@ const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const [miniNav, setMiniNav] = useState(true);
   const [navConfig, setNavConfig] = useState([]);
 
-  const navWidth = miniNav ? 88 : NAV.WIDTH;
+const navWidth =
+  upLg && miniNav
+    ? 88
+    : NAV.WIDTH;
 
   useEffect(() => {
     if (openNav) {
@@ -83,7 +86,7 @@ const user = JSON.parse(sessionStorage.getItem('user') || '{}');
         <NavItem
           key={item.title}
           item={item}
-          miniNav={miniNav}
+          miniNav={upLg && miniNav}
         />
       ))}
     </Stack>
@@ -97,7 +100,7 @@ const renderContent = (
       overflow: 'visible',
     }}
   >
-<IconButton
+{upLg && (<IconButton
   size="small"
   onClick={() => setMiniNav((prev) => !prev)}
   sx={{
@@ -129,7 +132,7 @@ const renderContent = (
     }
     width={16}
   />
-</IconButton>
+</IconButton>)}
 
     <Scrollbar
       sx={{

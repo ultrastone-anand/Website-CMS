@@ -70,27 +70,33 @@ export const getProductDetail =async (slug) => {
 
 // ================= CREATE PRODUCT =================
 
-export const createProduct =async (payload) => {
-    const response = await fetch(
-      `${API_URL}/stones/product`,
-      {
-        method: 'POST',
-        headers: getHeaders(),
-        body: JSON.stringify(payload),
-      }
-    );
+export const createProduct = async (
+  formData
+) => {
 
-    const data = await response.json();
+  const response = await fetch(
+    `${API_URL}/stones/product`,
+    {
+      method: "POST",
+      headers:
+        getMultipartHeaders(),
 
-    if (!response.ok) {
-      throw new Error(
-        data.message ||
-          'Failed to create product'
-      );
+      body: formData,
     }
+  );
 
-    return data;
-  };
+  const data =
+    await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Failed to create product"
+    );
+  }
+
+  return data;
+};
 
 // ================= UPDATE PRODUCT =================
 
@@ -120,6 +126,7 @@ export const updateProduct = async (id, formData) => {
 // ================= DELETE PRODUCT =================
 
 export const deleteProduct =async (id) => {
+  console.log(id);
     const response = await fetch(
       `${API_URL}/stones/product/${id}`,
       {

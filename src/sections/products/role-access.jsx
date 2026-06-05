@@ -1,6 +1,4 @@
-const user = JSON.parse(
-  sessionStorage.getItem('user') || '{}'
-);
+const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
 export const roleId = Number(user?.role_id);
 

@@ -38,6 +38,8 @@ const defaultForm = {
     featured_images: [],
     gallery_images: [],
     featured_videos: [],
+    application_images: [],
+    bookmatch_slipmatch: [],
 
     finishes_available: [],
     pattern: '',
@@ -299,7 +301,6 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
     const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState(defaultForm);
     const [activeTab, setActiveTab] = useState(0);
-    // { featured_images: [{url, name, file}], gallery_images: [...], featured_videos: [...] }
     const [mediaPreviews, setMediaPreviews] = useState(defaultPreviews);
     const [countries, setCountries] = useState([]);
     const [stone_group, setStone_group] = useState([])
@@ -450,8 +451,8 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
     ];
 
     const MEDIA_FIELDS = [
-        { label: 'Slab Images', field: 'featured_images', accept: 'image/*', icon: '🪨' },
-        { label: 'Closeup Images', field: 'gallery_images', accept: 'image/*', icon: '🔍' },
+        { label: 'Closeup Images', field: 'featured_images', accept: 'image/*', icon: '🔍' },
+        { label: 'Slab Images', field: 'gallery_images', accept: 'image/*', icon: '🪨' },
         { label: 'Application Images (3D)', field: 'application_images', accept: 'image/*', icon: '🏢' },
         { label: 'Bookmatch/Slipmatch', field: 'bookmatch_slipmatch', accept: 'image/*', icon: '🪞' },
         { label: 'Featured Videos', field: 'featured_videos', accept: 'video/*', icon: '🎬' },
@@ -952,23 +953,23 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                                                             'divider',
                                                     }}
                                                 >
-                                                    {  [
-    'FEATURED_IMAGE',
-    'GALLERY_IMAGE',
-    'APPLICATION_IMAGE',
-    'BOOKMATCH_SLIPMATCH',
-  ].includes(item.media_type) ? (
-    <Box
-      component="img"
-      src={item.media_url}
-      alt=""
-      sx={{
-        width: '100%',
-        height: 160,
-        objectFit: 'cover',
-        display: 'block',
-      }}
-    />
+                                                    {[
+                                                        'FEATURED_IMAGE',
+                                                        'GALLERY_IMAGE',
+                                                        'APPLICATION_IMAGE',
+                                                        'BOOKMATCH_SLIPMATCH',
+                                                    ].includes(item.media_type) ? (
+                                                        <Box
+                                                            component="img"
+                                                            src={item.media_url}
+                                                            alt=""
+                                                            sx={{
+                                                                width: '100%',
+                                                                height: 160,
+                                                                objectFit: 'cover',
+                                                                display: 'block',
+                                                            }}
+                                                        />
                                                     ) : (
                                                         <Box
                                                             component="video"
