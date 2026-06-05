@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
   Card,
@@ -13,19 +14,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import Grid from '@mui/material/Unstable_Grid2';
+import { getDashboard } from 'src/services/dashboard.service';
 
 import AppCurrentVisits from '../app-current-visits';
 import AppWidgetSummary from '../app-widget-summary';
 import AppOrderTimeline from '../app-order-timeline';
-
-import { getDashboard } from 'src/services/dashboard.service';
-
-export default function AppView() {
-  const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
   const roleMap = {
     1: 'admin',
@@ -34,24 +27,29 @@ export default function AppView() {
     4: 'seo',
     5: 'blog',
   };
+export default function AppView() {
+  const [dashboard, setDashboard] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const role = roleMap[user?.role_id] || 'admin';
+  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+  const role = roleMap[user?.role_id] || 'admin';
 
-        const response = await getDashboard(role);
 
-        setDashboard(response.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+useEffect(() => {
+  const fetchDashboard = async () => {
+    try {
+      const response = await getDashboard(role);
 
-    fetchDashboard();
-  }, []);
+      setDashboard(response.data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchDashboard();
+}, [role]);
 
   if (loading) {
     return (
