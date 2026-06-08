@@ -191,8 +191,20 @@ function MediaUploadField({ label, accept, icon, fieldKey, previews, onFilesSele
 
             {/* Preview Grid */}
             {previews.length > 0 && (
+
+                
                 <Grid container spacing={1}>
-                    {previews.map((item, idx) => (
+                    {previews.map((item, idx) =>{ 
+                            const fileSize = item.file?.size || item.size || 0;
+
+    const maxSize = isVideo
+        ? 100 * 1024 * 1024
+        : 10 * 1024 * 1024;
+
+    const exceedsLimit = fileSize > maxSize;
+                        return(
+
+                        
                         <Grid item key={idx} xs={6} sm={4}>
                             <Box
                                 sx={{
@@ -200,7 +212,9 @@ function MediaUploadField({ label, accept, icon, fieldKey, previews, onFilesSele
                                     borderRadius: 1.5,
                                     overflow: 'hidden',
                                     border: '1px solid',
-                                    borderColor: 'divider',
+                                     borderColor: exceedsLimit
+                        ? 'error.main'
+                        : 'divider',
                                     bgcolor: 'background.neutral',
                                     aspectRatio: '4/3',
                                     display: 'flex',
@@ -257,23 +271,36 @@ function MediaUploadField({ label, accept, icon, fieldKey, previews, onFilesSele
                                         bgcolor: 'rgba(0,0,0,0.5)',
                                     }}
                                 >
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            color: 'white',
-                                            fontSize: 9,
-                                            display: 'block',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                        }}
-                                    >
-                                        {item.name}
-                                    </Typography>
+<Typography
+    variant="caption"
+    sx={{
+        color: 'white',
+        fontSize: 9,
+        display: 'block',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+    }}
+>
+    {item.name}
+</Typography>
+
+{item.file && (
+    <Typography
+        variant="caption"
+        sx={{
+            color: 'rgba(255,255,255,0.8)',
+            fontSize: 8,
+            display: 'block',
+        }}
+    >
+        {(item.file.size / 1024 / 1024).toFixed(2)} MB / {isVideo ? '100 MB' : '10 MB'}
+    </Typography>
+)}
                                 </Box>
                             </Box>
                         </Grid>
-                    ))}
+                    )})}
                 </Grid>
             )}
         </Stack>
@@ -405,9 +432,9 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         }
     };
 
-    const handleChange = (field, value) =>setFormData((prev) => ({ ...prev, [field]: value }));
+    const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
-    const handleCommaSplit = (field, raw) =>handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
+    const handleCommaSplit = (field, raw) => handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
 
     // ── Media handlers ────────────────────────────────────────────────────────
 
@@ -459,6 +486,18 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         { label: 'Featured Videos', field: 'featured_videos', accept: 'video/*', icon: '🎬' },
     ];
 
+    const generateSlug = (text) =>
+        text
+            .toLowerCase()
+            .trim()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "");
+
+            const getMaxSize = (field) =>
+  field === 'featured_videos' ? 100 : 10;
+
+
+            
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
             sx: {
@@ -533,8 +572,18 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                         <SectionLabel>Identity</SectionLabel>
                         <Grid container spacing={2.5} sx={{ width: '100%', m: 0 }}>
                             <Grid item xs={12} md={6}>
-                                <TextField fullWidth label="Product Name" value={formData.name}
-                                    onChange={(e) => handleChange('name', e.target.value)} disabled={!canEditIdentity()} />
+                                <TextField
+                                    fullWidth
+                                    label="Product Name"
+                                    value={formData.name}
+                                    onChange={(e) => {
+                                        const name = e.target.value;
+
+                                        handleChange("name", name);
+                                        handleChange("slug", generateSlug(name));
+                                    }}
+                                    disabled={!canEditIdentity()}
+                                />
                             </Grid>
                             <Grid item xs={12} md={6}>
                                 <TextField fullWidth label="Slug" value={formData.slug}
@@ -955,7 +1004,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                     }}
                                                 >
                                                     {[
-                                                    'SLAB_IMAGE',
+                                                        'SLAB_IMAGE',
                                                         'CLOSEUP_IMAGE',
                                                         'APPLICATION_IMAGE',
                                                         'BOOKMATCH_SLIPMATCH',
@@ -1010,8 +1059,11 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                     </Box>
                                                 </Box>
                                             </Grid>
+                                            
                                         )
+                                        
                                     )}
+                                    
                                 </Grid>
                             </>
                         )}
@@ -1215,12 +1267,12 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                             <Button variant="contained" onClick={() => setActiveTab((p) => p + 1)}>Next →</Button>
                         ) : (
                             <LoadingButton
-  variant="contained"
-  loading={loading}
-  onClick={() => onSubmit(formData)}
->
-  {currentProduct ? 'Update Product' : 'Create Product'}
-</LoadingButton>
+                                variant="contained"
+                                loading={loading}
+                                onClick={() => onSubmit(formData)}
+                            >
+                                {currentProduct ? 'Update Product' : 'Create Product'}
+                            </LoadingButton>
                         )}
                     </Stack>
                 </Stack>
