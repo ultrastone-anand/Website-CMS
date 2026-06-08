@@ -2,23 +2,28 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import Stack from '@mui/material/Stack';
+import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import TableRow from '@mui/material/TableRow';
 import MenuItem from '@mui/material/MenuItem';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-// ----------------------------------------------------------------------
-
 export default function UserTableRow({
   row,
   onEdit,
+  onDelete,
 }) {
   const [open, setOpen] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
@@ -33,6 +38,19 @@ export default function UserTableRow({
 
     if (onEdit) {
       onEdit(row);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    handleCloseMenu();
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setDeleteDialogOpen(false);
+
+    if (onDelete) {
+      onDelete(row.user_id);
     }
   };
 
@@ -87,15 +105,12 @@ export default function UserTableRow({
         }}
       >
         <MenuItem onClick={handleEditClick}>
-          <Iconify
-            icon="eva:edit-fill"
-            sx={{ mr: 2 }}
-          />
+          <Iconify icon="eva:edit-fill" sx={{ mr: 2 }} />
           Edit
         </MenuItem>
 
         <MenuItem
-          onClick={handleCloseMenu}
+          onClick={handleDeleteClick}
           sx={{ color: 'error.main' }}
         >
           <Iconify
@@ -105,6 +120,31 @@ export default function UserTableRow({
           Delete
         </MenuItem>
       </Popover>
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+      >
+        <DialogTitle>Delete User</DialogTitle>
+
+        <DialogContent>
+          Are you sure you want to delete <b>{row.name}</b>?
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>
+            Cancel
+          </Button>
+
+          <Button
+            color="error"
+            variant="contained"
+            onClick={handleConfirmDelete}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
@@ -112,4 +152,5 @@ export default function UserTableRow({
 UserTableRow.propTypes = {
   row: PropTypes.object.isRequired,
   onEdit: PropTypes.func,
+  onDelete: PropTypes.func,
 };

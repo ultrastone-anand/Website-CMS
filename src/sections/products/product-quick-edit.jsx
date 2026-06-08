@@ -493,10 +493,6 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
 
-            const getMaxSize = (field) =>
-  field === 'featured_videos' ? 100 : 10;
-
-
             
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
