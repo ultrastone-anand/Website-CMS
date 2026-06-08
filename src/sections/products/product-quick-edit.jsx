@@ -7,6 +7,7 @@ import Tabs from '@mui/material/Tabs';
 import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -15,8 +16,8 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import { Alert, Autocomplete } from '@mui/material';
 import DialogTitle from '@mui/material/DialogTitle';
+import { Alert, Autocomplete } from '@mui/material';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -299,7 +300,7 @@ const defaultPreviews = {
     bookmatch_slipmatch: [],
 };
 
-export default function ProductQuickEdit({ open, onClose, onSubmit, currentProduct }) {
+export default function ProductQuickEdit({ open, onClose, loading, onSubmit, currentProduct }) {
     const [categories, setCategories] = useState([]);
     const [formData, setFormData] = useState(defaultForm);
     const [activeTab, setActiveTab] = useState(0);
@@ -1213,9 +1214,13 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
                         {activeTab < tabs.length - 1 ? (
                             <Button variant="contained" onClick={() => setActiveTab((p) => p + 1)}>Next →</Button>
                         ) : (
-                            <Button variant="contained" onClick={() => onSubmit(formData)}>
-                                {currentProduct ? 'Update Product' : 'Create Product'}
-                            </Button>
+                            <LoadingButton
+  variant="contained"
+  loading={loading}
+  onClick={() => onSubmit(formData)}
+>
+  {currentProduct ? 'Update Product' : 'Create Product'}
+</LoadingButton>
                         )}
                     </Stack>
                 </Stack>
@@ -1227,6 +1232,7 @@ export default function ProductQuickEdit({ open, onClose, onSubmit, currentProdu
 ProductQuickEdit.propTypes = {
     open: PropTypes.bool,
     onClose: PropTypes.func,
+    loading: PropTypes.bool,
     onSubmit: PropTypes.func,
     currentProduct: PropTypes.object,
 };

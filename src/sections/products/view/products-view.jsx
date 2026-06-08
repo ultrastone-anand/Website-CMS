@@ -30,6 +30,7 @@ export default function ProductsView() {
   const [products, setProducts] =useState([]);
   const [productModalOpen, setProductModalOpen] =useState(false);
   const [currentProduct, setCurrentProduct] =useState(null);
+  const [loading, setLoading] = useState(false);
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const canAddProducts = [1, 3, 4].includes(Number(user?.role_id));
 
@@ -205,6 +206,7 @@ export default function ProductsView() {
 
   const handleSubmit = async (payload) => {
     try {
+      setLoading(true);
       const formData = buildProductFormData(payload);
 
       if (currentProduct?.id) {
@@ -220,6 +222,8 @@ export default function ProductsView() {
       }
     } catch (error) {
       console.error("Product Save Error:", error);
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -380,6 +384,9 @@ export default function ProductsView() {
         }
         onSubmit={
           handleSubmit
+        }
+        loading={
+          loading
         }
       />
     </Container>
