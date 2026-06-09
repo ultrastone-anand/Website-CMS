@@ -1,3 +1,4 @@
+import QRCode from 'qrcode';
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
@@ -9,14 +10,19 @@ import Dialog from '@mui/material/Dialog';
 import Typography from '@mui/material/Typography';
 import CardActions from '@mui/material/CardActions';
 import DialogTitle from '@mui/material/DialogTitle';
+import { Tooltip, IconButton } from '@mui/material';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
 
+import Iconify from 'src/components/iconify';
+
 import { canView, canEditIdentity } from './role-access';
+
 
 export default function ShopProductCard({
 product,
+categories,
 onEdit,
 onDelete,
 }) {
@@ -35,6 +41,27 @@ onDelete(product.id);
 setOpenDeleteDialog(false);
 };
 
+const handleDownloadQR = async () => {
+  try {
+    const qrUrl = `https://web.ultrastone.in/product/${categories.slug}/${product.slug}`;
+
+    const dataUrl = await QRCode.toDataURL(qrUrl, {
+      width: 500,
+      margin: 2,
+    });
+
+    const link = document.createElement('a');
+
+    link.href = dataUrl;
+    link.download = `${product.slug}-qr.png`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (error) {
+    console.error('QR generation failed', error);
+  }
+};
 return (
 <>
 <Card
@@ -50,6 +77,7 @@ pt: '55%',
 position: 'relative',
 }}
 >
+
 <Box
 component="img"
 alt={product.name}
@@ -73,12 +101,33 @@ position: 'absolute',
         flexGrow: 1,
       }}
     >
-      <Typography
-        variant="subtitle1"
-        noWrap
-      >
-        {product.name}
-      </Typography>
+<Stack
+  direction="row"
+  alignItems="center"
+  justifyContent="space-between"
+>
+  <Typography
+    variant="subtitle1"
+    noWrap
+    sx={{ flex: 1 }}
+  >
+    {product.name}
+  </Typography>
+
+  <Tooltip title="Download QR Code">
+    <IconButton
+      size="small"
+      onClick={handleDownloadQR}
+    >
+      <Iconify
+        icon="mdi:qrcode"
+        width={32}
+      />
+    </IconButton>
+  </Tooltip>
+</Stack>
+      
+
 
       <Typography
         variant="body2"
@@ -168,6 +217,7 @@ position: 'absolute',
 
 ShopProductCard.propTypes = {
 product: PropTypes.object,
+categories: PropTypes.object,
 onEdit: PropTypes.func,
 onDelete: PropTypes.func,
 };

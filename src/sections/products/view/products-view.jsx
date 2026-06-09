@@ -337,6 +337,7 @@ export default function ProductsView() {
       >
         <ProductCard
           product={product}
+          categories={selectedCategory}
           onEdit={handleEditProduct}
           onDelete={handleDeleteProduct}
         />
