@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import { TextField, Autocomplete } from '@mui/material';
 
 import {
   getCategories,
@@ -21,7 +22,6 @@ import {
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
-import CategoryCard from '../category-card';
 import ProductQuickEdit from '../product-quick-edit';
 
 export default function ProductsView() {
@@ -31,6 +31,7 @@ export default function ProductsView() {
   const [productModalOpen, setProductModalOpen] =useState(false);
   const [currentProduct, setCurrentProduct] =useState(null);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const canAddProducts = [1, 3, 4].includes(Number(user?.role_id));
 
@@ -236,6 +237,12 @@ export default function ProductsView() {
     }
   };
 
+  const filteredProducts = products.filter((product) =>
+  product.name
+    ?.toLowerCase()
+    .includes(searchTerm.toLowerCase())
+);
+
   return (
     <Container maxWidth={false}>
 
@@ -258,47 +265,38 @@ export default function ProductsView() {
           New Product
         </Button>}
       </Stack>
-      <Typography
-        variant="h6"
-        sx={{
-          mb: 3,
-          fontWeight: 700,
-        }}
-      >
-        Categories
-      </Typography>
+<Stack
+  direction={{ xs: 'column', md: 'row' }}
+  spacing={2}
+  sx={{ mb: 4 }}
+>
+  <Autocomplete
+    fullWidth
+    options={categories}
+    value={selectedCategory}
+    onChange={(_, value) => {
+      setSelectedCategory(value);
+    }}
+    getOptionLabel={(option) =>
+      option?.name || ''
+    }
+    renderInput={(params) => (
+      <TextField
+        {...params}
+        label="Select Category"
+      />
+    )}
+  />
 
-      <Grid
-        container
-        spacing={2}
-        sx={{ mb: 5 }}
-      >
-        {categories.map(
-          (category) => (
-            <Grid
-              key={category.id}
-              xs={12}
-              sm={6}
-              md={4}
-              lg={3}
-              xl={2}
-            >
-              <CategoryCard
-                category={category}
-                selected={
-                  selectedCategory?.id ===
-                  category.id
-                }
-                onClick={() =>
-                  setSelectedCategory(
-                    category
-                  )
-                }
-              />
-            </Grid>
-          )
-        )}
-      </Grid>
+  <TextField
+    fullWidth
+    label="Search Products"
+    value={searchTerm}
+    onChange={(e) =>
+      setSearchTerm(e.target.value)
+    }
+  />
+</Stack>
 
       {selectedCategory && (
         <Box sx={{ mb: 4 }}>
@@ -315,43 +313,37 @@ export default function ProductsView() {
             variant="body2"
             color="text.secondary"
           >
-            {products.length}{' '}
+            {filteredProducts.length}{' '}
             product
-            {products.length !== 1
+            {filteredProducts.length !== 1
               ? 's'
               : ''}
           </Typography>
         </Box>
       )}
 
+     <Grid
+  container
+  spacing={3}
+>
+  {filteredProducts.map(
+    (product) => (
       <Grid
-        container
-        spacing={3}
+        key={product.id}
+        xs={12}
+        sm={6}
+        md={4}
+        lg={3}
       >
-        {products.map(
-          (product) => (
-            <Grid
-              key={product.id}
-              xs={12}
-              sm={6}
-              md={4}
-              lg={3}
-            >
-              <ProductCard
-                product={
-                  product
-                }
-                onEdit={
-                  handleEditProduct
-                }
-                onDelete={
-                  handleDeleteProduct
-                }
-              />
-            </Grid>
-          )
-        )}
+        <ProductCard
+          product={product}
+          onEdit={handleEditProduct}
+          onDelete={handleDeleteProduct}
+        />
       </Grid>
+    )
+  )}
+</Grid>
 
       {products.length === 0 && (
         <Box

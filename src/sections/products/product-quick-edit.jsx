@@ -436,6 +436,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
 
     const handleCommaSplit = (field, raw) => handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
 
+        
     // ── Media handlers ────────────────────────────────────────────────────────
 
     const handleFilesSelected = (fieldKey, files) => {
