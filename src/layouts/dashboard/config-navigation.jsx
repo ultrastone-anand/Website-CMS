@@ -50,6 +50,11 @@ export const getNavConfig = () => {
             path: '/dashboard/reports',
             icon: icon('ic_reports'),
           },
+          {
+            title: 'Activitys',
+            path: '/dashboard/activitys',
+            icon: icon('ic_activity'),
+          },
         ]
       : []),
   ];
