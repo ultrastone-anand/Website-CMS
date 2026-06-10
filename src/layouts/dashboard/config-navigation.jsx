@@ -39,6 +39,11 @@ export const getNavConfig = () => {
             path: '/dashboard/user',
             icon: icon('ic_users'),
           },
+          {
+            title: 'Lookups',
+            path: '/dashboard/lookup',
+            icon: icon('ic_lookup'),
+          },
         ]
       : []),
 

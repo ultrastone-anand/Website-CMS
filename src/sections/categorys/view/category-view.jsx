@@ -185,6 +185,33 @@ export default function CategoryPage() {
       }
     };
 
+const updateCategoryStatus = async (item) => {
+  try {
+    const payload = {
+      name: item.name,
+      slug: item.slug,
+      description: item.description,
+      parent_id:
+        item.parent_id === null
+          ? null
+          : Number(item.parent_id),
+      is_active: !item.is_active,
+    };
+
+    await updateCategory(
+      item.id,
+      payload
+    );
+
+    await fetchCategories();
+  } catch (error) {
+    console.error(
+      'Error updating category status:',
+      error
+    );
+  }
+};
+
   if (loading) {
     return (
       <Container>
@@ -234,111 +261,117 @@ export default function CategoryPage() {
           }
         />
 
-{isMobile ? (
-  <Stack spacing={2} sx={{ p: 2 }}>
-    {dataFiltered
-      .slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage
-      )
-      .map((row) => (
-        <CategoryCardRow
-          key={row.id}
-          row={row}
-          categories={categories}
-          onEdit={handleEditCategory}
-        />
-      ))}
+        {isMobile ? (
+          <Stack spacing={2} sx={{ p: 2 }}>
+            {dataFiltered
+              .slice(
+                page * rowsPerPage,
+                page * rowsPerPage + rowsPerPage
+              )
+              .map((row) => (
+                <CategoryCardRow
+                  key={row.id}
+                  row={row}
+                  categories={categories}
+                  onEdit={handleEditCategory}
+                  onToggleStatus={
+                    updateCategoryStatus
+                  }
+                />
+              ))}
 
-    {notFound && (
-      <TableNoData query={filterName} />
-    )}
-  </Stack>
-) : (
-  <Scrollbar>
-    <TableContainer
-      sx={{
-        overflow: 'unset',
-      }}
-    >
-      <Table
-        sx={{
-          minWidth: 1000,
-        }}
-      >
-        <CategoryTableHead
-          order={order}
-          orderBy={orderBy}
-          rowCount={categories.length}
-          numSelected={selected.length}
-          onRequestSort={handleSort}
-          onSelectAllClick={
-            handleSelectAllClick
-          }
-          headLabel={[
-            {
-              id: 'name',
-              label: 'Name',
-            },
-            {
-              id: 'slug',
-              label: 'Slug',
-            },
-            {
-              id: 'parent',
-              label: 'Parent',
-            },
-            {
-              id: 'type',
-              label: 'Type',
-            },
-            {
-              id: 'status',
-              label: 'Status',
-            },
-            {
-              id: '',
-            },
-          ]}
-        />
-
-        <TableBody>
-          {dataFiltered
-            .slice(
-              page * rowsPerPage,
-              page * rowsPerPage +
-                rowsPerPage
-            )
-            .map((row) => (
-              <CategoryTableRow
-                key={row.id}
-                row={row}
-                categories={categories}
-                onEdit={
-                  handleEditCategory
-                }
-              />
-            ))}
-
-          <TableEmptyRows
-            height={77}
-            emptyRows={emptyRows(
-              page,
-              rowsPerPage,
-              categories.length
+            {notFound && (
+              <TableNoData query={filterName} />
             )}
-          />
+          </Stack>
+        ) : (
+          <Scrollbar>
+            <TableContainer
+              sx={{
+                overflow: 'unset',
+              }}
+            >
+              <Table
+                sx={{
+                  minWidth: 1000,
+                }}
+              >
+                <CategoryTableHead
+                  order={order}
+                  orderBy={orderBy}
+                  rowCount={categories.length}
+                  numSelected={selected.length}
+                  onRequestSort={handleSort}
+                  onSelectAllClick={
+                    handleSelectAllClick
+                  }
+                  headLabel={[
+                    {
+                      id: 'name',
+                      label: 'Name',
+                    },
+                    {
+                      id: 'slug',
+                      label: 'Slug',
+                    },
+                    {
+                      id: 'parent',
+                      label: 'Parent',
+                    },
+                    {
+                      id: 'type',
+                      label: 'Type',
+                    },
+                    {
+                      id: 'status',
+                      label: 'Status',
+                    },
+                    {
+                      id: '',
+                    },
+                  ]}
+                />
 
-          {notFound && (
-            <TableNoData
-              query={filterName}
-            />
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  </Scrollbar>
-)}
+                <TableBody>
+                  {dataFiltered
+                    .slice(
+                      page * rowsPerPage,
+                      page * rowsPerPage +
+                      rowsPerPage
+                    )
+                    .map((row) => (
+                      <CategoryTableRow
+                        key={row.id}
+                        row={row}
+                        categories={categories}
+                        onEdit={
+                          handleEditCategory
+                        }
+                        onToggleStatus={
+                          updateCategoryStatus
+                        }
+                      />
+                    ))}
+
+                  <TableEmptyRows
+                    height={77}
+                    emptyRows={emptyRows(
+                      page,
+                      rowsPerPage,
+                      categories.length
+                    )}
+                  />
+
+                  {notFound && (
+                    <TableNoData
+                      query={filterName}
+                    />
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Scrollbar>
+        )}
 
         <TablePagination
           page={page}
