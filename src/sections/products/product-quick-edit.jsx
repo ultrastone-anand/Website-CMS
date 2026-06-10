@@ -35,6 +35,7 @@ const defaultForm = {
     small_description: '',
     long_description: '',
     category_id: '',
+    sealer: '',
 
     closeup_images: [],
     slab_images: [],
@@ -192,115 +193,116 @@ function MediaUploadField({ label, accept, icon, fieldKey, previews, onFilesSele
             {/* Preview Grid */}
             {previews.length > 0 && (
 
-                
+
                 <Grid container spacing={1}>
-                    {previews.map((item, idx) =>{ 
-                            const fileSize = item.file?.size || item.size || 0;
+                    {previews.map((item, idx) => {
+                        const fileSize = item.file?.size || item.size || 0;
 
-    const maxSize = isVideo
-        ? 100 * 1024 * 1024
-        : 10 * 1024 * 1024;
+                        const maxSize = isVideo
+                            ? 100 * 1024 * 1024
+                            : 10 * 1024 * 1024;
 
-    const exceedsLimit = fileSize > maxSize;
-                        return(
+                        const exceedsLimit = fileSize > maxSize;
+                        return (
 
-                        
-                        <Grid item key={idx} xs={6} sm={4}>
-                            <Box
-                                sx={{
-                                    position: 'relative',
-                                    borderRadius: 1.5,
-                                    overflow: 'hidden',
-                                    border: '1px solid',
-                                     borderColor: exceedsLimit
-                        ? 'error.main'
-                        : 'divider',
-                                    bgcolor: 'background.neutral',
-                                    aspectRatio: '4/3',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}
-                            >
-                                {isVideo ? (
-                                    <Box
-                                        component="video"
-                                        src={item.url}
-                                        sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                                        muted
-                                        onMouseEnter={(e) => e.currentTarget.play()}
-                                        onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                                    />
-                                ) : (
-                                    <Box
-                                        component="img"
-                                        src={item.url}
-                                        alt={item.name}
-                                        sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                                    />
-                                )}
 
-                                {/* Remove button */}
-                                <IconButton
-                                    size="small"
-                                    onClick={() => onRemove(fieldKey, idx)}
-                                    sx={{
-                                        position: 'absolute',
-                                        top: 4,
-                                        right: 4,
-                                        bgcolor: 'rgba(0,0,0,0.55)',
-                                        color: 'white',
-                                        width: 22,
-                                        height: 22,
-                                        fontSize: 12,
-                                        '&:hover': { bgcolor: 'error.main' },
-                                    }}
-                                >
-                                    ✕
-                                </IconButton>
-
-                                {/* File name tooltip at bottom */}
+                            <Grid item key={idx} xs={6} sm={4}>
                                 <Box
                                     sx={{
-                                        position: 'absolute',
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        px: 0.75,
-                                        py: 0.4,
-                                        bgcolor: 'rgba(0,0,0,0.5)',
+                                        position: 'relative',
+                                        borderRadius: 1.5,
+                                        overflow: 'hidden',
+                                        border: '1px solid',
+                                        borderColor: exceedsLimit
+                                            ? 'error.main'
+                                            : 'divider',
+                                        bgcolor: 'background.neutral',
+                                        aspectRatio: '4/3',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}
                                 >
-<Typography
-    variant="caption"
-    sx={{
-        color: 'white',
-        fontSize: 9,
-        display: 'block',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-    }}
->
-    {item.name}
-</Typography>
+                                    {isVideo ? (
+                                        <Box
+                                            component="video"
+                                            src={item.url}
+                                            sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                            muted
+                                            onMouseEnter={(e) => e.currentTarget.play()}
+                                            onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                                        />
+                                    ) : (
+                                        <Box
+                                            component="img"
+                                            src={item.url}
+                                            alt={item.name}
+                                            sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                        />
+                                    )}
 
-{item.file && (
-    <Typography
-        variant="caption"
-        sx={{
-            color: 'rgba(255,255,255,0.8)',
-            fontSize: 8,
-            display: 'block',
-        }}
-    >
-        {(item.file.size / 1024 / 1024).toFixed(2)} MB / {isVideo ? '100 MB' : '10 MB'}
-    </Typography>
-)}
+                                    {/* Remove button */}
+                                    <IconButton
+                                        size="small"
+                                        onClick={() => onRemove(fieldKey, idx)}
+                                        sx={{
+                                            position: 'absolute',
+                                            top: 4,
+                                            right: 4,
+                                            bgcolor: 'rgba(0,0,0,0.55)',
+                                            color: 'white',
+                                            width: 22,
+                                            height: 22,
+                                            fontSize: 12,
+                                            '&:hover': { bgcolor: 'error.main' },
+                                        }}
+                                    >
+                                        ✕
+                                    </IconButton>
+
+                                    {/* File name tooltip at bottom */}
+                                    <Box
+                                        sx={{
+                                            position: 'absolute',
+                                            bottom: 0,
+                                            left: 0,
+                                            right: 0,
+                                            px: 0.75,
+                                            py: 0.4,
+                                            bgcolor: 'rgba(0,0,0,0.5)',
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                color: 'white',
+                                                fontSize: 9,
+                                                display: 'block',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            {item.name}
+                                        </Typography>
+
+                                        {item.file && (
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: 'rgba(255,255,255,0.8)',
+                                                    fontSize: 8,
+                                                    display: 'block',
+                                                }}
+                                            >
+                                                {(item.file.size / 1024 / 1024).toFixed(2)} MB / {isVideo ? '100 MB' : '10 MB'}
+                                            </Typography>
+                                        )}
+                                    </Box>
                                 </Box>
-                            </Box>
-                        </Grid>
-                    )})}
+                            </Grid>
+                        )
+                    })}
                 </Grid>
             )}
         </Stack>
@@ -436,7 +438,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
 
     const handleCommaSplit = (field, raw) => handleChange(field, raw.split(',').map((v) => v.trim()).filter(Boolean));
 
-        
+
     // ── Media handlers ────────────────────────────────────────────────────────
 
     const handleFilesSelected = (fieldKey, files) => {
@@ -494,7 +496,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
 
-            
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
             sx: {
@@ -797,7 +799,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     ))}
                                 </TextField>
                             </Grid>
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12} md={4}>
                                 <TextField select fullWidth label="Translucent" disabled={!canEditStoneDetails()}
                                     value={formData.translucent ? 'YES' : 'NO'}
                                     onChange={(e) => handleChange('translucent', e.target.value === 'YES')}>
@@ -805,12 +807,27 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     <MenuItem value="NO">No</MenuItem>
                                 </TextField>
                             </Grid>
-                            <Grid item xs={12} md={6}>
+                            <Grid item xs={12} md={4}>
                                 <TextField select fullWidth label="Cut To Size" disabled={!canEditStoneDetails()}
                                     value={formData.cut_to_size ? 'YES' : 'NO'}
                                     onChange={(e) => handleChange('cut_to_size', e.target.value === 'YES')}>
                                     <MenuItem value="YES">Yes</MenuItem>
                                     <MenuItem value="NO">No</MenuItem>
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} md={4}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Sealer"
+                                    disabled={!canEditStoneDetails()}
+                                    value={formData.sealer || 'N/A'}
+                                    onChange={(e) => handleChange('sealer', e.target.value)}
+                                >
+                                    <MenuItem value="N/A">N/A</MenuItem>
+                                    <MenuItem value="Filamp90 or Mapei Ultra Care">
+                                        Filamp90 or Mapei Ultra Care
+                                    </MenuItem>
                                 </TextField>
                             </Grid>
                             <Grid item xs={12} md={4}>
@@ -1056,11 +1073,11 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                     </Box>
                                                 </Box>
                                             </Grid>
-                                            
+
                                         )
-                                        
+
                                     )}
-                                    
+
                                 </Grid>
                             </>
                         )}

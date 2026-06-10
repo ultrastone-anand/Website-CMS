@@ -138,6 +138,7 @@ export default function ProductsView() {
       "origin_country",
       "pantone_colour",
       "variation_level",
+      "sealer",
     ].forEach((key) => {
       data.append(key, payload[key] ?? "");
     });
