@@ -7,9 +7,11 @@ import ProtectedRoute from './ProtectedRoute';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
 export const UserPage = lazy(() => import('src/pages/user'));
+export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const LookupPage = lazy(() => import('src/pages/lookup'));
 export const ReportPage = lazy(() => import('src/pages/reports'));
+export const SocialsPage = lazy(() => import('src/pages/socials'));
 export const CompanyPage = lazy(() => import('src/pages/company'));
 export const ActivityPage = lazy(() => import('src/pages/activity'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
@@ -49,6 +51,8 @@ export default function Router() {
         { path: 'activitys', element: <ActivityPage /> },
         { path: 'lookup', element: <LookupPage /> },
         { path: 'company', element: <CompanyPage /> },
+        { path: 'blog', element: <BlogPage /> },
+        { path: 'socials', element: <SocialsPage /> },
       ],
     },
 

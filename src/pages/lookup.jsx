@@ -9,7 +9,7 @@ export default function BlogPage() {
   return (
     <>
       <Helmet>
-        <title> Reports | Ultrastones </title>
+        <title> Lookups | Ultrastones </title>
       </Helmet>
 
       <LookupPage />

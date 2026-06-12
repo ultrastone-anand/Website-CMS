@@ -1,17 +1,17 @@
 import { Helmet } from 'react-helmet-async';
 
-import CompanyPage from 'src/sections/company_info/view/company-view';
+import { BlogView } from 'src/sections/blog/view';
 
 // ----------------------------------------------------------------------
 
-export default function BlogPage() {
+export default function ProductsPage() {
   return (
     <>
       <Helmet>
-        <title> Showrooms | Ultrastones </title>
+        <title> Blogs | Ultrastones </title>
       </Helmet>
 
-      <CompanyPage />
+      <BlogView/>
     </>
   );
 }

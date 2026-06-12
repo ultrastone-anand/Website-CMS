@@ -30,6 +30,16 @@ export const getNavConfig = () => {
       path: '/dashboard/products',
       icon: icon('ic_products'),
     },
+    {
+      title: 'Blogs',
+      path: '/dashboard/blog',
+      icon: icon('ic_blogs'),
+    },
+    {
+      title: 'Socials',
+      path: '/dashboard/socials',
+      icon: icon('ic_socials'),
+    },
 
     // Admin only
     ...(roleId === 1
