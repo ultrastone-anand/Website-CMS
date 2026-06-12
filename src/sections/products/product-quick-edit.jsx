@@ -79,8 +79,26 @@ const defaultForm = {
     is_trending: false,
     is_new_arrival: false,
     is_active: false,
-};
 
+    // =====================================
+    // SEO
+    // =====================================
+
+    meta_title: '',
+    meta_description: '',
+    canonical_url: '',
+
+    og_title: '',
+    og_description: '',
+    og_image: '',
+
+    schema_markup: '',
+
+    robots_index: true,
+    robots_follow: true,
+
+    seo_content: '',
+};
 // ---------------------------------------------------------------------------
 
 const RESISTANCE_FIELDS = [
@@ -478,7 +496,8 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         { label: 'Basic Info', icon: '📋' },
         { label: 'Media', icon: '🖼️' },
         { label: 'Applications', icon: '🔧' },
-        { label: 'Specifications', icon: '📊' }
+        { label: 'Specifications', icon: '📊' },
+        { label: 'SEO', icon: '🌐' },
     ];
 
     const MEDIA_FIELDS = [
@@ -497,6 +516,22 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             .replace(/[^a-z0-9-]/g, "");
 
 
+    const handleAltTextChange = (
+        mediaId,
+        value
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            media: prev.media.map((media) =>
+                media.id === mediaId
+                    ? {
+                        ...media,
+                        alt_text: value,
+                    }
+                    : media
+            ),
+        }));
+    };
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
             sx: {
@@ -1070,6 +1105,20 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                                 height: 18,
                                                             }}
                                                         />
+                                                        <TextField
+                                                            sx={{ mt: 2 }}
+                                                            fullWidth
+                                                            size="small"
+                                                            label="Alt Text"
+                                                            value={item.alt_text || ''}
+                                                            disabled={!canEditMedia()}
+                                                            onChange={(e) =>
+                                                                handleAltTextChange(
+                                                                    item.id,
+                                                                    e.target.value
+                                                                )
+                                                            }
+                                                        />
                                                     </Box>
                                                 </Box>
                                             </Grid>
@@ -1262,6 +1311,217 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 modify specification ratings.
                             </Alert>
                         )}
+                    </Stack>
+                )}
+
+                {/* ── TAB 4: SEO ─────────────────────────────────── */}
+                {activeTab === 4 && (
+                    <Stack spacing={3}>
+                        <SectionLabel>
+                            SEO Configuration
+                        </SectionLabel>
+
+                        <Grid
+                            container
+                            spacing={2.5}
+                            sx={{ width: '100%', m: 0 }}
+                        >
+                            {/* Meta Title */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Meta Title"
+                                    value={formData.seo.meta_title || ''}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'meta_title',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* Meta Description */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={4}
+                                    label="Meta Description"
+                                    value={
+                                        formData.seo.meta_description || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'meta_description',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* Canonical URL */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    label="Canonical URL"
+                                    value={
+                                        formData.seo.canonical_url || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'canonical_url',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* OG Title */}
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="OG Title"
+                                    value={formData.seo.og_title || ''}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'og_title',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* OG Image */}
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    fullWidth
+                                    label="OG Image URL"
+                                    value={formData.seo.og_image || ''}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'og_image',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* OG Description */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={3}
+                                    label="OG Description"
+                                    value={
+                                        formData.seo.og_description || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'og_description',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+
+                            {/* Robots Index */}
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Robots Index"
+                                    value={String(formData.seo.robots_index ?? true)}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'robots_index',
+                                            e.target.value === 'true'
+                                        )
+                                    }
+                                >
+                                    <MenuItem value="true">
+                                        Index
+                                    </MenuItem>
+
+                                    <MenuItem value="false">
+                                        No Index
+                                    </MenuItem>
+                                </TextField>
+                            </Grid>
+
+                            {/* Robots Follow */}
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Robots Follow"
+                                    value={String(formData.seo.robots_follow ?? true)}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'robots_follow',
+                                            e.target.value === 'true'
+                                        )
+                                    }
+                                >
+                                    <MenuItem value="true">
+                                        Follow
+                                    </MenuItem>
+
+                                    <MenuItem value="false">
+                                        No Follow
+                                    </MenuItem>
+                                </TextField>
+                            </Grid>
+
+                            {/* Schema Markup */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={8}
+                                    label="Schema Markup (JSON-LD)"
+                                    value={
+                                        formData.seo.schema_markup || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'schema_markup',
+                                            e.target.value
+                                        )
+                                    }
+                                    placeholder={`{
+  "@context": "https://schema.org",
+  "@type": "Product"
+}`}
+                                />
+                            </Grid>
+
+                            {/* SEO Content */}
+                            <Grid item xs={12}>
+                                <TextField
+                                    fullWidth
+                                    multiline
+                                    rows={8}
+                                    label="SEO Content"
+                                    value={
+                                        formData.seo.seo_content || ''
+                                    }
+                                    onChange={(e) =>
+                                        handleChange(
+                                            'seo_content',
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </Grid>
+                        </Grid>
+
+                        <Alert severity="info">
+                            SEO metadata helps improve search
+                            engine visibility and social sharing
+                            previews.
+                        </Alert>
                     </Stack>
                 )}
 

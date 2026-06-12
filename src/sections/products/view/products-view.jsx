@@ -25,11 +25,11 @@ import ProductCard from '../product-card';
 import ProductQuickEdit from '../product-quick-edit';
 
 export default function ProductsView() {
-  const [categories, setCategories] =useState([]);
-  const [selectedCategory,setSelectedCategory,] = useState(null);
-  const [products, setProducts] =useState([]);
-  const [productModalOpen, setProductModalOpen] =useState(false);
-  const [currentProduct, setCurrentProduct] =useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory,] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [currentProduct, setCurrentProduct] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -188,6 +188,27 @@ export default function ProductsView() {
       data.append(key, payload[key] ?? "");
     });
 
+    // SEO TEXT FIELDS
+[
+  "meta_title",
+  "meta_description",
+  "canonical_url",
+  "og_title",
+  "og_description",
+  "og_image",
+  "seo_content",
+].forEach((key) => {
+  data.append(key, payload[key] ?? "");
+});
+
+// SCHEMA JSON
+data.append(
+  "schema_markup",
+  JSON.stringify(
+    payload.schema_markup || {}
+  )
+);
+
     // FILES
     [
       "closeup_images",
@@ -203,7 +224,14 @@ export default function ProductsView() {
       });
     });
 
+    // EXISTING MEDIA WITH ALT TEXT
+    data.append(
+      "existing_media",
+      JSON.stringify(payload.media || [])
+    );
+
     return data;
+
   };
 
   const handleSubmit = async (payload) => {
@@ -224,7 +252,7 @@ export default function ProductsView() {
       }
     } catch (error) {
       console.error("Product Save Error:", error);
-    }finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -239,10 +267,10 @@ export default function ProductsView() {
   };
 
   const filteredProducts = products.filter((product) =>
-  product.name
-    ?.toLowerCase()
-    .includes(searchTerm.toLowerCase())
-);
+    product.name
+      ?.toLowerCase()
+      .includes(searchTerm.toLowerCase())
+  );
 
   return (
     <Container maxWidth={false}>
@@ -266,38 +294,38 @@ export default function ProductsView() {
           New Product
         </Button>}
       </Stack>
-<Stack
-  direction={{ xs: 'column', md: 'row' }}
-  spacing={2}
-  sx={{ mb: 4 }}
->
-  <Autocomplete
-    fullWidth
-    options={categories}
-    value={selectedCategory}
-    onChange={(_, value) => {
-      setSelectedCategory(value);
-    }}
-    getOptionLabel={(option) =>
-      option?.name || ''
-    }
-    renderInput={(params) => (
-      <TextField
-        {...params}
-        label="Select Category"
-      />
-    )}
-  />
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        sx={{ mb: 4 }}
+      >
+        <Autocomplete
+          fullWidth
+          options={categories}
+          value={selectedCategory}
+          onChange={(_, value) => {
+            setSelectedCategory(value);
+          }}
+          getOptionLabel={(option) =>
+            option?.name || ''
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Select Category"
+            />
+          )}
+        />
 
-  <TextField
-    fullWidth
-    label="Search Products"
-    value={searchTerm}
-    onChange={(e) =>
-      setSearchTerm(e.target.value)
-    }
-  />
-</Stack>
+        <TextField
+          fullWidth
+          label="Search Products"
+          value={searchTerm}
+          onChange={(e) =>
+            setSearchTerm(e.target.value)
+          }
+        />
+      </Stack>
 
       {selectedCategory && (
         <Box sx={{ mb: 4 }}>
@@ -323,29 +351,29 @@ export default function ProductsView() {
         </Box>
       )}
 
-     <Grid
-  container
-  spacing={3}
->
-  {filteredProducts.map(
-    (product) => (
       <Grid
-        key={product.id}
-        xs={12}
-        sm={6}
-        md={4}
-        lg={3}
+        container
+        spacing={3}
       >
-        <ProductCard
-          product={product}
-          categories={selectedCategory}
-          onEdit={handleEditProduct}
-          onDelete={handleDeleteProduct}
-        />
+        {filteredProducts.map(
+          (product) => (
+            <Grid
+              key={product.id}
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+            >
+              <ProductCard
+                product={product}
+                categories={selectedCategory}
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+              />
+            </Grid>
+          )
+        )}
       </Grid>
-    )
-  )}
-</Grid>
 
       {products.length === 0 && (
         <Box

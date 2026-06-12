@@ -6,11 +6,12 @@ import DashboardLayout from 'src/layouts/dashboard';
 import ProtectedRoute from './ProtectedRoute';
 
 export const IndexPage = lazy(() => import('src/pages/app'));
-export const ReportPage = lazy(() => import('src/pages/reports'));
-export const ActivityPage = lazy(() => import('src/pages/activity'));
-export const LookupPage = lazy(() => import('src/pages/lookup'));
 export const UserPage = lazy(() => import('src/pages/user'));
 export const LoginPage = lazy(() => import('src/pages/login'));
+export const LookupPage = lazy(() => import('src/pages/lookup'));
+export const ReportPage = lazy(() => import('src/pages/reports'));
+export const CompanyPage = lazy(() => import('src/pages/company'));
+export const ActivityPage = lazy(() => import('src/pages/activity'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const CategorysPage = lazy(() => import('src/pages/category'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
@@ -47,6 +48,7 @@ export default function Router() {
         { path: 'reports', element: <ReportPage /> },
         { path: 'activitys', element: <ActivityPage /> },
         { path: 'lookup', element: <LookupPage /> },
+        { path: 'company', element: <CompanyPage /> },
       ],
     },
 
