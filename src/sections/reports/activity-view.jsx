@@ -28,8 +28,12 @@ import Iconify from 'src/components/iconify';
 
 const ACTION_COLORS = {
   CREATE: 'success',
+  BULK_CREATE: 'success',
+
   UPDATE: 'warning',
+
   DELETE: 'error',
+  BULK_DELETE: 'error',
 };
 
 const HIDDEN_FIELDS = [
@@ -82,28 +86,28 @@ function ChangeCard({ field, values }) {
                           variant="rounded"
                           sx={{ width: 80, height: 80 }}
                         />
-<Box>
-  <Typography fontWeight={600}>
-    {item.media_type}
-  </Typography>
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {item.media_type}
+                          </Typography>
 
-  <Typography
-    variant="body2"
-    color="text.secondary"
-  >
-    ID: {item.id}
-  </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            ID: {item.id}
+                          </Typography>
 
-  <Typography
-    variant="body2"
-    sx={{ mt: 0.5 }}
-  >
-    Alt Text:
-    <strong>
-      {item.alt_text || '—'}
-    </strong>
-  </Typography>
-</Box>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5 }}
+                          >
+                            Alt Text:
+                            <strong>
+                              {item.alt_text || '—'}
+                            </strong>
+                          </Typography>
+                        </Box>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -129,28 +133,28 @@ function ChangeCard({ field, values }) {
                           variant="rounded"
                           sx={{ width: 80, height: 80 }}
                         />
-<Box>
-  <Typography fontWeight={600}>
-    {item.media_type}
-  </Typography>
+                        <Box>
+                          <Typography fontWeight={600}>
+                            {item.media_type}
+                          </Typography>
 
-  <Typography
-    variant="body2"
-    color="text.secondary"
-  >
-    ID: {item.id}
-  </Typography>
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                          >
+                            ID: {item.id}
+                          </Typography>
 
-  <Typography
-    variant="body2"
-    sx={{ mt: 0.5 }}
-  >
-    Alt Text:
-    <strong>
-      {item.alt_text || '—'}
-    </strong>
-  </Typography>
-</Box>
+                          <Typography
+                            variant="body2"
+                            sx={{ mt: 0.5 }}
+                          >
+                            Alt Text:
+                            <strong>
+                              {item.alt_text || '—'}
+                            </strong>
+                          </Typography>
+                        </Box>
                       </Stack>
                     </CardContent>
                   </Card>
@@ -277,6 +281,18 @@ export default function ActivityView() {
     return <Alert severity="error">{error}</Alert>;
   }
 
+
+  const isCreateAction =
+  selected?.action === 'CREATE';
+
+const isBulkCreateAction =
+  selected?.action === 'BULK_CREATE';
+  
+  const isDeleteAction =
+  selected?.action === 'DELETE';
+
+const isBulkDeleteAction =
+  selected?.action === 'BULK_DELETE';
   return (
     <>
       {/* Search Bar */}
@@ -548,31 +564,98 @@ export default function ActivityView() {
                 </>
               )}
 
-              {selected.action === 'CREATE' && (
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Created Record
-                    </Typography>
-                    <pre style={{ overflow: 'auto', maxHeight: 500 }}>
-                      {JSON.stringify(selected.new_values, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
-              )}
+              
+                {isCreateAction && (
+  <Card variant="outlined">
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Created Record
+      </Typography>
 
-              {selected.action === 'DELETE' && (
-                <Card variant="outlined">
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      Deleted Record
-                    </Typography>
-                    <pre style={{ overflow: 'auto', maxHeight: 500 }}>
-                      {JSON.stringify(selected.old_values, null, 2)}
-                    </pre>
-                  </CardContent>
-                </Card>
-              )}
+      <pre style={{ overflow: 'auto', maxHeight: 500 }}>
+        {JSON.stringify(selected.new_values, null, 2)}
+      </pre>
+    </CardContent>
+  </Card>
+)}
+
+{isBulkCreateAction && (
+  <Card variant="outlined">
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Created Records ({selected.new_values?.count || 0})
+      </Typography>
+
+      <Stack spacing={1}>
+        {selected.new_values?.products?.map((product) => (
+          <Card key={product.id} variant="outlined">
+            <CardContent>
+              <Typography fontWeight={600}>
+                {product.name}
+              </Typography>
+              <Typography variant="body2">
+                {product.slug}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+    </CardContent>
+  </Card>
+)}
+
+{isDeleteAction && (
+  <Card variant="outlined">
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Deleted Record
+      </Typography>
+
+      <pre style={{ overflow: 'auto', maxHeight: 500 }}>
+        {JSON.stringify(selected.old_values, null, 2)}
+      </pre>
+    </CardContent>
+  </Card>
+)}              
+{isBulkDeleteAction && (
+  <Card variant="outlined">
+    <CardContent>
+      <Typography variant="h6" gutterBottom>
+        Deleted Records ({selected.new_values?.count || 0})
+      </Typography>
+
+      <Stack spacing={1}>
+        {selected.new_values?.products?.map((product) => (
+          <Card
+            key={product.id}
+            variant="outlined"
+            sx={{ borderColor: 'error.light' }}
+          >
+            <CardContent sx={{ py: 1.5 }}>
+              <Typography fontWeight={600}>
+                {product.name}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                ID: {product.id}
+              </Typography>
+
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Slug: {product.slug}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))}
+      </Stack>
+    </CardContent>
+  </Card>
+)}
             </DialogContent>
           </>
         )}

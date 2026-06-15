@@ -6,7 +6,7 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { TextField, Autocomplete } from '@mui/material';
+import { Checkbox , TextField, Autocomplete } from '@mui/material';
 
 import {
   getCategories,
@@ -16,6 +16,7 @@ import {
   deleteProduct,
   updateProduct,
   getProductDetail,
+  bulkdeleteProduct,
   getProductsByCategory,
 } from 'src/services/product.service';
 
@@ -34,6 +35,7 @@ export default function ProductsView() {
   const [searchTerm, setSearchTerm] = useState('');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const canAddProducts = [1, 3, 4].includes(Number(user?.role_id));
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
   useEffect(() => {
     loadCategories();
@@ -276,28 +278,106 @@ data.append(
       .includes(searchTerm.toLowerCase())
   );
 
+ const handleBulkDelete = async () => {
+  try {
+    if (selectedProducts.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${selectedProducts.length} products?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    await bulkdeleteProduct(selectedProducts);
+
+    // instantly remove from UI
+    setProducts((prev) =>
+      prev.filter(
+        (product) =>
+          !selectedProducts.includes(product.id)
+      )
+    );
+
+    setSelectedProducts([]);
+
+    // optional refresh from server
+    if (selectedCategory) {
+      await loadProducts(selectedCategory.slug);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+  const handleSelectProduct = (
+  productId
+) => {
+  setSelectedProducts((prev) =>
+    prev.includes(productId)
+      ? prev.filter(
+          (id) => id !== productId
+        )
+      : [...prev, productId]
+  );
+};
+
   return (
     <Container maxWidth={false}>
 
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        mb={4}
-      >
-        <Typography variant="h4">
-          Products
-        </Typography>
+<Stack
+  direction="row"
+  alignItems="center"
+  justifyContent="space-between"
+  mb={4}
+>
+  <Typography variant="h4">
+    Products
+  </Typography>
 
-        {canAddProducts && <Button
-          variant="contained"
-          color="inherit"
-          startIcon={<Iconify icon="eva:plus-fill" />}
-          onClick={handleAddProduct}
-        >
-          New Product
-        </Button>}
-      </Stack>
+  <Stack
+    direction="row"
+    spacing={2}
+  >
+    {selectedProducts.length >
+      0 && (
+      <Button
+        color="error"
+        variant="contained"
+        startIcon={
+          <Iconify icon="eva:trash-2-outline" />
+        }
+        onClick={
+          handleBulkDelete
+        }
+      >
+        Delete (
+        {
+          selectedProducts.length
+        }
+        )
+      </Button>
+    )}
+
+    {canAddProducts && (
+      <Button
+        variant="contained"
+        color="inherit"
+        startIcon={
+          <Iconify icon="eva:plus-fill" />
+        }
+        onClick={
+          handleAddProduct
+        }
+      >
+        New Product
+      </Button>
+    )}
+  </Stack>
+</Stack>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={2}
@@ -308,6 +388,7 @@ data.append(
           options={categories}
           value={selectedCategory}
           onChange={(_, value) => {
+            setSelectedProducts([]);
             setSelectedCategory(value);
           }}
           getOptionLabel={(option) =>
@@ -361,20 +442,52 @@ data.append(
       >
         {filteredProducts.map(
           (product) => (
-            <Grid
-              key={product.id}
-              xs={12}
-              sm={6}
-              md={4}
-              lg={3}
-            >
-              <ProductCard
-                product={product}
-                categories={selectedCategory}
-                onEdit={handleEditProduct}
-                onDelete={handleDeleteProduct}
-              />
-            </Grid>
+<Grid
+  key={product.id}
+  xs={12}
+  sm={6}
+  md={4}
+  lg={3}
+>
+  <Box position="relative">
+<Checkbox
+  checked={selectedProducts.includes(
+    product.id
+  )}
+  onClick={(e) => {
+    e.stopPropagation();
+  }}
+  onChange={(e) => {
+    e.stopPropagation();
+
+    handleSelectProduct(
+      product.id
+    );
+  }}
+  sx={{
+    position: "absolute",
+    top: 8,
+    left: 8,
+    zIndex: 1000,
+    bgcolor: "background.paper",
+    borderRadius: "50%",
+  }}
+/>
+
+    <ProductCard
+      product={product}
+      categories={
+        selectedCategory
+      }
+      onEdit={
+        handleEditProduct
+      }
+      onDelete={
+        handleDeleteProduct
+      }
+    />
+  </Box>
+</Grid>
           )
         )}
       </Grid>

@@ -171,3 +171,32 @@ export const bulkuploadProduct = async (products) => {
 
   return data;
 };
+
+// ================= BULK DELETE PRODUCTS =================
+
+export const bulkdeleteProduct = async (
+  ids
+) => {
+
+  const response = await fetch(
+    `${API_URL}/stones/bulk-delete`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        ids,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        "Bulk delete failed"
+    );
+  }
+
+  return data;
+};
