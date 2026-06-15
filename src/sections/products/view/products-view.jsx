@@ -203,11 +203,15 @@ export default function ProductsView() {
 
 // SCHEMA JSON
 data.append(
-  "schema_markup",
-  JSON.stringify(
-    payload.schema_markup || {}
-  )
+    "schema_markup",
+    JSON.stringify(payload.schema_markup || {})
 );
+
+// SEO BOOLEANS  ← add this
+["robots_index", "robots_follow"].forEach((key) => {
+    data.append(key, payload[key] ?? true);
+});
+
 
     // FILES
     [

@@ -40,6 +40,11 @@ export const getNavConfig = () => {
       path: '/dashboard/socials',
       icon: icon('ic_socials'),
     },
+        {
+      title: 'Bulk Upload',
+      path: '/dashboard/bulk',
+      icon: icon('ic_bulk'),
+    },
 
     // Admin only
     ...(roleId === 1

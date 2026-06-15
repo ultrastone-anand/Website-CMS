@@ -146,3 +146,28 @@ export const deleteProduct =async (id) => {
 
     return data;
   };
+
+ // ================= BULK UPLOAD PRODUCT ================= 
+
+export const bulkuploadProduct = async (products) => {
+  const response = await fetch(
+    `${API_URL}/stones/bulkupload`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        products,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "Bulk upload failed"
+    );
+  }
+
+  return data;
+};

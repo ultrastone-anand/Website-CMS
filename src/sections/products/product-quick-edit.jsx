@@ -421,22 +421,11 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         }
     };
 
-
-    useEffect(() => {
-        if (currentProduct) {
-            setFormData({ ...defaultForm, ...currentProduct });
-        } else {
-            setFormData(defaultForm);
-        }
-        setActiveTab(0);
-        // Revoke old object URLs to avoid memory leaks, then reset
-        setMediaPreviews((prev) => {
-            Object.values(prev).flat().forEach((item) => {
-                if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url);
-            });
-            return defaultPreviews;
-        });
-    }, [currentProduct, open]);
+    const formatSchemaMarkup = (schema) => {
+    if (!schema) return '';
+    if (typeof schema === 'object') return JSON.stringify(schema, null, 2);
+    return schema;
+};
 
     const loadCategories = async () => {
         try {
@@ -451,6 +440,28 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             console.error(error);
         }
     };
+
+useEffect(() => {
+       if (currentProduct) {
+        setFormData({
+            ...defaultForm,
+            ...currentProduct,
+            ...(currentProduct.seo || {}),
+            schema_markup: formatSchemaMarkup(currentProduct.seo?.schema_markup),
+        });
+    } else {
+        setFormData(defaultForm);
+    }
+    setActiveTab(0);
+    setMediaPreviews((prev) => {
+        Object.values(prev).flat().forEach((item) => {
+            if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url);
+        });
+        return defaultPreviews;
+    });
+}, [currentProduct, open]);
+
+
 
     const handleChange = (field, value) => setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -1331,7 +1342,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="Meta Title"
-                                    value={formData.seo.meta_title || ''}
+                                    value={formData?.meta_title || ''}
                                     onChange={(e) =>
                                         handleChange(
                                             'meta_title',
@@ -1349,7 +1360,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     rows={4}
                                     label="Meta Description"
                                     value={
-                                        formData.seo.meta_description || ''
+                                        formData?.meta_description || ''
                                     }
                                     onChange={(e) =>
                                         handleChange(
@@ -1366,7 +1377,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     fullWidth
                                     label="Canonical URL"
                                     value={
-                                        formData.seo.canonical_url || ''
+                                        formData?.canonical_url || ''
                                     }
                                     onChange={(e) =>
                                         handleChange(
@@ -1382,7 +1393,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="OG Title"
-                                    value={formData.seo.og_title || ''}
+                                    value={formData?.og_title || ''}
                                     onChange={(e) =>
                                         handleChange(
                                             'og_title',
@@ -1397,7 +1408,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="OG Image URL"
-                                    value={formData.seo.og_image || ''}
+                                    value={formData?.og_image || ''}
                                     onChange={(e) =>
                                         handleChange(
                                             'og_image',
@@ -1415,7 +1426,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     rows={3}
                                     label="OG Description"
                                     value={
-                                        formData.seo.og_description || ''
+                                        formData?.og_description || ''
                                     }
                                     onChange={(e) =>
                                         handleChange(
@@ -1432,7 +1443,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     select
                                     fullWidth
                                     label="Robots Index"
-                                    value={String(formData.seo.robots_index ?? true)}
+                                    value={String(formData?.robots_index ?? true)}
                                     onChange={(e) =>
                                         handleChange(
                                             'robots_index',
@@ -1456,7 +1467,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     select
                                     fullWidth
                                     label="Robots Follow"
-                                    value={String(formData.seo.robots_follow ?? true)}
+                                    value={String(formData?.robots_follow ?? true)}
                                     onChange={(e) =>
                                         handleChange(
                                             'robots_follow',
@@ -1482,7 +1493,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     rows={8}
                                     label="Schema Markup (JSON-LD)"
                                     value={
-                                        formData.seo.schema_markup || ''
+                                        formData?.schema_markup || ''
                                     }
                                     onChange={(e) =>
                                         handleChange(
@@ -1505,7 +1516,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     rows={8}
                                     label="SEO Content"
                                     value={
-                                        formData.seo.seo_content || ''
+                                        formData?.seo_content || ''
                                     }
                                     onChange={(e) =>
                                         handleChange(
