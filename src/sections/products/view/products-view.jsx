@@ -412,29 +412,69 @@ data.append(
         />
       </Stack>
 
-      {selectedCategory && (
-        <Box sx={{ mb: 4 }}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
-          >
-            {
-              selectedCategory.name
-            }
-          </Typography>
+{selectedCategory && (
+  <Stack
+    direction="row"
+    justifyContent="space-between"
+    alignItems="center"
+    sx={{ mb: 4 }}
+  >
+    <Box>
+      <Typography
+        variant="h6"
+        fontWeight={700}
+      >
+        {selectedCategory.name}
+      </Typography>
 
-          <Typography
-            variant="body2"
-            color="text.secondary"
-          >
-            {filteredProducts.length}{' '}
-            product
-            {filteredProducts.length !== 1
-              ? 's'
-              : ''}
-          </Typography>
-        </Box>
-      )}
+      <Typography
+        variant="body2"
+        color="text.secondary"
+      >
+        {filteredProducts.length} product
+        {filteredProducts.length !== 1
+          ? "s"
+          : ""}
+      </Typography>
+    </Box>
+
+    {filteredProducts.length > 0 && (
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+      >
+        <Checkbox
+          checked={
+            filteredProducts.length > 0 &&
+            selectedProducts.length ===
+              filteredProducts.length
+          }
+          indeterminate={
+            selectedProducts.length > 0 &&
+            selectedProducts.length <
+              filteredProducts.length
+          }
+          onChange={(e) => {
+            if (e.target.checked) {
+              setSelectedProducts(
+                filteredProducts.map(
+                  (p) => p.id
+                )
+              );
+            } else {
+              setSelectedProducts([]);
+            }
+          }}
+        />
+
+        <Typography>
+          Select All
+        </Typography>
+      </Stack>
+    )}
+  </Stack>
+)}
 
       <Grid
         container
