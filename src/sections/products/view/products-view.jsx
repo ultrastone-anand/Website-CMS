@@ -172,6 +172,7 @@ export default function ProductsView() {
       "is_featured",
       "is_trending",
       "is_new_arrival",
+      "silica_warning",
       "is_active",
     ].forEach((key) => {
       data.append(key, payload[key] || false);
@@ -236,6 +237,11 @@ data.append(
       JSON.stringify(payload.media || [])
     );
 
+    data.append(
+  "faqs",
+  JSON.stringify(payload.faqs || [])
+);
+
     return data;
 
   };
@@ -278,36 +284,29 @@ data.append(
       .includes(searchTerm.toLowerCase())
   );
 
- const handleBulkDelete = async () => {
+const handleBulkDelete = async () => {
   try {
-    if (selectedProducts.length === 0) {
-      return;
-    }
+    if (selectedProducts.length === 0) return;
 
     const confirmed = window.confirm(
       `Delete ${selectedProducts.length} products?`
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
-    await bulkdeleteProduct(selectedProducts);
+    const idsToDelete = [...selectedProducts];
 
-    // instantly remove from UI
-    setProducts((prev) =>
-      prev.filter(
+    await bulkdeleteProduct(idsToDelete);
+    
+
+    setProducts((prevProducts) =>
+      prevProducts.filter(
         (product) =>
-          !selectedProducts.includes(product.id)
+          !idsToDelete.includes(product.id)
       )
     );
 
     setSelectedProducts([]);
-
-    // optional refresh from server
-    if (selectedCategory) {
-      await loadProducts(selectedCategory.slug);
-    }
   } catch (error) {
     console.error(error);
   }

@@ -64,6 +64,8 @@ const defaultForm = {
     pool_fountain: false,
     fireplace: false,
     furniture_top: false,
+    silica_warning: false,
+
 
     abrasion_resistance: 'LOW',
     stain_resistance: 'LOW',
@@ -98,6 +100,12 @@ const defaultForm = {
     robots_follow: true,
 
     seo_content: '',
+
+    // =====================================
+    // FAQ
+    // =====================================
+
+    faqs: [],
 };
 // ---------------------------------------------------------------------------
 
@@ -422,10 +430,10 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
     };
 
     const formatSchemaMarkup = (schema) => {
-    if (!schema) return '';
-    if (typeof schema === 'object') return JSON.stringify(schema, null, 2);
-    return schema;
-};
+        if (!schema) return '';
+        if (typeof schema === 'object') return JSON.stringify(schema, null, 2);
+        return schema;
+    };
 
     const loadCategories = async () => {
         try {
@@ -441,25 +449,25 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         }
     };
 
-useEffect(() => {
-       if (currentProduct) {
-        setFormData({
-            ...defaultForm,
-            ...currentProduct,
-            ...(currentProduct.seo || {}),
-            schema_markup: formatSchemaMarkup(currentProduct.seo?.schema_markup),
+    useEffect(() => {
+        if (currentProduct) {
+            setFormData({
+                ...defaultForm,
+                ...currentProduct,
+                ...(currentProduct.seo || {}),
+                schema_markup: formatSchemaMarkup(currentProduct.seo?.schema_markup),
+            });
+        } else {
+            setFormData(defaultForm);
+        }
+        setActiveTab(0);
+        setMediaPreviews((prev) => {
+            Object.values(prev).flat().forEach((item) => {
+                if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url);
+            });
+            return defaultPreviews;
         });
-    } else {
-        setFormData(defaultForm);
-    }
-    setActiveTab(0);
-    setMediaPreviews((prev) => {
-        Object.values(prev).flat().forEach((item) => {
-            if (item.url?.startsWith('blob:')) URL.revokeObjectURL(item.url);
-        });
-        return defaultPreviews;
-    });
-}, [currentProduct, open]);
+    }, [currentProduct, open]);
 
 
 
@@ -509,6 +517,7 @@ useEffect(() => {
         { label: 'Applications', icon: '🔧' },
         { label: 'Specifications', icon: '📊' },
         { label: 'SEO', icon: '🌐' },
+        { label: 'FAQ', icon: '❓' },
     ];
 
     const MEDIA_FIELDS = [
@@ -540,6 +549,47 @@ useEffect(() => {
                         alt_text: value,
                     }
                     : media
+            ),
+        }));
+    };
+
+    const addFaq = () => {
+        setFormData((prev) => ({
+            ...prev,
+            faqs: [
+                ...(prev.faqs || []),
+                {
+                    question: '',
+                    answer: '',
+                },
+            ],
+        }));
+    };
+
+    const removeFaq = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            faqs: prev.faqs.filter(
+                (_, i) => i !== index
+            ),
+        }));
+    };
+
+    const updateFaq = (
+        index,
+        field,
+        value
+    ) => {
+        setFormData((prev) => ({
+            ...prev,
+            faqs: prev.faqs.map(
+                (faq, i) =>
+                    i === index
+                        ? {
+                            ...faq,
+                            [field]: value,
+                        }
+                        : faq
             ),
         }));
     };
@@ -1235,7 +1285,61 @@ useEffect(() => {
                                     </Grid>
                                 )
                             )}
+
                         </Grid>
+
+                        <SectionLabel>
+                            Silica Warning
+                        </SectionLabel>
+
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={Boolean(
+                                        formData.silica_warning
+                                    )}
+                                    onChange={(e) =>
+                                        handleChange(
+                                            "silica_warning",
+                                            e.target.checked
+                                        )
+                                    }
+                                />
+                            }
+                            label="This product requires a silica warning"
+                        />
+
+                        {/* {formData.silica_warning && (
+    <Box>
+      <Typography
+        variant="body2"
+        sx={{ mb: 1 }}
+      >
+        Upload Warning PDF
+      </Typography>
+
+      <input
+        type="file"
+        accept=".pdf"
+        onChange={(e) =>
+          handleChange(
+            "silica_warning_pdf",
+            e.target.files?.[0] || null
+          )
+        }
+      />
+
+      {formData.silica_warning_pdf && (
+        <Typography
+          variant="caption"
+          display="block"
+          sx={{ mt: 1 }}
+        >
+          {formData.silica_warning_pdf.name}
+        </Typography>
+      )}
+    </Box>
+  )} */}
 
                         {!canEditApplications() && (
                             <Alert
@@ -1533,6 +1637,97 @@ useEffect(() => {
                             engine visibility and social sharing
                             previews.
                         </Alert>
+                    </Stack>
+                )}
+
+                {/* ── TAB 5: FAQ ─────────────────────────────────── */}
+                {activeTab === 5 && (
+                    <Stack spacing={3}>
+                        <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                        >
+                            <SectionLabel>
+                                Product FAQs
+                            </SectionLabel>
+
+                            <Button
+                                variant="contained"
+                                onClick={addFaq}
+                            >
+                                Add FAQ
+                            </Button>
+                        </Stack>
+
+                        {!formData.faqs?.length && (
+                            <Alert severity="info">
+                                No FAQs added yet.
+                            </Alert>
+                        )}
+
+                        {formData.faqs?.map(
+                            (faq, index) => (
+                                <Box
+                                    key={index}
+                                    sx={{
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
+                                        p: 2,
+                                    }}
+                                >
+                                    <Stack spacing={2}>
+                                        <TextField
+                                            fullWidth
+                                            label={`Question ${index + 1
+                                                }`}
+                                            value={
+                                                faq.question || ''
+                                            }
+                                            onChange={(e) =>
+                                                updateFaq(
+                                                    index,
+                                                    'question',
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+
+                                        <TextField
+                                            fullWidth
+                                            multiline
+                                            rows={4}
+                                            label="Answer"
+                                            value={
+                                                faq.answer || ''
+                                            }
+                                            onChange={(e) =>
+                                                updateFaq(
+                                                    index,
+                                                    'answer',
+                                                    e.target.value
+                                                )
+                                            }
+                                        />
+
+                                        <Stack
+                                            direction="row"
+                                            justifyContent="flex-end"
+                                        >
+                                            <Button
+                                                color="error"
+                                                onClick={() =>
+                                                    removeFaq(index)
+                                                }
+                                            >
+                                                Remove
+                                            </Button>
+                                        </Stack>
+                                    </Stack>
+                                </Box>
+                            )
+                        )}
                     </Stack>
                 )}
 
