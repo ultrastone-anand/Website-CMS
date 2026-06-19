@@ -48,7 +48,7 @@ export default function UserTableRow({
 
   const handleConfirmDelete = () => {
     setDeleteDialogOpen(false);
-
+    console.log(row)
     if (onDelete) {
       onDelete(row.user_id);
     }

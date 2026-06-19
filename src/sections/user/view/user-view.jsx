@@ -146,6 +146,7 @@ export default function UserPage() {
 
   const handelDelete = async (userId) => {
     try {
+      console.log(userId)
       await deleteUser(userId);
       await fetchUsers();
     } catch (error) {
@@ -246,7 +247,7 @@ export default function UserPage() {
                   row={row}
                   onEdit={handleEditUser}
                   onDelete={(user) =>
-                    handelDelete(user.user_id)
+                    handelDelete(user)
                   }
                 />
               ))}

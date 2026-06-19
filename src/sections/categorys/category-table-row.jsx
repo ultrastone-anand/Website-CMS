@@ -12,7 +12,6 @@ import IconButton from '@mui/material/IconButton';
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
-import { canEditCategory } from './category-access';
 
 // ----------------------------------------------------------------------
 
@@ -143,13 +142,13 @@ export default function CategoryTableRow({
         </TableCell>
 
         {/* ACTION */}
-        {canEditCategory && <TableCell align="right">
+        <TableCell align="right">
           <IconButton
             onClick={handleOpenMenu}
           >
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton>
-        </TableCell>}
+        </TableCell>
       </TableRow>
 
       <Popover
@@ -179,6 +178,7 @@ export default function CategoryTableRow({
         </MenuItem>
 
         <MenuItem
+          
           onClick={handleStatusClick}
           sx={{
             color: row.is_active

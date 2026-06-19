@@ -18,6 +18,9 @@ export const canEditStoneDetails = () =>
 export const canEditMedia = () =>
     [1, 3].includes(getRoleId());
 
+export const canEditSEO = () =>
+    [1, 6].includes(getRoleId());
+
 export const canEditApplications = () =>
     [1, 3, 4].includes(getRoleId());
 

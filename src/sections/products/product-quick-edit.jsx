@@ -25,7 +25,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { getCategories } from 'src/services/category.service';
 import { getLookupDetails } from 'src/services/lookup.service';
 
-import { canEditMedia, canEditIdentity, canEditDescription, canEditStoneDetails, canEditApplications } from './role-access';
+import { canEditSEO, canEditMedia, canEditIdentity, canEditDescription, canEditStoneDetails, canEditApplications } from './role-access';
 
 // ---------------------------------------------------------------------------
 
@@ -867,6 +867,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 control={
                                     <Checkbox
                                         checked={silicaData.warning}
+                                        disabled={!canEditDescription()}
                                         onChange={(e) =>
                                             handleChange(
                                                 "silica_warning",
@@ -883,6 +884,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     <TextField
                                         fullWidth
                                         multiline
+                                        disabled={!canEditDescription()}
                                         minRows={3}
                                         label="Silica Warning Message"
                                         value={silicaData.message}
@@ -897,6 +899,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
 
                                     <Button
                                         variant="outlined"
+                                        disabled={!canEditDescription()}
                                         component="label"
                                     >
                                         {
@@ -1561,6 +1564,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     fullWidth
                                     label="Meta Title"
                                     value={formData?.meta_title || ''}
+                                    disabled={!canEditSEO()}
                                     onChange={(e) =>
                                         handleChange(
                                             'meta_title',
@@ -1576,6 +1580,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     fullWidth
                                     multiline
                                     rows={4}
+                                    disabled={!canEditSEO()}
                                     label="Meta Description"
                                     value={
                                         formData?.meta_description || ''
@@ -1594,6 +1599,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="Canonical URL"
+                                    disabled={!canEditSEO()}
                                     value={
                                         formData?.canonical_url || ''
                                     }
@@ -1611,6 +1617,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="OG Title"
+                                    disabled={!canEditSEO()}
                                     value={formData?.og_title || ''}
                                     onChange={(e) =>
                                         handleChange(
@@ -1626,6 +1633,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     label="OG Image URL"
+                                    disabled={!canEditSEO()}
                                     value={formData?.og_image || ''}
                                     onChange={(e) =>
                                         handleChange(
@@ -1641,6 +1649,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 <TextField
                                     fullWidth
                                     multiline
+                                    disabled={!canEditSEO()}
                                     rows={3}
                                     label="OG Description"
                                     value={
@@ -1659,6 +1668,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                             <Grid item xs={12} md={6}>
                                 <TextField
                                     select
+                                    disabled={!canEditSEO()}
                                     fullWidth
                                     label="Robots Index"
                                     value={String(formData?.robots_index ?? true)}
@@ -1683,6 +1693,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                             <Grid item xs={12} md={6}>
                                 <TextField
                                     select
+                                    disabled={!canEditSEO()}
                                     fullWidth
                                     label="Robots Follow"
                                     value={String(formData?.robots_follow ?? true)}
@@ -1709,6 +1720,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     fullWidth
                                     multiline
                                     rows={8}
+                                    disabled={!canEditSEO()}
                                     label="Schema Markup (JSON-LD)"
                                     value={
                                         formData?.schema_markup || ''
@@ -1733,6 +1745,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     multiline
                                     rows={8}
                                     label="SEO Content"
+                                    disabled={!canEditSEO()}
                                     value={
                                         formData?.seo_content || ''
                                     }
@@ -1768,6 +1781,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
 
                             <Button
                                 variant="contained"
+                                disabled={!canEditDescription()}
                                 onClick={addFaq}
                             >
                                 Add FAQ
@@ -1794,6 +1808,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     <Stack spacing={2}>
                                         <TextField
                                             fullWidth
+                                            disabled={!canEditDescription()}
                                             label={`Question ${index + 1
                                                 }`}
                                             value={
@@ -1811,6 +1826,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                         <TextField
                                             fullWidth
                                             multiline
+                                            disabled={!canEditDescription()}
                                             rows={4}
                                             label="Answer"
                                             value={
@@ -1831,6 +1847,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                         >
                                             <Button
                                                 color="error"
+                                                disabled={!canEditDescription()}
                                                 onClick={() =>
                                                     removeFaq(index)
                                                 }

@@ -30,57 +30,65 @@ export const getNavConfig = () => {
       path: '/dashboard/products',
       icon: icon('ic_products'),
     },
-    {
-      title: 'Blogs',
-      path: '/dashboard/blog',
-      icon: icon('ic_blogs'),
-    },
-    {
-      title: 'Socials',
-      path: '/dashboard/socials',
-      icon: icon('ic_socials'),
-    },
-        {
-      title: 'Bulk Upload',
-      path: '/dashboard/bulk',
-      icon: icon('ic_bulk'),
-    },
-
-    // Admin only
-    ...(roleId === 1
+ 
+    // Hide for role_id = 6
+    ...(roleId !== 6
       ? [
           {
-            title: 'user',
-            path: '/dashboard/user',
-            icon: icon('ic_users'),
+            title: 'Blogs',
+            path: '/dashboard/blog',
+            icon: icon('ic_blogs'),
           },
           {
-            title: 'Lookups',
-            path: '/dashboard/lookup',
-            icon: icon('ic_lookup'),
+            title: 'Socials',
+            path: '/dashboard/socials',
+            icon: icon('ic_socials'),
           },
           {
             title: 'Showrooms',
-            path: '/dashboard/company ',
+            path: '/dashboard/company',
             icon: icon('ic_company'),
           },
         ]
       : []),
 
+
+    // Admin only
+    ...(roleId === 1
+      ? [
+        {
+          title: 'user',
+          path: '/dashboard/user',
+          icon: icon('ic_users'),
+        },
+        {
+          title: 'Lookups',
+          path: '/dashboard/lookup',
+          icon: icon('ic_lookup'),
+        },
+
+        {
+          title: 'Bulk Upload',
+          path: '/dashboard/bulk',
+          icon: icon('ic_bulk'),
+        },
+      ]
+      : []),
+
     // Admin + Viewer
     ...([1, 2].includes(roleId)
       ? [
-          {
-            title: 'Reports',
-            path: '/dashboard/reports',
-            icon: icon('ic_reports'),
-          },
-          {
-            title: 'Activitys',
-            path: '/dashboard/activitys',
-            icon: icon('ic_activity'),
-          },
-        ]
+        {
+          title: 'Reports',
+          path: '/dashboard/reports',
+          icon: icon('ic_reports'),
+        },
+        {
+          title: 'Activitys',
+          path: '/dashboard/activitys',
+          icon: icon('ic_activity'),
+        },
+      ]
       : []),
   ];
 };
