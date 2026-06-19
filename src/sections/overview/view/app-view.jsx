@@ -5,16 +5,29 @@ import {
   Box,
   Card,
   Table,
+  Dialog,
+  Button,
   TableRow,
   TableBody,
   TableCell,
   TableHead,
   Container,
+    TextField,
   Typography,
+  IconButton,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
+import { useRouter } from 'src/routes/hooks';
+
+import { updateUser } from 'src/services/user.service';
 import { getDashboard } from 'src/services/dashboard.service';
+
+import Iconify from 'src/components/iconify';
 
 import AppCurrentVisits from '../app-current-visits';
 import AppWidgetSummary from '../app-widget-summary';
@@ -30,26 +43,34 @@ import AppOrderTimeline from '../app-order-timeline';
 export default function AppView() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [openPasswordModal, setOpenPasswordModal] =useState(false);
+  const [showPassword, setShowPassword] =useState(false);
+  const [newPassword, setNewPassword] =useState('');
   const user = JSON.parse(sessionStorage.getItem('user') || '{}');
   const role = roleMap[user?.role_id] || 'admin';
 
+  const router = useRouter();
 
-useEffect(() => {
-  const fetchDashboard = async () => {
-    try {
-      const response = await getDashboard(role);
-
-      setDashboard(response.data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (user.must_change_password) {
+      setOpenPasswordModal(true);
     }
-  };
+  }, [user.must_change_password]);
 
-  fetchDashboard();
-}, [role]);
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await getDashboard(role);
+        setDashboard(response.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, [role]);
 
   if (loading) {
     return (
@@ -67,6 +88,43 @@ useEffect(() => {
   }
 
   const summaryCards = dashboard?.summaryCards || {};
+
+
+const handlePasswordChange = async () => {
+  try {
+    await updateUser(
+      user.user_id,
+      {
+        password: newPassword,
+      }
+    );
+
+    const updatedUser = {
+      ...user,
+      must_change_password: false,
+    };
+
+    sessionStorage.setItem(
+      'user',
+      JSON.stringify(updatedUser)
+    );
+
+    setOpenPasswordModal(false);
+
+    alert(
+      'Password changed successfully'
+    );
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const handleLogout = () => {
+  sessionStorage.clear();
+
+
+  router.replace('/login');
+};
 
   return (
     <Container maxWidth={false}>
@@ -221,6 +279,75 @@ useEffect(() => {
           </Grid>
         )}
       </Grid>
+
+      <Dialog
+  open={openPasswordModal}
+  disableEscapeKeyDown
+>
+  <DialogTitle>
+    Change Password
+  </DialogTitle>
+
+  <DialogContent>
+<TextField
+  fullWidth
+  margin="normal"
+  label="New Password"
+  type={
+    showPassword
+      ? 'text'
+      : 'password'
+  }
+  value={newPassword}
+  onChange={(e) =>
+    setNewPassword(
+      e.target.value
+    )
+  }
+  InputProps={{
+    endAdornment: (
+      <InputAdornment position="end">
+        <IconButton
+          onClick={() =>
+            setShowPassword(
+              !showPassword
+            )
+          }
+          edge="end"
+        >
+          {showPassword ? (
+            <Iconify icon="eva:eye-fill" />
+          ) : (
+            <Iconify icon="eva:eye-off-fill" />
+          )}
+        </IconButton>
+      </InputAdornment>
+    ),
+  }}
+/>
+  </DialogContent>
+
+  <DialogActions>
+    <Button
+      variant="contained"
+      onClick={
+        handlePasswordChange
+      }
+      disabled={!newPassword}
+    >
+      Update Password
+    </Button>
+        <Button
+      variant="contained"
+      color="error"
+      onClick={
+        handleLogout
+      }
+    >
+      Logout
+    </Button>
+  </DialogActions>
+</Dialog>
     </Container>
   );
 }
