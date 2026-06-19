@@ -121,6 +121,69 @@ export default function CategoryCardRow({
             </Stack>
 
             <Stack
+  direction="row"
+  justifyContent="space-between"
+  alignItems="center"
+>
+  <Typography
+    variant="body2"
+    color="text.secondary"
+  >
+    Silica Warning
+  </Typography>
+
+  <Label
+    color={
+      row.silica_warning
+        ? 'warning'
+        : 'default'
+    }
+  >
+    {row.silica_warning
+      ? 'Enabled'
+      : 'Disabled'}
+  </Label>
+</Stack>
+
+<Stack
+  direction="row"
+  justifyContent="space-between"
+  alignItems="center"
+>
+  <Typography
+    variant="body2"
+    color="text.secondary"
+  >
+    Datasheet
+  </Typography>
+
+  {
+    row.silica_datasheet_url ? (
+      <Typography
+        component="a"
+        href={`${import.meta.env.VITE_API_URL.replace('/api','')}${row.silica_datasheet_url}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          color: 'primary.main',
+          textDecoration: 'none',
+          fontSize: 14,
+          '&:hover': {
+            textDecoration: 'underline',
+          },
+        }}
+      >
+        View PDF
+      </Typography>
+    ) : (
+      <Typography variant="body2">
+        -
+      </Typography>
+    )
+  }
+</Stack>
+
+            <Stack
               direction="row"
               justifyContent="space-between"
               alignItems="center"

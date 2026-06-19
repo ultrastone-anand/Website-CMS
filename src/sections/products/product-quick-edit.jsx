@@ -17,9 +17,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Alert, Autocomplete } from '@mui/material';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
+import { Alert, Paper, Autocomplete } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { getCategories } from 'src/services/category.service';
@@ -64,7 +64,13 @@ const defaultForm = {
     pool_fountain: false,
     fireplace: false,
     furniture_top: false,
+
+
     silica_warning: false,
+    silica_warning_message: null,
+    silica_datasheet_url: null,
+    silica_datasheet_file: null,
+
 
 
     abrasion_resistance: 'LOW',
@@ -593,6 +599,33 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             ),
         }));
     };
+
+    const silicaData = {
+        warning:
+            formData.silica_warning ??
+            formData.stone_categories?.silica_warning ??
+            false,
+
+        message:
+            formData.silica_warning_message ||
+            formData.stone_categories?.silica_warning_message ||
+            "",
+
+        datasheet:
+        formData.silica_warning_datasheet || // NEW FILE
+        formData.silica_datasheet_url ||     // EXISTING URL
+        formData.stone_categories?.silica_datasheet_url ||
+            ""
+    };
+
+    const handleSilicaFileChange = (event) => {
+        const file = event.target.files?.[0];
+
+        handleChange(
+            "silica_warning_datasheet",
+            file || null
+        );
+    };
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
             sx: {
@@ -825,6 +858,140 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     }
                                 />
                             </Grid>
+                        </Grid>
+
+                        <Divider />
+                        <SectionLabel>Silica Warning</SectionLabel>
+                        <Grid container spacing={2.5} sx={{ width: '100%', m: 0 }}>
+                            <FormControlLabel
+                                control={
+                                    <Checkbox
+                                        checked={silicaData.warning}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                "silica_warning",
+                                                e.target.checked
+                                            )
+                                        }
+                                    />
+                                }
+                                label="Enable Silica Warning"
+                            />
+                            {silicaData.warning && (
+                                <Stack spacing={2} sx={{ width: "100%" }}>
+
+                                    <TextField
+                                        fullWidth
+                                        multiline
+                                        minRows={3}
+                                        label="Silica Warning Message"
+                                        value={silicaData.message}
+                                        onChange={(e) =>
+                                            handleChange(
+                                                "silica_warning_message",
+                                                e.target.value
+                                            )
+                                        }
+                                        required
+                                    />
+
+                                    <Button
+                                        variant="outlined"
+                                        component="label"
+                                    >
+                                        {
+                                            silicaData.datasheet instanceof File
+                                                ? "Change PDF"
+                                                : "Upload Silica Datasheet PDF"
+                                        }
+
+                                        <input
+                                            hidden
+                                            type="file"
+                                            accept="application/pdf"
+                                            onChange={handleSilicaFileChange}
+                                        />
+                                    </Button>
+
+                                    {/* Existing Uploaded PDF */}
+                                    {
+                                        !(silicaData.datasheet instanceof File) &&
+                                        silicaData.datasheet && (
+                                            <Stack spacing={1}>
+                                                <Typography variant="body2">
+                                                    Current PDF:
+                                                </Typography>
+
+                                                <a
+                                                    href={`http://localhost:5001${silicaData.datasheet}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    View Current Datasheet
+                                                </a>
+                                            </Stack>
+                                        )
+                                    }
+
+                                    {/* Newly Selected PDF */}
+{
+    silicaData.datasheet instanceof File && (
+        <Paper
+            variant="outlined"
+            sx={{
+                p: 2,
+                bgcolor: "success.lighter",
+            }}
+        >
+            <Stack spacing={1}>
+                <Typography
+                    variant="subtitle2"
+                    color="success.main"
+                >
+                    ✓ New PDF Selected
+                </Typography>
+
+                <Typography variant="body2">
+                    {silicaData.datasheet.name}
+                </Typography>
+
+                <Typography
+                    variant="caption"
+                    color="text.secondary"
+                >
+                    {(silicaData.datasheet.size / 1024).toFixed(1)} KB
+                </Typography>
+
+                <Button
+                    size="small"
+                    component="a"
+                    href={URL.createObjectURL(
+                        silicaData.datasheet
+                    )}
+                    target="_blank"
+                >
+                    Preview PDF
+                </Button>
+
+                <Button
+                    size="small"
+                    color="error"
+                    onClick={() =>
+                        handleChange(
+                            "silica_warning_datasheet",
+                            null
+                        )
+                    }
+                >
+                    Remove PDF
+                </Button>
+            </Stack>
+        </Paper>
+    )
+}
+
+                                </Stack>
+                            )}
                         </Grid>
 
                         <Divider />
@@ -1288,59 +1455,6 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
 
                         </Grid>
 
-                        <SectionLabel>
-                            Silica Warning
-                        </SectionLabel>
-
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={Boolean(
-                                        formData.silica_warning
-                                    )}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            "silica_warning",
-                                            e.target.checked
-                                        )
-                                    }
-                                />
-                            }
-                            label="This product requires a silica warning"
-                        />
-
-                        {/* {formData.silica_warning && (
-    <Box>
-      <Typography
-        variant="body2"
-        sx={{ mb: 1 }}
-      >
-        Upload Warning PDF
-      </Typography>
-
-      <input
-        type="file"
-        accept=".pdf"
-        onChange={(e) =>
-          handleChange(
-            "silica_warning_pdf",
-            e.target.files?.[0] || null
-          )
-        }
-      />
-
-      {formData.silica_warning_pdf && (
-        <Typography
-          variant="caption"
-          display="block"
-          sx={{ mt: 1 }}
-        >
-          {formData.silica_warning_pdf.name}
-        </Typography>
-      )}
-    </Box>
-  )} */}
-
                         {!canEditApplications() && (
                             <Alert
                                 severity="info"
@@ -1750,6 +1864,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 variant="contained"
                                 loading={loading}
                                 onClick={() => onSubmit(formData)}
+                            // onClick={() => console.log(formData)}
                             >
                                 {currentProduct ? 'Update Product' : 'Create Product'}
                             </LoadingButton>

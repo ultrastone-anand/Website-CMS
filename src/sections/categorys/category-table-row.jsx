@@ -96,6 +96,37 @@ export default function CategoryTableRow({
           </Label>
         </TableCell>
 
+        <TableCell>
+  <Label
+    color={
+      row.silica_warning
+        ? 'warning'
+        : 'default'
+    }
+  >
+    {row.silica_warning
+      ? 'Enabled'
+      : 'Disabled'}
+  </Label>
+</TableCell>
+
+<TableCell>
+  {
+    row.silica_datasheet_url ? (
+      <a
+        href={`${import.meta.env.VITE_API_URL.replace('/api','')}${row.silica_datasheet_url}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ cursor: 'pointer' }}
+      >
+       View PDF
+      </a>
+    ) : (
+      '-'
+    )
+  }
+</TableCell>
+
         {/* STATUS */}
         <TableCell>
           <Label

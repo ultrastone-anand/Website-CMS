@@ -158,8 +158,8 @@ export default function CategoryPage() {
     setSelectedCategory(null);
   };
 
-  const handleSubmitCategory =
-    async (formData) => {
+  const handleSubmitCategory =async (formData) => {
+
       try {
         if (
           selectedCategory
@@ -185,18 +185,47 @@ export default function CategoryPage() {
       }
     };
 
+
 const updateCategoryStatus = async (item) => {
+
   try {
-    const payload = {
-      name: item.name,
-      slug: item.slug,
-      description: item.description,
-      parent_id:
-        item.parent_id === null
-          ? null
-          : Number(item.parent_id),
-      is_active: !item.is_active,
-    };
+
+    const payload = new FormData();
+
+    payload.append(
+      "name",
+      item.name
+    );
+
+    payload.append(
+      "slug",
+      item.slug
+    );
+
+    payload.append(
+      "description",
+      item.description || ""
+    );
+
+    payload.append(
+      "parent_id",
+      item.parent_id || ""
+    );
+
+    payload.append(
+      "is_active",
+      (!item.is_active)
+    );
+
+    payload.append(
+      "silica_warning",
+      item.silica_warning || false
+    );
+
+    payload.append(
+      "silica_warning_message",
+      item.silica_warning_message || ""
+    );
 
     await updateCategory(
       item.id,
@@ -204,12 +233,16 @@ const updateCategoryStatus = async (item) => {
     );
 
     await fetchCategories();
+
   } catch (error) {
+
     console.error(
-      'Error updating category status:',
+      "Error updating category status:",
       error
     );
+
   }
+
 };
 
   if (loading) {
@@ -306,30 +339,38 @@ const updateCategoryStatus = async (item) => {
                     handleSelectAllClick
                   }
                   headLabel={[
-                    {
-                      id: 'name',
-                      label: 'Name',
-                    },
-                    {
-                      id: 'slug',
-                      label: 'Slug',
-                    },
-                    {
-                      id: 'parent',
-                      label: 'Parent',
-                    },
-                    {
-                      id: 'type',
-                      label: 'Type',
-                    },
-                    {
-                      id: 'status',
-                      label: 'Status',
-                    },
-                    {
-                      id: '',
-                    },
-                  ]}
+  {
+    id: 'name',
+    label: 'Name',
+  },
+  {
+    id: 'slug',
+    label: 'Slug',
+  },
+  {
+    id: 'parent',
+    label: 'Parent',
+  },
+  {
+    id: 'type',
+    label: 'Type',
+  },
+  {
+    id: 'silica_warning',
+    label: 'Silica Warning',
+  },
+  {
+    id: 'datasheet',
+    label: 'Datasheet',
+  },
+  {
+    id: 'status',
+    label: 'Status',
+  },
+  {
+    id: '',
+  },
+]}
                 />
 
                 <TableBody>

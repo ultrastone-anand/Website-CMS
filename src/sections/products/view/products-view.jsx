@@ -6,7 +6,7 @@ import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { Checkbox , TextField, Autocomplete } from '@mui/material';
+import { Checkbox, TextField, Autocomplete } from '@mui/material';
 
 import {
   getCategories,
@@ -17,6 +17,7 @@ import {
   updateProduct,
   getProductDetail,
   bulkdeleteProduct,
+  updateProductStatus,
   getProductsByCategory,
 } from 'src/services/product.service';
 
@@ -173,6 +174,7 @@ export default function ProductsView() {
       "is_trending",
       "is_new_arrival",
       "silica_warning",
+      "silica_warning_message",
       "is_active",
     ].forEach((key) => {
       data.append(key, payload[key] || false);
@@ -192,28 +194,28 @@ export default function ProductsView() {
     });
 
     // SEO TEXT FIELDS
-[
-  "meta_title",
-  "meta_description",
-  "canonical_url",
-  "og_title",
-  "og_description",
-  "og_image",
-  "seo_content",
-].forEach((key) => {
-  data.append(key, payload[key] ?? "");
-});
+    [
+      "meta_title",
+      "meta_description",
+      "canonical_url",
+      "og_title",
+      "og_description",
+      "og_image",
+      "seo_content",
+    ].forEach((key) => {
+      data.append(key, payload[key] ?? "");
+    });
 
-// SCHEMA JSON
-data.append(
-    "schema_markup",
-    JSON.stringify(payload.schema_markup || {})
-);
+    // SCHEMA JSON
+    data.append(
+      "schema_markup",
+      JSON.stringify(payload.schema_markup || {})
+    );
 
-// SEO BOOLEANS  ← add this
-["robots_index", "robots_follow"].forEach((key) => {
-    data.append(key, payload[key] ?? true);
-});
+    // SEO BOOLEANS  ← add this
+    ["robots_index", "robots_follow"].forEach((key) => {
+      data.append(key, payload[key] ?? true);
+    });
 
 
     // FILES
@@ -238,9 +240,16 @@ data.append(
     );
 
     data.append(
-  "faqs",
-  JSON.stringify(payload.faqs || [])
-);
+      "faqs",
+      JSON.stringify(payload.faqs || [])
+    );
+
+    if (payload.silica_warning_datasheet instanceof File) {
+  data.append(
+    "silica_datasheet",
+    payload.silica_warning_datasheet
+  );
+}
 
     return data;
 
@@ -278,105 +287,144 @@ data.append(
     }
   };
 
-  const filteredProducts = products.filter((product) =>
-    product.name
-      ?.toLowerCase()
-      .includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products
+    .filter((product) =>
+      product.name
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      // Active products first
+      if (a.is_active === true && b.is_active === false) {
+        return -1;
+      }
 
-const handleBulkDelete = async () => {
-  try {
-    if (selectedProducts.length === 0) return;
+      if (a.is_active === false && b.is_active === true) {
+        return 1;
+      }
 
-    const confirmed = window.confirm(
-      `Delete ${selectedProducts.length} products?`
-    );
+      // Same status -> sort by name
+      return a.name.localeCompare(b.name);
+    });
 
-    if (!confirmed) return;
+  const handleBulkDelete = async () => {
+    try {
+      if (selectedProducts.length === 0) return;
 
-    const idsToDelete = [...selectedProducts];
+      const confirmed = window.confirm(
+        `Delete ${selectedProducts.length} products?`
+      );
 
-    await bulkdeleteProduct(idsToDelete);
-    
+      if (!confirmed) return;
 
-    setProducts((prevProducts) =>
-      prevProducts.filter(
-        (product) =>
-          !idsToDelete.includes(product.id)
-      )
-    );
+      const idsToDelete = [...selectedProducts];
 
-    setSelectedProducts([]);
-  } catch (error) {
-    console.error(error);
-  }
-};
+      await bulkdeleteProduct(idsToDelete);
+
+
+      setProducts((prevProducts) =>
+        prevProducts.filter(
+          (product) =>
+            !idsToDelete.includes(product.id)
+        )
+      );
+
+      setSelectedProducts([]);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const handleSelectProduct = (
-  productId
-) => {
-  setSelectedProducts((prev) =>
-    prev.includes(productId)
-      ? prev.filter(
+    productId
+  ) => {
+    setSelectedProducts((prev) =>
+      prev.includes(productId)
+        ? prev.filter(
           (id) => id !== productId
         )
-      : [...prev, productId]
-  );
-};
+        : [...prev, productId]
+    );
+  };
+
+  const handleProductStatusChange = async (
+    productId,
+    status
+  ) => {
+    try {
+
+      await updateProductStatus(
+        productId,
+        status
+      );
+
+      if (selectedCategory) {
+        await loadProducts(
+          selectedCategory.slug
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Status Update Error:",
+        error
+      );
+    }
+  };
 
   return (
     <Container maxWidth={false}>
 
-<Stack
-  direction="row"
-  alignItems="center"
-  justifyContent="space-between"
-  mb={4}
->
-  <Typography variant="h4">
-    Products
-  </Typography>
-
-  <Stack
-    direction="row"
-    spacing={2}
-  >
-    {selectedProducts.length >
-      0 && (
-      <Button
-        color="error"
-        variant="contained"
-        startIcon={
-          <Iconify icon="eva:trash-2-outline" />
-        }
-        onClick={
-          handleBulkDelete
-        }
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        mb={4}
       >
-        Delete (
-        {
-          selectedProducts.length
-        }
-        )
-      </Button>
-    )}
+        <Typography variant="h4">
+          Products
+        </Typography>
 
-    {canAddProducts && (
-      <Button
-        variant="contained"
-        color="inherit"
-        startIcon={
-          <Iconify icon="eva:plus-fill" />
-        }
-        onClick={
-          handleAddProduct
-        }
-      >
-        New Product
-      </Button>
-    )}
-  </Stack>
-</Stack>
+        <Stack
+          direction="row"
+          spacing={2}
+        >
+          
+          {selectedProducts.length >
+            0 && (
+              <Button
+                color="error"
+                variant="contained"
+                startIcon={
+                  <Iconify icon="eva:trash-2-outline" />
+                }
+                onClick={
+                  handleBulkDelete
+                }
+              >
+                Delete (
+                {
+                  selectedProducts.length
+                }
+                )
+              </Button>
+            )}
+
+          {canAddProducts && (
+            <Button
+              variant="contained"
+              color="inherit"
+              startIcon={
+                <Iconify icon="eva:plus-fill" />
+              }
+              onClick={
+                handleAddProduct
+              }
+            >
+              New Product
+            </Button>
+          )}
+        </Stack>
+      </Stack>
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={2}
@@ -411,69 +459,82 @@ const handleBulkDelete = async () => {
         />
       </Stack>
 
-{selectedCategory && (
-  <Stack
-    direction="row"
-    justifyContent="space-between"
-    alignItems="center"
-    sx={{ mb: 4 }}
-  >
-    <Box>
-      <Typography
-        variant="h6"
-        fontWeight={700}
-      >
-        {selectedCategory.name}
-      </Typography>
+      {selectedCategory && (
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ mb: 4 }}
+        >
+          <Box>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+            >
+              {selectedCategory.name}
+            </Typography>
 
-      <Typography
-        variant="body2"
-        color="text.secondary"
-      >
-        {filteredProducts.length} product
-        {filteredProducts.length !== 1
-          ? "s"
-          : ""}
-      </Typography>
-    </Box>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+            >
+              <b>{filteredProducts.filter(
+                (product) => product.is_active
+              ).length}</b> active product
+              {filteredProducts.filter(
+                (product) => product.is_active
+              ).length !== 1
+                ? "s"
+                : ""}
+              {" and "}
+              <b>{filteredProducts.filter(
+                (product) => !product.is_active
+              ).length}</b> deactivated product
+              {filteredProducts.filter(
+                (product) => !product.is_active
+              ).length !== 1
+                ? "s"
+                : ""}
+            </Typography>
+          </Box>
 
-    {filteredProducts.length > 0 && (
-      <Stack
-        direction="row"
-        spacing={1}
-        alignItems="center"
-      >
-        <Checkbox
-          checked={
-            filteredProducts.length > 0 &&
-            selectedProducts.length ===
-              filteredProducts.length
-          }
-          indeterminate={
-            selectedProducts.length > 0 &&
-            selectedProducts.length <
-              filteredProducts.length
-          }
-          onChange={(e) => {
-            if (e.target.checked) {
-              setSelectedProducts(
-                filteredProducts.map(
-                  (p) => p.id
-                )
-              );
-            } else {
-              setSelectedProducts([]);
-            }
-          }}
-        />
+          {filteredProducts.length > 0 && (
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+            >
+              <Checkbox
+                checked={
+                  filteredProducts.length > 0 &&
+                  selectedProducts.length ===
+                  filteredProducts.length
+                }
+                indeterminate={
+                  selectedProducts.length > 0 &&
+                  selectedProducts.length <
+                  filteredProducts.length
+                }
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedProducts(
+                      filteredProducts.map(
+                        (p) => p.id
+                      )
+                    );
+                  } else {
+                    setSelectedProducts([]);
+                  }
+                }}
+              />
 
-        <Typography>
-          Select All
-        </Typography>
-      </Stack>
-    )}
-  </Stack>
-)}
+              <Typography>
+                Select All
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+      )}
 
       <Grid
         container
@@ -481,52 +542,55 @@ const handleBulkDelete = async () => {
       >
         {filteredProducts.map(
           (product) => (
-<Grid
-  key={product.id}
-  xs={12}
-  sm={6}
-  md={4}
-  lg={3}
->
-  <Box position="relative">
-<Checkbox
-  checked={selectedProducts.includes(
-    product.id
-  )}
-  onClick={(e) => {
-    e.stopPropagation();
-  }}
-  onChange={(e) => {
-    e.stopPropagation();
+            <Grid
+              key={product.id}
+              xs={12}
+              sm={6}
+              md={4}
+              lg={3}
+            >
+              <Box position="relative">
+                <Checkbox
+                  checked={selectedProducts.includes(
+                    product.id
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                  onChange={(e) => {
+                    e.stopPropagation();
 
-    handleSelectProduct(
-      product.id
-    );
-  }}
-  sx={{
-    position: "absolute",
-    top: 8,
-    left: 8,
-    zIndex: 1000,
-    bgcolor: "background.paper",
-    borderRadius: "50%",
-  }}
-/>
+                    handleSelectProduct(
+                      product.id
+                    );
+                  }}
+                  sx={{
+                    position: "absolute",
+                    top: 8,
+                    left: 8,
+                    zIndex: 1000,
+                    bgcolor: "background.paper",
+                    borderRadius: "50%",
+                  }}
+                />
 
-    <ProductCard
-      product={product}
-      categories={
-        selectedCategory
-      }
-      onEdit={
-        handleEditProduct
-      }
-      onDelete={
-        handleDeleteProduct
-      }
-    />
-  </Box>
-</Grid>
+                <ProductCard
+                  product={product}
+                  categories={
+                    selectedCategory
+                  }
+                  onEdit={
+                    handleEditProduct
+                  }
+                  onDelete={
+                    handleDeleteProduct
+                  }
+                  onStatusChange={
+                    handleProductStatusChange
+                  }
+                />
+              </Box>
+            </Grid>
           )
         )}
       </Grid>

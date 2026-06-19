@@ -47,6 +47,7 @@ export const getProductsByCategory =async (slug) => {
 
 // ================= GET PRODUCT DETAIL =================
 
+
 export const getProductDetail =async (slug) => {
     const response = await fetch(
       `${API_URL}/stones/productdetail/${slug}`,
@@ -195,6 +196,36 @@ export const bulkdeleteProduct = async (
     throw new Error(
       data.message ||
         "Bulk delete failed"
+    );
+  }
+
+  return data;
+};
+
+// ================ ACTIVE/DEACTIVE PRODUCTS =================
+
+export const updateProductStatus = async (
+  id,
+  is_active
+) => {
+
+  const response = await fetch(
+    `${API_URL}/stones/product/${id}/status`,
+    {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        is_active,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Failed to update product status"
     );
   }
 
