@@ -926,7 +926,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                 </Typography>
 
                                                 <a
-                                                    href={`http://localhost:5001${silicaData.datasheet}`}
+                                                    href={`${import.meta.env.VITE_API_URL.replace('/api','')}${silicaData.datasheet}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                 >
