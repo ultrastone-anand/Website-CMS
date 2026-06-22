@@ -19,12 +19,14 @@ import {
   bulkdeleteProduct,
   updateProductStatus,
   getProductsByCategory,
+  bulkupdateProductStatus,
 } from 'src/services/product.service';
 
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
 import ProductQuickEdit from '../product-quick-edit';
+import { Admin , canEditIdentity} from '../role-access';
 
 export default function ProductsView() {
   const [categories, setCategories] = useState([]);
@@ -33,9 +35,7 @@ export default function ProductsView() {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-  const canAddProducts = [1, 3, 4].includes(Number(user?.role_id));
+  const [searchTerm, setSearchTerm] = useState('')
   const [selectedProducts, setSelectedProducts] = useState([]);
 
   useEffect(() => {
@@ -335,6 +335,52 @@ export default function ProductsView() {
     }
   };
 
+  const handleBulkDeactivate = async () => {
+  try {
+
+    if (selectedProducts.length === 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Deactivate ${selectedProducts.length} products?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const idsToDeactivate = [
+      ...selectedProducts,
+    ];
+
+    await bulkupdateProductStatus(
+      idsToDeactivate,
+      false
+    );
+
+    setProducts((prevProducts) =>
+      prevProducts.map((product) =>
+        idsToDeactivate.includes(
+          product.id
+        )
+          ? {
+              ...product,
+              is_active: false,
+            }
+          : product
+      )
+    );
+
+    setSelectedProducts([]);
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+};
+
   const handleSelectProduct = (
     productId
   ) => {
@@ -389,8 +435,8 @@ export default function ProductsView() {
           spacing={2}
         >
           
-          {selectedProducts.length >
-            0 && (
+          {Admin() && selectedProducts.length >
+            0  && (
               <Button
                 color="error"
                 variant="contained"
@@ -409,7 +455,27 @@ export default function ProductsView() {
               </Button>
             )}
 
-          {canAddProducts && (
+                     {selectedProducts.length >
+            0 && (
+              <Button
+                color="warning"
+                variant="contained"
+                startIcon={
+                  <Iconify icon="akar-icons:stop" />
+                }
+                onClick={
+                  handleBulkDeactivate
+                }
+              >
+                Deactivate (
+                {
+                  selectedProducts.length
+                }
+                )
+              </Button>
+            )}
+
+          {canEditIdentity && (
             <Button
               variant="contained"
               color="inherit"

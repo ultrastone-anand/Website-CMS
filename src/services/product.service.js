@@ -231,3 +231,34 @@ export const updateProductStatus = async (
 
   return data;
 };
+
+// ================= BULK ACTIVE/DEACTIVE PRODUCTS =================
+
+export const bulkupdateProductStatus = async (
+  ids,
+  is_active = true
+) => {
+
+  const response = await fetch(
+    `${API_URL}/stones/bulk-deactive`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        ids,
+        is_active,
+      }),
+    }
+  );
+
+  const data = await response.json(); 
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Bulk update failed"
+    );
+  }
+
+  return data;
+};

@@ -17,7 +17,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 
 import Iconify from 'src/components/iconify';
 
-import { canView, canEditIdentity } from './role-access';
+import {Admin , canView, canEditIdentity } from './role-access';
 
 
 export default function ShopProductCard({
@@ -180,7 +180,7 @@ export default function ShopProductCard({
             }
           </Button>)}
 
-          {canEditIdentity() && (
+          {Admin() && (
             <Button
               fullWidth
               variant="contained"
