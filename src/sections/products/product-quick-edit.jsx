@@ -802,10 +802,10 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                     onChange={(e) =>
                                         handleChange(
                                             'small_description',
-                                            e.target.value.slice(0, 100)
+                                            e.target.value.slice(0, 200)
                                         )
                                     }
-                                    inputProps={{ maxLength: 100 }}
+                                    inputProps={{ maxLength: 200 }}
                                     helperText={
                                         <Box
                                             sx={{
@@ -818,7 +818,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                                 Shown in listing cards and search results
                                             </span>
                                             <span>
-                                                {(formData.small_description || '').length}/100
+                                                {(formData.small_description || '').length}/200
                                             </span>
                                         </Box>
                                     }
