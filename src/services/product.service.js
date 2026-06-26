@@ -262,3 +262,35 @@ export const bulkupdateProductStatus = async (
 
   return data;
 };
+
+
+// ================= PUBLISH/UNPUBLISH PRODUCTS =================
+
+
+
+export const updatePublishStatus = async (
+  id,
+  is_publish
+) => {
+  const response = await fetch(
+    `${API_URL}/stones/product/${id}/publish`,
+    {
+      method: "PATCH",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        is_publish,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Failed to update publish status"
+    );
+  }
+
+  return data;
+};

@@ -326,7 +326,7 @@ const isBulkDeleteAction =
 
         {Object.entries(groupedActivities).map(([moduleName, moduleActivities]) => {
           const isOpen = expandedModules[moduleName] !== false;
-
+          
           return (
             <Card key={moduleName} variant="outlined">
               {/* Module Group Header */}

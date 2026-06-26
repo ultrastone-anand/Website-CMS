@@ -8,16 +8,14 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { Checkbox, TextField, Autocomplete } from '@mui/material';
 
-import {
-  getCategories,
-} from 'src/services/category.service';
+import { getCategories } from 'src/services/category.service';
 import {
   createProduct,
   deleteProduct,
   updateProduct,
   getProductDetail,
-  bulkdeleteProduct,
   updateProductStatus,
+  updatePublishStatus,
   getProductsByCategory,
   bulkupdateProductStatus,
 } from 'src/services/product.service';
@@ -25,18 +23,20 @@ import {
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
+import { canEditIdentity } from '../role-access';
 import ProductQuickEdit from '../product-quick-edit';
-import { Admin , canEditIdentity} from '../role-access';
 
 export default function ProductsView() {
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory,] = useState(null);
   const [products, setProducts] = useState([]);
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showBin, setShowBin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('')
+  const [categories, setCategories] = useState([]);
+  const [currentProduct, setCurrentProduct] = useState(null);
+  const [deletedMediaIds, setDeletedMediaIds] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory,] = useState(null);
 
   useEffect(() => {
     loadCategories();
@@ -240,16 +240,21 @@ export default function ProductsView() {
     );
 
     data.append(
+      "deleted_media",
+      JSON.stringify(deletedMediaIds)
+    );
+
+    data.append(
       "faqs",
       JSON.stringify(payload.faqs || [])
     );
 
     if (payload.silica_warning_datasheet instanceof File) {
-  data.append(
-    "silica_datasheet",
-    payload.silica_warning_datasheet
-  );
-}
+      data.append(
+        "silica_datasheet",
+        payload.silica_warning_datasheet
+      );
+    }
 
     return data;
 
@@ -288,98 +293,92 @@ export default function ProductsView() {
   };
 
   const filteredProducts = products
-    .filter((product) =>
-      product.name
+    .filter((product) => {
+      const searchMatch = product.name
         ?.toLowerCase()
-        .includes(searchTerm.toLowerCase())
-    )
-    .sort((a, b) => {
-      // Active products first
-      if (a.is_active === true && b.is_active === false) {
-        return -1;
-      }
+        .includes(searchTerm.toLowerCase());
 
-      if (a.is_active === false && b.is_active === true) {
-        return 1;
-      }
+      const statusMatch = showBin
+        ? !product.is_active
+        : product.is_active;
 
-      // Same status -> sort by name
-      return a.name.localeCompare(b.name);
-    });
+      return searchMatch && statusMatch;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const handleBulkDelete = async () => {
+  // const handleBulkDelete = async () => {
+  //   try {
+  //     if (selectedProducts.length === 0) return;
+
+  //     const confirmed = window.confirm(
+  //       `Delete ${selectedProducts.length} products?`
+  //     );
+
+  //     if (!confirmed) return;
+
+  //     const idsToDelete = [...selectedProducts];
+
+  //     await bulkdeleteProduct(idsToDelete);
+
+
+  //     setProducts((prevProducts) =>
+  //       prevProducts.filter(
+  //         (product) =>
+  //           !idsToDelete.includes(product.id)
+  //       )
+  //     );
+
+  //     setSelectedProducts([]);
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // };
+
+  const handleBulkDeactivate = async () => {
     try {
-      if (selectedProducts.length === 0) return;
+
+      if (selectedProducts.length === 0) {
+        return;
+      }
 
       const confirmed = window.confirm(
-        `Delete ${selectedProducts.length} products?`
+        `Deactivate ${selectedProducts.length} products?`
       );
 
-      if (!confirmed) return;
+      if (!confirmed) {
+        return;
+      }
 
-      const idsToDelete = [...selectedProducts];
+      const idsToDeactivate = [
+        ...selectedProducts,
+      ];
 
-      await bulkdeleteProduct(idsToDelete);
-
+      await bulkupdateProductStatus(
+        idsToDeactivate,
+        false
+      );
 
       setProducts((prevProducts) =>
-        prevProducts.filter(
-          (product) =>
-            !idsToDelete.includes(product.id)
+        prevProducts.map((product) =>
+          idsToDeactivate.includes(
+            product.id
+          )
+            ? {
+              ...product,
+              is_active: false,
+            }
+            : product
         )
       );
 
       setSelectedProducts([]);
+
     } catch (error) {
+
       console.error(error);
+
     }
   };
-
-  const handleBulkDeactivate = async () => {
-  try {
-
-    if (selectedProducts.length === 0) {
-      return;
-    }
-
-    const confirmed = window.confirm(
-      `Deactivate ${selectedProducts.length} products?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const idsToDeactivate = [
-      ...selectedProducts,
-    ];
-
-    await bulkupdateProductStatus(
-      idsToDeactivate,
-      false
-    );
-
-    setProducts((prevProducts) =>
-      prevProducts.map((product) =>
-        idsToDeactivate.includes(
-          product.id
-        )
-          ? {
-              ...product,
-              is_active: false,
-            }
-          : product
-      )
-    );
-
-    setSelectedProducts([]);
-
-  } catch (error) {
-
-    console.error(error);
-
-  }
-};
 
   const handleSelectProduct = (
     productId
@@ -417,6 +416,39 @@ export default function ProductsView() {
     }
   };
 
+  const handlePublishProduct = async (
+    productId,
+    currentPublishStatus
+  ) => {
+    console.log(productId, currentPublishStatus)
+    try {
+
+      await updatePublishStatus(
+        productId,
+        currentPublishStatus
+      );
+
+      if (selectedCategory) {
+        await loadProducts(
+          selectedCategory.slug
+        );
+      }
+
+    } catch (error) {
+
+      console.error(
+        "Publish Update Error:",
+        error
+      );
+
+    }
+
+  };
+
+  const activeCount = products.filter((p) => p.is_active).length;
+  const inactiveCount = products.filter((p) => !p.is_active).length;
+  const publishedCount = products.filter((p) => p.is_published).length;
+
   return (
     <Container maxWidth={false}>
 
@@ -434,95 +466,146 @@ export default function ProductsView() {
           direction="row"
           spacing={2}
         >
-          
-          {Admin() && selectedProducts.length >
-            0  && (
-              <Button
-                color="error"
-                variant="contained"
-                startIcon={
-                  <Iconify icon="eva:trash-2-outline" />
-                }
-                onClick={
-                  handleBulkDelete
-                }
-              >
-                Delete (
-                {
-                  selectedProducts.length
-                }
-                )
-              </Button>
-            )}
 
-                     {selectedProducts.length >
-            0 && (
+          {selectedProducts.length > 0 ? (
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+            >
+              <Typography
+                variant="subtitle1"
+                fontWeight={600}
+              >
+                {selectedProducts.length} Selected
+              </Typography>
+
               <Button
                 color="warning"
                 variant="contained"
                 startIcon={
-                  <Iconify icon="akar-icons:stop" />
+                  <Iconify icon="solar:trash-bin-trash-outline" />
                 }
-                onClick={
-                  handleBulkDeactivate
-                }
+                onClick={handleBulkDeactivate}
               >
-                Deactivate (
-                {
-                  selectedProducts.length
-                }
-                )
+                Move to Bin
               </Button>
-            )}
 
-          {canEditIdentity && (
-            <Button
-              variant="contained"
-              color="inherit"
-              startIcon={
-                <Iconify icon="eva:plus-fill" />
-              }
-              onClick={
-                handleAddProduct
-              }
-            >
-              New Product
-            </Button>
+              <Button
+                color="inherit"
+                variant="text"
+                onClick={() => setSelectedProducts([])}
+              >
+                Cancel
+              </Button>
+            </Stack>
+          ) : (
+            canEditIdentity && (
+              <Button
+                variant="contained"
+                color="inherit"
+                startIcon={<Iconify icon="eva:plus-fill" />}
+                onClick={handleAddProduct}
+              >
+                New Product
+              </Button>
+            )
           )}
         </Stack>
       </Stack>
+
       <Stack
-        direction={{ xs: 'column', md: 'row' }}
+        direction={{ xs: "column", md: "row" }}
         spacing={2}
+        alignItems="center"
         sx={{ mb: 4 }}
       >
         <Autocomplete
-          fullWidth
+          sx={{ flex: 1, minWidth: 280 }}
           options={categories}
           value={selectedCategory}
           onChange={(_, value) => {
             setSelectedProducts([]);
             setSelectedCategory(value);
           }}
-          getOptionLabel={(option) =>
-            option?.name || ''
-          }
+          getOptionLabel={(option) => option?.name || ""}
           renderInput={(params) => (
             <TextField
               {...params}
-              label="Select Category"
+              label="Category"
             />
           )}
         />
 
         <TextField
-          fullWidth
+          sx={{ flex: 1, minWidth: 300 }}
           label="Search Products"
           value={searchTerm}
-          onChange={(e) =>
-            setSearchTerm(e.target.value)
-          }
+          onChange={(e) => setSearchTerm(e.target.value)}
         />
+
+        <Box
+          sx={{
+            display: "flex",
+            bgcolor: "background.neutral",
+            border: (theme) => `1px solid ${theme.palette.divider}`,
+            borderRadius: 2,
+            p: 0.5,
+            gap: 0.5,
+          }}
+        >
+          <Button
+            disableElevation
+            variant={!showBin ? "contained" : "text"}
+            color={!showBin ? "primary" : "inherit"}
+            sx={{
+              minWidth: 110,
+              borderRadius: 1.5,
+            }}
+            onClick={() => {
+              setShowBin(false);
+              setSelectedProducts([]);
+            }}
+          >
+            Products
+          </Button>
+
+          <Button
+            disableElevation
+            variant={showBin ? "contained" : "text"}
+            color={showBin ? "warning" : "inherit"}
+            startIcon={
+              <Iconify icon="solar:trash-bin-trash-outline" />
+            }
+            sx={{
+              minWidth: 110,
+              borderRadius: 1.5,
+            }}
+            onClick={() => {
+              setShowBin(true);
+              setSelectedProducts([]);
+            }}
+          >
+            Bin
+            {!showBin && (
+              <Box
+                component="span"
+                sx={{
+                  ml: 1,
+                  px: 0.8,
+                  py: 0.2,
+                  borderRadius: 5,
+                  bgcolor: "warning.main",
+                  color: "common.white",
+                  fontSize: 12,
+                  fontWeight: 700,
+                }}
+              >
+                {products.filter((p) => !p.is_active).length}
+              </Box>
+            )}
+          </Button>
+        </Box>
       </Stack>
 
       {selectedCategory && (
@@ -544,23 +627,20 @@ export default function ProductsView() {
               variant="body2"
               color="text.secondary"
             >
-              <b>{filteredProducts.filter(
-                (product) => product.is_active
-              ).length}</b> active product
-              {filteredProducts.filter(
-                (product) => product.is_active
-              ).length !== 1
-                ? "s"
-                : ""}
-              {" and "}
-              <b>{filteredProducts.filter(
-                (product) => !product.is_active
-              ).length}</b> deactivated product
-              {filteredProducts.filter(
-                (product) => !product.is_active
-              ).length !== 1
-                ? "s"
-                : ""}
+              <Box component="span" fontWeight={600}>
+                {activeCount}
+              </Box>{" "}
+              Active {activeCount !== 1 ? "Products" : "Product"}
+              {" • "}
+              <Box component="span" fontWeight={600}>
+                {inactiveCount}
+              </Box>{" "}
+              In Bin
+              {" • "}
+              <Box component="span" fontWeight={600}>
+                {publishedCount}
+              </Box>{" "}
+              Published
             </Typography>
           </Box>
 
@@ -654,6 +734,9 @@ export default function ProductsView() {
                   onStatusChange={
                     handleProductStatusChange
                   }
+                  onPublish={
+                    handlePublishProduct
+                  }
                 />
               </Box>
             </Grid>
@@ -677,10 +760,9 @@ export default function ProductsView() {
         </Box>
       )}
 
-      <ProductQuickEdit
-        open={
-          productModalOpen
-        }
+      <ProductQuickEdit open={
+        productModalOpen
+      }
         onClose={
           handleCloseModal
         }
@@ -696,6 +778,8 @@ export default function ProductsView() {
         loading={
           loading
         }
+        deletedMediaIds={deletedMediaIds}
+        setDeletedMediaIds={setDeletedMediaIds}
       />
     </Container>
   );

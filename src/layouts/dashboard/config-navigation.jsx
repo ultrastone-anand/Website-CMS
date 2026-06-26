@@ -72,6 +72,12 @@ export const getNavConfig = () => {
           path: '/dashboard/bulk',
           icon: icon('ic_bulk'),
         },
+
+        {
+          title: 'Lead Management',
+          path: '/dashboard/lead',
+          icon: icon('ic_lead'),
+        },
       ]
       : []),
 

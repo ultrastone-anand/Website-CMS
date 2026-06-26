@@ -17,7 +17,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 
 import Iconify from 'src/components/iconify';
 
-import {Admin , canView, canEditIdentity } from './role-access';
+import { canView, canEditIdentity } from './role-access';
 
 
 export default function ShopProductCard({
@@ -26,12 +26,13 @@ export default function ShopProductCard({
   onEdit,
   onDelete,
   onStatusChange,
+  onPublish,
 }) {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  const handleDeleteClick = () => {
-    setOpenDeleteDialog(true);
-  };
+  // const handleDeleteClick = () => {
+  //   setOpenDeleteDialog(true);
+  // };
 
   const handleCloseDialog = () => {
     setOpenDeleteDialog(false);
@@ -134,14 +135,7 @@ export default function ShopProductCard({
             variant="body2"
             color="text.secondary"
           >
-            {product.pattern}
-          </Typography>
-
-          <Typography
-            variant="caption"
-            color="text.secondary"
-          >
-            {product.stone_group}
+            {product.pattern} ● {product.stone_group}
           </Typography>
         </Stack>
 
@@ -149,47 +143,135 @@ export default function ShopProductCard({
           sx={{
             px: 2,
             pb: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
           }}
         >
-          <Button
-            fullWidth
-            variant="contained"
-            onClick={() => onEdit(product)}
-          >
-            {canView()
-              ? 'View Product'
-              : 'Edit Product'}
-          </Button>
+<Stack
+  direction="row"
+  spacing={1}
+  justifyContent="flex-end"
+  sx={{
+    px: 2,
+    pb: 2,
+  }}
+>
+  {/* If product is inactive, show ONLY Activate button */}
+  {!product.is_active ? (
+    canEditIdentity() && (
+      <Tooltip title="Activate">
+        <IconButton
+          onClick={() =>
+            onStatusChange(product.id, true)
+          }
+          sx={{
+            bgcolor: "success.lighter",
+            color: "success.main",
+            "&:hover": {
+              bgcolor: "success.main",
+              color: "common.white",
+            },
+          }}
+        >
+          <Iconify
+            icon="mdi:toggle-switch"
+            width={22}
+          />
+        </IconButton>
+      </Tooltip>
+    )
+  ) : (
+    <>
+      {/* Edit */}
+      <Tooltip title={canView() ? "View Product" : "Edit Product"}>
+        <IconButton
+          onClick={() => onEdit(product)}
+          sx={{
+            bgcolor: "primary.lighter",
+            color: "primary.main",
+            "&:hover": {
+              bgcolor: "primary.main",
+              color: "common.white",
+            },
+          }}
+        >
+          <Iconify
+            icon="mdi:pencil-outline"
+            width={20}
+          />
+        </IconButton>
+      </Tooltip>
 
-          {canEditIdentity() && (
-            <Button
-            fullWidth
-            variant="contained"
-            color= {product.is_active ? 'warning' : 'info'}
+      {/* Deactivate */}
+      {canEditIdentity() && (
+        <Tooltip title="Deactivate">
+          <IconButton
             onClick={() =>
-              onStatusChange(
+              onStatusChange(product.id, false)
+            }
+            sx={{
+              bgcolor: "warning.lighter",
+              color: "warning.main",
+              "&:hover": {
+                bgcolor: "warning.main",
+                color: "common.white",
+              },
+            }}
+          >
+            <Iconify
+              icon="mdi:toggle-switch"
+              width={22}
+            />
+          </IconButton>
+        </Tooltip>
+      )}
+
+      {/* Publish */}
+      {canEditIdentity() && (
+        <Tooltip
+          title={
+            product.is_published
+              ? "Unpublish"
+              : "Publish"
+          }
+        >
+          <IconButton
+            onClick={() =>
+              onPublish(
                 product.id,
-                !product.is_active
+                !product.is_published
               )
             }
+            sx={{
+              bgcolor: product.is_published
+                ? "secondary.lighter"
+                : "grey.200",
+              color: product.is_published
+                ? "secondary.main"
+                : "text.secondary",
+              "&:hover": {
+                bgcolor: product.is_published
+                  ? "secondary.main"
+                  : "grey.700",
+                color: "common.white",
+              },
+            }}
           >
-            {
-              product.is_active
-                ? "Deactivate"
-                : "Activate"
-            }
-          </Button>)}
-
-          {Admin() && (
-            <Button
-              fullWidth
-              variant="contained"
-              color="error"
-              onClick={handleDeleteClick}
-            >
-              Delete
-            </Button>
-          )}
+            <Iconify
+              icon={
+                product.is_published
+                  ? "mdi:web-check"
+                  : "mdi:web-off"
+              }
+              width={20}
+            />
+          </IconButton>
+        </Tooltip>
+      )}
+    </>
+  )}
+</Stack>
         </CardActions>
       </Card>
 
@@ -241,4 +323,5 @@ ShopProductCard.propTypes = {
   onEdit: PropTypes.func,
   onDelete: PropTypes.func,
   onStatusChange: PropTypes.func,
+  onPublish: PropTypes.func,
 };

@@ -15,9 +15,10 @@ export const SocialsPage = lazy(() => import('src/pages/socials'));
 export const CompanyPage = lazy(() => import('src/pages/company'));
 export const ActivityPage = lazy(() => import('src/pages/activity'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
-export const CategorysPage = lazy(() => import('src/pages/category'));
-export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
+export const CategorysPage = lazy(() => import('src/pages/category'));
+export const LeadPage = lazy(() => import('src/pages/leadManagement'));
+export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
 
 export default function Router() {
   const token = sessionStorage.getItem('token');
@@ -55,6 +56,7 @@ export default function Router() {
         { path: 'blog', element: <BlogPage /> },
         { path: 'socials', element: <SocialsPage /> },
         { path: 'bulk', element: <BulkUploadPage /> },
+        { path: 'lead', element: <LeadPage /> },
       ],
     },
 
