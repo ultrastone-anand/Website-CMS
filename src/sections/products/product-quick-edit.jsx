@@ -16,6 +16,7 @@ import DialogContent from '@mui/material/DialogContent';
 
 import { getCategories } from 'src/services/category.service';
 import { getLookupDetails } from 'src/services/lookup.service';
+import { deleteProductMedia } from 'src/services/product.service';
 
 import SeoTab from './quickedit/SeoTab';
 import FaqTab from './quickedit/FaqTab';
@@ -371,6 +372,35 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             file || null
         );
     };
+
+    const handleDeleteMedia = async (mediaId) => {
+    try {
+
+        await deleteProductMedia(mediaId);
+
+        setFormData((prev) => ({
+            ...prev,
+            media: prev.media.filter(
+                (item) => item.id !== mediaId
+            ),
+        }));
+
+        alert(
+            "Media deleted successfully",
+            { variant: "success" }
+        );
+
+    } catch (error) {
+
+        alert(
+            error.message,
+            { variant: "error" }
+        );
+
+    }
+};
+
+
     return (
         <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth PaperProps={{
             sx: {
@@ -467,6 +497,7 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                         handleRemovePreview={handleRemovePreview}
                         handleAltTextChange={handleAltTextChange}
                         canEditMedia={canEditMedia}
+                        handleDeleteMedia={handleDeleteMedia}
                     />
                 )}
 

@@ -56,6 +56,7 @@ export default function MediaTab({
     handleRemovePreview,
     handleAltTextChange,
     canEditMedia,
+    handleDeleteMedia,
 }) {
     const [selectedMedia, setSelectedMedia] =
     useState('');
@@ -184,7 +185,7 @@ export default function MediaTab({
                                     <Tooltip title="Remove Media">
     <IconButton
         disabled={!canEditMedia()}
-        // onClick={() => handleRemoveMedia(item.id)}
+        onClick={() => handleDeleteMedia(item.id)}
         sx={{
             position: 'absolute',
             top: 8,
@@ -326,6 +327,7 @@ MediaTab.propTypes = {
     handleFilesSelected: PropTypes.func.isRequired,
     handleRemovePreview: PropTypes.func.isRequired,
     handleAltTextChange: PropTypes.func.isRequired,
+    handleDeleteMedia: PropTypes.func.isRequired,
 
     canEditMedia: PropTypes.func.isRequired,
 };

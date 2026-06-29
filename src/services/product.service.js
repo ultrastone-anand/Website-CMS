@@ -266,8 +266,6 @@ export const bulkupdateProductStatus = async (
 
 // ================= PUBLISH/UNPUBLISH PRODUCTS =================
 
-
-
 export const updatePublishStatus = async (
   id,
   is_publish
@@ -289,6 +287,33 @@ export const updatePublishStatus = async (
     throw new Error(
       data.message ||
       "Failed to update publish status"
+    );
+  }
+
+  return data;
+};
+
+
+// ================= DELETE PRODUCT MEDIA =================
+
+export const deleteProductMedia = async (
+  mediaId
+) => {
+
+  const response = await fetch(
+    `${API_URL}/stones/media/${mediaId}`,
+    {
+      method: "DELETE",
+      headers: getHeaders(),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Failed to delete media"
     );
   }
 
