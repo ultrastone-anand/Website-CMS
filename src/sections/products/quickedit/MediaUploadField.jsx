@@ -70,18 +70,7 @@ export default function MediaUploadField({
             {/* Preview Grid */}
             {previews.length > 0 && (
                 <Grid container spacing={1}>
-                    {previews.map((item, idx) => {
-                        const fileSize =
-                            item.file?.size || item.size || 0;
-
-                        const maxSize = isVideo
-                            ? 100 * 1024 * 1024
-                            : 10 * 1024 * 1024;
-
-                        const exceedsLimit =
-                            fileSize > maxSize;
-
-                        return (
+                    {previews.map((item, idx) =>  (
                             <Grid
                                 item
                                 xs={6}
@@ -94,9 +83,7 @@ export default function MediaUploadField({
                                         borderRadius: 1.5,
                                         overflow: 'hidden',
                                         border: '1px solid',
-                                        borderColor: exceedsLimit
-                                            ? 'error.main'
-                                            : 'divider',
+                                        borderColor: 'divider',
                                         bgcolor:
                                             'background.neutral',
                                         aspectRatio: '4/3',
@@ -196,28 +183,20 @@ export default function MediaUploadField({
                                             <Typography
                                                 variant="caption"
                                                 sx={{
-                                                    color:
-                                                        'rgba(255,255,255,.8)',
+                                                    color: 'rgba(255,255,255,.8)',
                                                     fontSize: 8,
                                                     display: 'block',
                                                 }}
                                             >
-                                                {(item.file.size /
-                                                    1024 /
-                                                    1024).toFixed(
-                                                    2
-                                                )}{' '}
-                                                MB /{' '}
-                                                {isVideo
-                                                    ? '100 MB'
-                                                    : '10 MB'}
+                                                {(item.file.size / 1024 / 1024).toFixed(2)} MB
+                                                
                                             </Typography>
                                         )}
                                     </Box>
                                 </Box>
                             </Grid>
-                        );
-                    })}
+                        )
+                        )}
                 </Grid>
             )}
         </Stack>
