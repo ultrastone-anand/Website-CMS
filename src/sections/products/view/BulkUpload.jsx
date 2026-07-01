@@ -11,6 +11,8 @@ import {
   Button,
   Divider,
   TableRow,
+  MenuItem,
+  TextField,
   TableCell,
   TableBody,
   TableHead,
@@ -103,6 +105,7 @@ export default function BulkUpload() {
   const [stone_group, setStone_group] = useState([])
   const [finishes_available, setFinishes_available] = useState([]);
   const [thicknesses_cm, setThicknesses_cm] = useState([])
+  const [selectedCategoryId, setSelectedCategoryId] = useState("");
 
   useEffect(() => {
     fetchStonegroup();
@@ -178,13 +181,6 @@ export default function BulkUpload() {
     }
   };
 
-  const findCategory = (value) =>
-    categories.find(
-      (item) =>
-        item.name?.trim().toLowerCase() ===
-        value?.trim().toLowerCase()
-    );
-
   const findStoneGroup = (value) =>
     stone_group.find(
       (item) =>
@@ -228,6 +224,11 @@ const handleUploadProducts = async () => {
       return;
     }
 
+    if (!selectedCategoryId) {
+  alert("Please select category first");
+  return;
+}
+
     setUploading(true);
 
     const slugTracker = {};
@@ -235,8 +236,7 @@ const handleUploadProducts = async () => {
 
     const finalPayload = products.map(
       (product) => {
-        const category =
-          findCategory(product.category);
+
 
         const stoneGroup =
           findStoneGroup(
@@ -272,8 +272,8 @@ if (slugTracker[slug]) {
 
           slug,
 
-          category_id:
-            category?.id || null,
+  category_id: selectedCategoryId,
+
 
           stone_group:
             stoneGroup?.value_name ||
@@ -443,6 +443,23 @@ if (slugTracker[slug]) {
             Upload Excel file and preview
             all products before saving.
           </Typography>
+
+          <TextField
+  select
+  fullWidth
+  label="Select Category"
+  value={selectedCategoryId}
+  onChange={(e) => setSelectedCategoryId(e.target.value)}
+  sx={{
+    maxWidth: 600,
+  }}
+>
+  {categories.map((category) => (
+    <MenuItem key={category.id} value={category.id}>
+      {category.name}
+    </MenuItem>
+  ))}
+</TextField>
 
           <Button
             variant="contained"

@@ -78,6 +78,12 @@ export const getNavConfig = () => {
           path: '/dashboard/lead',
           icon: icon('ic_lead'),
         },
+
+        {
+          title: 'About Us',
+          path: '/dashboard/aboutus',
+          icon: icon('ic_about'),
+        },
       ]
       : []),
 

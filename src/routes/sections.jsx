@@ -19,6 +19,7 @@ export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const CategorysPage = lazy(() => import('src/pages/category'));
 export const LeadPage = lazy(() => import('src/pages/leadManagement'));
 export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
+export const AboutusPage = lazy(() => import('src/pages/staticpages/about_us'));
 
 export default function Router() {
   const token = sessionStorage.getItem('token');
@@ -57,6 +58,7 @@ export default function Router() {
         { path: 'socials', element: <SocialsPage /> },
         { path: 'bulk', element: <BulkUploadPage /> },
         { path: 'lead', element: <LeadPage /> },
+        { path: 'aboutus', element: <AboutusPage /> },
       ],
     },
 
