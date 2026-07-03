@@ -13,13 +13,13 @@ const APPLICATION_FIELDS = [
     ['color_enhancing', 'Color Enhancing'],
     ['countertops_vanities', 'Countertops / Vanities'],
     ['interior_floor', 'Interior Floor'],
-    ['interior_wall', 'Interior Wall'],
+    ['interior_wall', 'Interior Wall / Fireplace'],  // if we want this then in website i need to give interior wall to both of them
     ['shower_wall', 'Shower Wall'],
     ['shower_floor', 'Shower Floor'],
     ['exterior_floor', 'Exterior Floor'],
     ['exterior_wall', 'Exterior Wall'],
     ['pool_fountain', 'Pool / Fountain'],
-    ['fireplace', 'Fireplace'],
+    // ['fireplace', 'Fireplace'],
     ['furniture_top', 'Furniture Top'],
 ];
 

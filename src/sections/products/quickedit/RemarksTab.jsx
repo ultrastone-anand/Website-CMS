@@ -20,14 +20,12 @@ import {
 
 import {
     createRemark,
-    deleteRemark,
     updateRemark,
     getProductRemarks,
 } from "src/services/productRemark.service";
 
 import Iconify from "src/components/iconify";
 
-import { Admin } from "../role-access";
 import SectionLabel from "./SectionLabel";
 
 export default function RemarksTab({ productId, }) {
@@ -97,21 +95,6 @@ export default function RemarksTab({ productId, }) {
             }
 
             resetEditor();
-
-            loadRemarks();
-        } catch (err) {
-            console.error(err);
-        }
-    };
-
-    const handleEdit = (item) => {
-        setEditingId(item.id);
-        setRemark(item.remark);
-    };
-
-    const handleDelete = async (id) => {
-        try {
-            await deleteRemark(id);
 
             loadRemarks();
         } catch (err) {
@@ -405,72 +388,6 @@ export default function RemarksTab({ productId, }) {
 
                                             </Stack>
 
-                                            {/* Hover Actions */}
-
-                                            <Stack
-                                                className="actions"
-                                                direction="row"
-                                                spacing={0.5}
-                                                sx={{
-
-                                                    position: "absolute",
-
-                                                    top: 6,
-
-                                                    right: 6,
-
-                                                    opacity: 0,
-
-                                                    transition: ".2s",
-
-                                                }}
-                                            >
-
-                                                <Tooltip title="Edit">
-
-                                                    <IconButton
-                                                        size="small"
-                                                        color="primary"
-                                                        onClick={() =>
-                                                            handleEdit(item)
-                                                        }
-                                                    >
-
-                                                        <Iconify
-                                                            icon="mdi:pencil-outline"
-                                                            width={16}
-                                                        />
-
-                                                    </IconButton>
-
-                                                </Tooltip>
-
-                                                {Admin() && (
-
-                                                    <Tooltip title="Delete">
-
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    item.id
-                                                                )
-                                                            }
-                                                        >
-
-                                                            <Iconify
-                                                                icon="mdi:delete-outline"
-                                                                width={16}
-                                                            />
-
-                                                        </IconButton>
-
-                                                    </Tooltip>
-
-                                                )}
-
-                                            </Stack>
 
                                         </Paper>
 

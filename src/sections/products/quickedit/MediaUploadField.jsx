@@ -1,219 +1,297 @@
-import { useRef } from 'react';
 import PropTypes from 'prop-types';
+import { useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import Stack from '@mui/material/Stack';
+import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
 export default function MediaUploadField({
-    label,
-    accept,
-    icon,
+    rowId,
     fieldKey,
-    previews,
+    index,
+    mediaFields,
     onFilesSelected,
-    onRemove,
+    onAddRow,
+    onRemoveRow,
+    onChangeType,
+    canRemoveRow,
 }) {
     const inputRef = useRef(null);
 
+    const [file, setFile] = useState(null);
+    const [isSent, setIsSent] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState('');
+    const [openPreview, setOpenPreview] = useState(false);
+
+    const selectedMedia = mediaFields.find((item) => item.field === fieldKey);
+    const isVideo = file?.type?.startsWith('video');
+
+    const sendIfReady = (selectedFile, selectedField) => {
+        if (!selectedFile || !selectedField || isSent) return;
+
+        onFilesSelected(selectedField, [selectedFile]);
+        setIsSent(true);
+    };
     const handleFileChange = (e) => {
-        const files = Array.from(e.target.files);
+        const selectedFile = e.target.files?.[0];
 
-        if (!files.length) return;
+        if (!selectedFile) return;
 
-        onFilesSelected(fieldKey, files);
+        setFile(selectedFile);
+        setPreviewUrl(URL.createObjectURL(selectedFile));
+        setIsSent(false);
 
-        // Allow selecting the same file again
+        if (fieldKey) {
+            onFilesSelected(fieldKey, [selectedFile]);
+            setIsSent(true);
+        }
+
         e.target.value = '';
     };
 
-    const isVideo = accept.startsWith('video');
+    const handleCategoryChange = (e) => {
+        const newField = e.target.value;
+
+        onChangeType(rowId, newField);
+        sendIfReady(file, newField);
+    };
+
+    let detectedFormat = '-';
+
+    if (file && isVideo) {
+        detectedFormat = 'Video';
+    }
+
+    if (file && !isVideo) {
+        detectedFormat = 'Image';
+    }
 
     return (
-        <Stack spacing={1.5}>
-            {/* Upload Button */}
-            <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => inputRef.current?.click()}
-                sx={{
-                    height: 80,
-                    borderStyle: 'dashed',
-                    borderRadius: 2,
-                    flexDirection: 'column',
-                    gap: 0.5,
-                    color: 'text.secondary',
-                    '&:hover': {
-                        borderStyle: 'solid',
-                    },
-                }}
-            >
-                <span style={{ fontSize: 22 }}>{icon}</span>
-
-                <Typography variant="caption">
-                    {label}
+        <>
+            {index === 0 && (
+        <Grid
+            container
+            spacing={1.5}
+            sx={{
+                mb: 1,
+                display: {
+                    xs: 'none',
+                    md: 'flex',
+                },
+            }}
+        >
+            <Grid item md={3}>
+                <Typography variant="caption" fontWeight={700}>
+                    Media File
                 </Typography>
+            </Grid>
 
-                <input
-                    ref={inputRef}
-                    hidden
-                    multiple
-                    type="file"
-                    accept={accept}
-                    onChange={handleFileChange}
-                />
-            </Button>
+            <Grid item md={2}>
+                <Typography variant="caption" fontWeight={700}>
+                    Detected Format
+                </Typography>
+            </Grid>
 
-            {/* Preview Grid */}
-            {previews.length > 0 && (
-                <Grid container spacing={1}>
-                    {previews.map((item, idx) =>  (
-                            <Grid
-                                item
-                                xs={6}
-                                sm={4}
-                                key={idx}
-                            >
-                                <Box
-                                    sx={{
-                                        position: 'relative',
-                                        borderRadius: 1.5,
-                                        overflow: 'hidden',
-                                        border: '1px solid',
-                                        borderColor: 'divider',
-                                        bgcolor:
-                                            'background.neutral',
-                                        aspectRatio: '4/3',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                    }}
-                                >
-                                    {isVideo ? (
-                                        <Box
-                                            component="video"
-                                            src={item.url}
-                                            muted
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                            }}
-                                            onMouseEnter={(e) =>
-                                                e.currentTarget.play()
-                                            }
-                                            onMouseLeave={(e) => {
-                                                e.currentTarget.pause();
-                                                e.currentTarget.currentTime = 0;
-                                            }}
-                                        />
-                                    ) : (
-                                        <Box
-                                            component="img"
-                                            src={item.url}
-                                            alt={item.name}
-                                            sx={{
-                                                width: '100%',
-                                                height: '100%',
-                                                objectFit: 'cover',
-                                                display: 'block',
-                                            }}
-                                        />
-                                    )}
+            <Grid item md={5}>
+                <Typography variant="caption" fontWeight={700}>
+                    Media Category
+                </Typography>
+            </Grid>
 
-                                    {/* Remove */}
-                                    <IconButton
-                                        size="small"
-                                        onClick={() =>
-                                            onRemove(fieldKey, idx)
-                                        }
-                                        sx={{
-                                            position: 'absolute',
-                                            top: 4,
-                                            right: 4,
-                                            bgcolor:
-                                                'rgba(0,0,0,.55)',
-                                            color: 'white',
-                                            width: 22,
-                                            height: 22,
-                                            fontSize: 12,
-                                            '&:hover': {
-                                                bgcolor:
-                                                    'error.main',
-                                            },
-                                        }}
-                                    >
-                                        ✕
-                                    </IconButton>
+            <Grid item md={2}>
+                <Typography
+                    variant="caption"
+                    fontWeight={700}
+                    align="right"
+                >
+                    Action
+                </Typography>
+            </Grid>
+        </Grid>
+    )}
+            <Grid container spacing={1.5} alignItems="center" sx={{ mb: 1.2 }}>
 
-                                    {/* Footer */}
-                                    <Box
-                                        sx={{
-                                            position: 'absolute',
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0,
-                                            px: .75,
-                                            py: .4,
-                                            bgcolor:
-                                                'rgba(0,0,0,.5)',
-                                        }}
-                                    >
-                                        <Typography
-                                            variant="caption"
-                                            sx={{
-                                                color: 'white',
-                                                fontSize: 9,
-                                                display: 'block',
-                                                whiteSpace:
-                                                    'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow:
-                                                    'ellipsis',
-                                            }}
-                                        >
-                                            {item.name}
-                                        </Typography>
 
-                                        {item.file && (
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    color: 'rgba(255,255,255,.8)',
-                                                    fontSize: 8,
-                                                    display: 'block',
-                                                }}
-                                            >
-                                                {(item.file.size / 1024 / 1024).toFixed(2)} MB
-                                                
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                </Box>
-                            </Grid>
-                        )
-                        )}
+                <Grid item xs={12} md={3}>
+                    <Box
+                        sx={{
+                            height: 46,
+                            px: 1,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1.25,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                        }}
+                    >
+                        <Button
+                            variant="outlined"
+                            onClick={() => inputRef.current?.click()}
+                            sx={{
+                                minWidth: 82,
+                                height: 32,
+                                fontWeight: 700,
+                                px: 1.5,
+                            }}
+                        >
+                            Browse
+                        </Button>
+
+                        <Typography
+                            variant="body2"
+                            noWrap
+                            onClick={() => file && setOpenPreview(true)}
+                            sx={{
+                                color: file ? 'primary.main' : 'text.secondary',
+                                cursor: file ? 'pointer' : 'default',
+                                textDecoration: file ? 'underline' : 'none',
+                                maxWidth: 90,
+                            }}
+                        >
+                            {file ? file.name : 'No file'}
+                        </Typography>
+
+                        <input
+                            ref={inputRef}
+                            hidden
+                            type="file"
+                            accept={selectedMedia?.accept || 'image/*,video/*'}
+                            onChange={handleFileChange}
+                        />
+                    </Box>
                 </Grid>
-            )}
-        </Stack>
+
+                <Grid item xs={12} md={2}>
+                    <Box
+                        sx={{
+                            height: 46,
+                            px: 1.5,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 1.25,
+                            display: 'flex',
+                            alignItems: 'center',
+                            fontWeight: 700,
+                            bgcolor: 'background.neutral',
+                        }}
+                    >
+                        Auto: {detectedFormat}
+                    </Box>
+                </Grid>
+
+                <Grid item xs={12} md={5}>
+                    <TextField
+                        select
+                        fullWidth
+                        size="small"
+                        value={fieldKey}
+                        disabled={isSent}
+                        onChange={handleCategoryChange}
+                        displayEmpty
+                        sx={{
+                            '& .MuiInputBase-root': {
+                                height: 46,
+                            },
+                        }}
+                    >
+                        <MenuItem value="">
+                            Select Media Category
+                        </MenuItem>
+
+                        {mediaFields.map((item) => (
+                            <MenuItem key={item.field} value={item.field}>
+                                {item.icon} {item.label}
+                            </MenuItem>
+                        ))}
+                    </TextField>
+                </Grid>
+
+                <Grid item xs={12} md={2}>
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        <IconButton
+                            onClick={onAddRow}
+                            sx={{
+                                width: 46,
+                                height: 46,
+                                minWidth: 46,
+                                borderRadius: 1.25,
+                                bgcolor: 'primary.main',
+                                color: '#fff',
+                                '&:hover': { bgcolor: 'primary.dark' },
+                            }}
+                        >
+                            +
+                        </IconButton>
+
+                        <IconButton
+                            disabled={!canRemoveRow}
+                            onClick={() => onRemoveRow(rowId)}
+                            sx={{
+                                width: 46,
+                                height: 46,
+                                minWidth: 46,
+                                borderRadius: 1.25,
+                                border: '1px solid',
+                                borderColor: canRemoveRow ? 'warning.main' : 'divider',
+                            }}
+                        >
+                            -
+                        </IconButton>
+                    </Box>
+                </Grid>
+            </Grid>
+
+            <Dialog
+                open={openPreview}
+                onClose={() => setOpenPreview(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <Box sx={{ p: 2 }}>
+                    {isVideo ? (
+                        <Box
+                            component="video"
+                            src={previewUrl}
+                            controls
+                            sx={{
+                                width: '100%',
+                                maxHeight: 500,
+                                display: 'block',
+                            }}
+                        />
+                    ) : (
+                        <Box
+                            component="img"
+                            src={previewUrl}
+                            alt={file?.name}
+                            sx={{
+                                width: '100%',
+                                maxHeight: 500,
+                                objectFit: 'contain',
+                                display: 'block',
+                            }}
+                        />
+                    )}
+                </Box>
+            </Dialog>
+        </>
     );
 }
 
 MediaUploadField.propTypes = {
-    label: PropTypes.string.isRequired,
-    accept: PropTypes.string.isRequired,
-    icon: PropTypes.string.isRequired,
+    rowId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
     fieldKey: PropTypes.string.isRequired,
-    previews: PropTypes.arrayOf(
-        PropTypes.shape({
-            url: PropTypes.string,
-            name: PropTypes.string,
-        })
-    ).isRequired,
+    mediaFields: PropTypes.array.isRequired,
     onFilesSelected: PropTypes.func.isRequired,
-    onRemove: PropTypes.func.isRequired,
+    onAddRow: PropTypes.func.isRequired,
+    onRemoveRow: PropTypes.func.isRequired,
+    onChangeType: PropTypes.func.isRequired,
+    canRemoveRow: PropTypes.bool.isRequired,
+    index: PropTypes.number.isRequired,
 };

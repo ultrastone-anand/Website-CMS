@@ -285,7 +285,9 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
         { label: 'Specifications', icon: '📊' },
         { label: 'SEO', icon: '🌐' },
         { label: 'FAQ', icon: '❓' },
-        { label: 'Remarks', icon: '📝' },
+        ...(currentProduct
+        ? [{ label: 'Remarks', icon: '📝' }]
+        : []),
     ];
 
     const handleAltTextChange = (
@@ -385,10 +387,6 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
             ),
         }));
 
-        alert(
-            "Media deleted successfully",
-            { variant: "success" }
-        );
 
     } catch (error) {
 
@@ -562,7 +560,6 @@ export default function ProductQuickEdit({ open, onClose, loading, onSubmit, cur
                                 variant="contained"
                                 loading={loading}
                                 onClick={() => onSubmit(formData)}
-                            // onClick={() => console.log(formData)}
                             >
                                 {currentProduct ? 'Update Product' : 'Create Product'}
                             </LoadingButton>

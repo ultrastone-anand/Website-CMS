@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
@@ -9,7 +8,7 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import {Tooltip,MenuItem,TextField,IconButton} from '@mui/material';
+import {Tooltip,TextField,IconButton} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -58,88 +57,72 @@ export default function MediaTab({
     canEditMedia,
     handleDeleteMedia,
 }) {
-    const [selectedMedia, setSelectedMedia] =
-    useState('');
-    
+
+const [uploadRows, setUploadRows] = useState([
+    { id: Date.now(), field: '' },
+]);
+
+const handleAddUploadRow = () => {
+    setUploadRows((prev) => [
+        ...prev,
+        { id: Date.now() + Math.random(), field: '' },
+    ]);
+};
+
+const handleRemoveUploadRow = (id) => {
+    setUploadRows((prev) =>
+        prev.length === 1 ? prev : prev.filter((row) => row.id !== id)
+    );
+};
+
+const handleChangeUploadType = (id, field) => {
+    setUploadRows((prev) =>
+        prev.map((row) =>
+            row.id === id ? { ...row, field } : row
+        )
+    );
+};
     return (
         <Stack spacing={3}>
 
             {canEditMedia() && (
                 <>
 
-                    <SectionLabel>
-                        Upload New Files
-                    </SectionLabel>
+<SectionLabel>
+    Upload New Media
+</SectionLabel>
 
-<Stack spacing={3}>
+<Typography variant="body2" sx={{ color: 'text.secondary', mt: -2 }}>
+    Upload media file first, then select its product media category.
+</Typography>
 
-    <TextField
-        select
-        fullWidth
-        label="Media Type"
-        value={selectedMedia}
-        onChange={(e) =>
-            setSelectedMedia(
-                e.target.value
-            )
-        }
-        sx={{
-            maxWidth: 350,
-        }}
-    >
-        <MenuItem value="">
-            Select Media Type
-        </MenuItem>
+<Box
+    sx={{
+        p: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        bgcolor: 'background.paper',
+    }}
+>
 
-        {MEDIA_FIELDS.map((item) => (
-            <MenuItem
-                key={item.field}
-                value={item.field}
-            >
-                {item.icon} {item.label}
-            </MenuItem>
-        ))}
-    </TextField>
-
-    {selectedMedia && (
-        <MediaUploadField
-            label={
-                MEDIA_FIELDS.find(
-                    (m) =>
-                        m.field ===
-                        selectedMedia
-                ).label
-            }
-            accept={
-                MEDIA_FIELDS.find(
-                    (m) =>
-                        m.field ===
-                        selectedMedia
-                ).accept
-            }
-            icon={
-                MEDIA_FIELDS.find(
-                    (m) =>
-                        m.field ===
-                        selectedMedia
-                ).icon
-            }
-            fieldKey={selectedMedia}
-            previews={
-                mediaPreviews[
-                    selectedMedia
-                ]
-            }
-            onFilesSelected={
-                handleFilesSelected
-            }
-            onRemove={
-                handleRemovePreview
-            }
-        />
-    )}
-
-</Stack>
+{uploadRows.map((row , index) => (
+    <MediaUploadField
+        key={row.id}
+        index={index}
+        rowId={row.id}
+        fieldKey={row.field}
+        mediaFields={MEDIA_FIELDS}
+        previews={mediaPreviews[row.field]}
+        onFilesSelected={handleFilesSelected}
+        onRemove={handleRemovePreview}
+        onAddRow={handleAddUploadRow}
+        onRemoveRow={handleRemoveUploadRow}
+        onChangeType={handleChangeUploadType}
+        canRemoveRow={uploadRows.length > 1}
+    />
+))}
+</Box>
 
                 </>
             )}

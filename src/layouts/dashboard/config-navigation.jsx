@@ -78,12 +78,33 @@ export const getNavConfig = () => {
           path: '/dashboard/lead',
           icon: icon('ic_lead'),
         },
-
         {
-          title: 'About Us',
-          path: '/dashboard/aboutus',
-          icon: icon('ic_about'),
-        },
+  title: 'Pages',
+  path: '/dashboard/pages',
+  icon: icon('ic_about'),
+  children: [
+    {
+      title: 'About Us',
+      path: '/dashboard/aboutus',
+    },
+    // {
+    //   title: 'MEU',
+    //   path: '/dashboard/meu',
+    // },
+    // {
+    //   title: 'Our Process',
+    //   path: '/dashboard/process',
+    // },
+    // {
+    //   title: 'Merchandise Display',
+    //   path: '/dashboard/merchandise',
+    // },
+    // {
+    //   title: 'Videos',
+    //   path: '/dashboard/videos',
+    // },
+  ],
+},
       ]
       : []),
 
