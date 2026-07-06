@@ -87,13 +87,13 @@ export const getNavConfig = () => {
       title: 'About Us',
       path: '/dashboard/aboutus',
     },
+    {
+      title: 'Our Process',
+      path: '/dashboard/process',
+    },
     // {
     //   title: 'MEU',
     //   path: '/dashboard/meu',
-    // },
-    // {
-    //   title: 'Our Process',
-    //   path: '/dashboard/process',
     // },
     // {
     //   title: 'Merchandise Display',

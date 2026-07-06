@@ -20,10 +20,10 @@ export const CategorysPage = lazy(() => import('src/pages/category'));
 export const LeadPage = lazy(() => import('src/pages/leadManagement'));
 export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
 export const AboutusPage = lazy(() => import('src/pages/staticpages/about_us'));
+export const ProcessPage = lazy(() => import('src/pages/staticpages/our_process'));
 // export const MeuPage = lazy(() => import('src/pages/staticpages/meu'));
 // export const VideoPage = lazy(() => import('src/pages/staticpages/video'));
 // export const MerchandisePage = lazy(() => import('src/pages/staticpages/merchandise'));
-// export const ProcessPage = lazy(() => import('src/pages/staticpages/process'));
 
 export default function Router() {
   const token = sessionStorage.getItem('token');
@@ -63,9 +63,9 @@ export default function Router() {
         { path: 'bulk', element: <BulkUploadPage /> },
         { path: 'lead', element: <LeadPage /> },
         { path: 'aboutus', element: <AboutusPage /> },
+        { path: 'process', element: <ProcessPage /> },
         // { path: 'meu', element: <MeuPage /> },
         // { path: 'videos', element: <VideoPage /> },
-        // { path: 'process ', element: <ProcessPage /> },
         // { path: 'merchandise ', element: <MerchandisePage /> },
       ],
     },
