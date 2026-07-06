@@ -3,7 +3,9 @@ import { useMemo , useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import Popper from '@mui/material/Popper';
 import Drawer from '@mui/material/Drawer';
 import Avatar from '@mui/material/Avatar';
 import { alpha } from '@mui/material/styles';
@@ -11,6 +13,7 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import ListItemButton from '@mui/material/ListItemButton';
+import ClickAwayListener from '@mui/material/ClickAwayListener';
 
 import { usePathname } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
@@ -95,6 +98,7 @@ export default function Nav({ openNav, onCloseNav }) {
       ))}
     </Stack>
   );
+
 
   const renderContent = (
     <Box
@@ -217,6 +221,9 @@ function NavItem({ item, miniNav, pathname }) {
   const hasChildren = !!item.children?.length;
   const childActive = isChildActive(item, pathname);
   const active = item.path === pathname || childActive;
+  const [anchorEl, setAnchorEl] = useState(null);
+
+const openPopper = Boolean(anchorEl);
 
   const [open, setOpen] = useState(childActive);
 
@@ -231,10 +238,24 @@ function NavItem({ item, miniNav, pathname }) {
     }
   };
 
+  const handleMouseEnter = (event) => {
+  if (miniNav && hasChildren) {
+    setAnchorEl(event.currentTarget);
+  }
+};
+
+const handleMouseLeave = () => {
+  if (miniNav) {
+    setAnchorEl(null);
+  }
+};
+
   return (
     <>
       <ListItemButton
         onClick={handleClick}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={!miniNav ? undefined : handleMouseLeave}
         component={hasChildren ? 'div' : RouterLink}
         href={hasChildren ? undefined : item.path}
         sx={{
@@ -289,6 +310,43 @@ function NavItem({ item, miniNav, pathname }) {
           />
         )}
       </ListItemButton>
+
+      {miniNav && hasChildren && (
+  <Popper
+    open={openPopper}
+    anchorEl={anchorEl}
+    placement="right-start"
+    sx={{ zIndex: 9999 }}
+  >
+    <ClickAwayListener onClickAway={() => setAnchorEl(null)}>
+      <Paper
+        elevation={8}
+        onMouseEnter={() => setAnchorEl(anchorEl)}
+        onMouseLeave={() => setAnchorEl(null)}
+        sx={{
+          ml: 1,
+          minWidth: 220,
+          py: 1,
+          borderRadius: 2,
+        }}
+      >
+        {item.children.map((child) => (
+          <ListItemButton
+            key={child.title}
+            component={RouterLink}
+            href={child.path}
+            sx={{
+              px: 2,
+              py: 1,
+            }}
+          >
+            {child.title}
+          </ListItemButton>
+        ))}
+      </Paper>
+    </ClickAwayListener>
+  </Popper>
+)}
 
       {hasChildren && !miniNav && (
         <Collapse in={open} timeout="auto" unmountOnExit>
