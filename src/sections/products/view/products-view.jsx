@@ -17,6 +17,7 @@ import {
   updateProductStatus,
   updatePublishStatus,
   getProductsByCategory,
+  uploadVideoDirectToR2,
   bulkupdateProductStatus,
 } from 'src/services/product.service';
 
@@ -126,162 +127,238 @@ export default function ProductsView() {
     setCurrentProduct(null);
   };
 
-  const buildProductFormData = (payload) => {
-    const data = new FormData();
+const buildProductFormData = (
+  payload,
+  uploadedFeaturedVideos = []
+) => {
+  const data = new FormData();
 
-    // BASIC
-    [
-      "name",
-      "slug",
-      "small_description",
-      "long_description",
-      "category_id",
-      "pattern",
-      "stone_group",
-      "origin_country",
-      "pantone_colour",
-      "variation_level",
-      "sealer",
-    ].forEach((key) => {
-      data.append(key, payload[key] ?? "");
-    });
+  // BASIC
+  [
+    'name',
+    'slug',
+    'small_description',
+    'long_description',
+    'category_id',
+    'pattern',
+    'stone_group',
+    'origin_country',
+    'pantone_colour',
+    'variation_level',
+    'sealer',
+  ].forEach((key) => {
+    data.append(key, payload[key] ?? '');
+  });
 
-    // ARRAYS
-    [
-      "finishes_available",
-      "thicknesses_cm",
-      "average_sizes_inches",
-    ].forEach((key) => {
-      data.append(key, JSON.stringify(payload[key] || []));
-    });
-
-    // BOOLEANS
-    [
-      "translucent",
-      "cut_to_size",
-      "color_enhancing",
-      "countertops_vanities",
-      "interior_floor",
-      "interior_wall",
-      "shower_wall",
-      "shower_floor",
-      "exterior_floor",
-      "exterior_wall",
-      "pool_fountain",
-      "fireplace",
-      "furniture_top",
-      "is_featured",
-      "is_trending",
-      "is_new_arrival",
-      "silica_warning",
-      "silica_warning_message",
-      "is_active",
-    ].forEach((key) => {
-      data.append(key, payload[key] || false);
-    });
-
-    // SPECIFICATIONS
-    [
-      "abrasion_resistance",
-      "stain_resistance",
-      "etching_resistance",
-      "heat_resistance",
-      "uv_resistance",
-      "color_range",
-      "movement_index",
-    ].forEach((key) => {
-      data.append(key, payload[key] ?? "");
-    });
-
-    // SEO TEXT FIELDS
-    [
-      "meta_title",
-      "meta_description",
-      "canonical_url",
-      "og_title",
-      "og_description",
-      "og_image",
-      "seo_content",
-    ].forEach((key) => {
-      data.append(key, payload[key] ?? "");
-    });
-
-    // SCHEMA JSON
+  // ARRAYS
+  [
+    'finishes_available',
+    'thicknesses_cm',
+    'average_sizes_inches',
+  ].forEach((key) => {
     data.append(
-      "schema_markup",
-      JSON.stringify(payload.schema_markup || {})
+      key,
+      JSON.stringify(payload[key] || [])
     );
+  });
 
-    // SEO BOOLEANS  ← add this
-    ["robots_index", "robots_follow"].forEach((key) => {
-      data.append(key, payload[key] ?? true);
-    });
+  // BOOLEANS
+  [
+    'translucent',
+    'cut_to_size',
+    'color_enhancing',
+    'countertops_vanities',
+    'interior_floor',
+    'interior_wall',
+    'shower_wall',
+    'shower_floor',
+    'exterior_floor',
+    'exterior_wall',
+    'pool_fountain',
+    'fireplace',
+    'furniture_top',
+    'is_featured',
+    'is_trending',
+    'is_new_arrival',
+    'silica_warning',
+    'is_active',
+  ].forEach((key) => {
+    data.append(
+      key,
+      String(Boolean(payload[key]))
+    );
+  });
 
+  // This is text, not boolean
+  data.append(
+    'silica_warning_message',
+    payload.silica_warning_message ?? ''
+  );
 
-    // FILES
-    [
-      "closeup_images",
-      "slab_images",
-      "featured_videos",
-      "application_images",
-      "bookmatch_slipmatch",
-    ].forEach((field) => {
-      (payload[field] || []).forEach((file) => {
+  // SPECIFICATIONS
+  [
+    'abrasion_resistance',
+    'stain_resistance',
+    'etching_resistance',
+    'heat_resistance',
+    'uv_resistance',
+    'color_range',
+    'movement_index',
+  ].forEach((key) => {
+    data.append(key, payload[key] ?? '');
+  });
+
+  // SEO TEXT FIELDS
+  [
+    'meta_title',
+    'meta_description',
+    'canonical_url',
+    'og_title',
+    'og_description',
+    'og_image',
+    'seo_content',
+  ].forEach((key) => {
+    data.append(key, payload[key] ?? '');
+  });
+
+  // SCHEMA JSON
+  data.append(
+    'schema_markup',
+    JSON.stringify(
+      payload.schema_markup || {}
+    )
+  );
+
+  // SEO BOOLEANS
+  ['robots_index', 'robots_follow'].forEach(
+    (key) => {
+      data.append(
+        key,
+        String(payload[key] ?? true)
+      );
+    }
+  );
+
+  // IMAGE FILES ONLY
+  [
+    'closeup_images',
+    'slab_images',
+    'application_images',
+    'bookmatch_slipmatch',
+  ].forEach((field) => {
+    (payload[field] || []).forEach(
+      (file) => {
         if (file instanceof File) {
           data.append(field, file);
         }
-      });
-    });
+      }
+    );
+  });
 
-    // EXISTING MEDIA WITH ALT TEXT
+  // NEW VIDEOS ALREADY UPLOADED DIRECTLY TO R2
+  data.append(
+    'uploaded_featured_videos',
+    JSON.stringify(uploadedFeaturedVideos)
+  );
+
+  // EXISTING PRODUCT MEDIA
+  data.append(
+    'existing_media',
+    JSON.stringify(payload.media || [])
+  );
+
+  // DELETED MEDIA
+  data.append(
+    'deleted_media',
+    JSON.stringify(deletedMediaIds)
+  );
+
+  // FAQS
+  data.append(
+    'faqs',
+    JSON.stringify(payload.faqs || [])
+  );
+
+  // SILICA DATASHEET
+  if (
+    payload.silica_warning_datasheet instanceof
+    File
+  ) {
     data.append(
-      "existing_media",
-      JSON.stringify(payload.media || [])
+      'silica_datasheet',
+      payload.silica_warning_datasheet
+    );
+  }
+
+  return data;
+};
+
+const uploadFeaturedVideos = async (
+  featuredVideos = []
+) => {
+  const newVideoFiles =
+    featuredVideos.filter(
+      (video) => video instanceof File
     );
 
-    data.append(
-      "deleted_media",
-      JSON.stringify(deletedMediaIds)
+  if (newVideoFiles.length === 0) {
+    return [];
+  }
+
+  const uploadedVideos =
+    await Promise.all(
+      newVideoFiles.map((file) =>
+        uploadVideoDirectToR2(file)
+      )
     );
 
-    data.append(
-      "faqs",
-      JSON.stringify(payload.faqs || [])
-    );
+  return uploadedVideos;
+};
 
-    if (payload.silica_warning_datasheet instanceof File) {
-      data.append(
-        "silica_datasheet",
-        payload.silica_warning_datasheet
+const handleSubmit = async (payload) => {
+  try {
+    setLoading(true);
+
+    // Step 1: Upload new video files directly to R2
+    const uploadedFeaturedVideos =
+      await uploadFeaturedVideos(
+        payload.featured_videos
+      );
+
+    // Step 2: Build product form without raw videos
+    const formData =
+      buildProductFormData(
+        payload,
+        uploadedFeaturedVideos
+      );
+
+    // Step 3: Create or update product
+    if (currentProduct?.id) {
+      await updateProduct(
+        currentProduct.id,
+        formData
+      );
+    } else {
+      await createProduct(formData);
+    }
+
+    setDeletedMediaIds([]);
+    handleCloseModal();
+
+    if (selectedCategory) {
+      await loadProducts(
+        selectedCategory.slug
       );
     }
-
-    return data;
-
-  };
-
-  const handleSubmit = async (payload) => {
-    try {
-      setLoading(true);
-      const formData = buildProductFormData(payload);
-
-      if (currentProduct?.id) {
-        await updateProduct(currentProduct.id, formData);
-      } else {
-        await createProduct(formData);
-      }
-
-      handleCloseModal();
-
-      if (selectedCategory) {
-        await loadProducts(selectedCategory.slug);
-      }
-    } catch (error) {
-      console.error("Product Save Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (error) {
+    console.error(
+      'Product Save Error:',
+      error
+    );
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDeleteProduct = async (productId) => {
     try {

@@ -319,3 +319,61 @@ export const deleteProductMedia = async (
 
   return data;
 };
+
+// ================= GET R2 VIDEO UPLOAD URL =================
+
+export const getVideoUploadUrl = async (fileName) => {
+  const response = await fetch(
+    `${API_URL}/stones/r2/video-upload-url`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        fileName,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      "Failed to create video upload URL"
+    );
+  }
+
+  return data.data;
+};
+
+// ================= UPLOAD VIDEO DIRECTLY TO R2 =================
+
+export const uploadVideoDirectToR2 = async (file) => {
+  const {
+    uploadUrl,
+    secure_url,
+    public_id,
+    contentType,
+  } = await getVideoUploadUrl(file.name);
+
+  const response = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": contentType,
+    },
+    body: file,
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to upload video directly to R2"
+    );
+  }
+
+  return {
+    media_type: "FEATURED_VIDEO",
+    media_url: secure_url,
+    public_id,
+    alt_text: "",
+  };
+};
