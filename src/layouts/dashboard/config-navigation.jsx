@@ -30,6 +30,11 @@ export const getNavConfig = () => {
       path: '/dashboard/products',
       icon: icon('ic_products'),
     },
+    {
+      title: 'Gallery',
+      path: '/dashboard/gallery',
+      icon: icon('ic_gallery'),
+    },
  
     // Hide for role_id = 6
     ...(roleId !== 6
