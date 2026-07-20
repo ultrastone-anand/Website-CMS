@@ -25,10 +25,6 @@ export default function PostCard({ post, index = 0, onEdit }) {
   const {
     cover = '',
     title = 'Untitled post',
-    view = 0,
-    comment = 0,
-    share = 0,
-    author = {},
     createdAt = null,
   } = post;
 
