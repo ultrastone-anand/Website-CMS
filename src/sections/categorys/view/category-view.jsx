@@ -158,73 +158,36 @@ export default function CategoryPage() {
     setSelectedCategory(null);
   };
 
-  const handleSubmitCategory =async (formData) => {
+const handleSubmitCategory = async (formData) => {
+  try {
+    if (selectedCategory) {
+      await updateCategory(
+        selectedCategory.id,
+        formData
+      );
+    } else {
+      await createCategory(formData);
+    }
 
-      try {
-        if (
-          selectedCategory
-        ) {
-          await updateCategory(
-            selectedCategory.id,
-            formData
-          );
-        } else {
-          await createCategory(
-            formData
-          );
-        }
+    await fetchCategories();
+    handleCloseEdit();
+  } catch (error) {
+    console.error(
+      'Error saving category:',
+      error
+    );
 
-        handleCloseEdit();
-
-        await fetchCategories();
-      } catch (error) {
-        console.error(
-          'Error saving category:',
-          error
-        );
-      }
-    };
-
+    throw error;
+  }
+};
 
 const updateCategoryStatus = async (item) => {
-
   try {
-
     const payload = new FormData();
 
     payload.append(
-      "name",
-      item.name
-    );
-
-    payload.append(
-      "slug",
-      item.slug
-    );
-
-    payload.append(
-      "description",
-      item.description || ""
-    );
-
-    payload.append(
-      "parent_id",
-      item.parent_id || ""
-    );
-
-    payload.append(
-      "is_active",
-      (!item.is_active)
-    );
-
-    payload.append(
-      "silica_warning",
-      item.silica_warning || false
-    );
-
-    payload.append(
-      "silica_warning_message",
-      item.silica_warning_message || ""
+      'is_active',
+      String(!item.is_active)
     );
 
     await updateCategory(
@@ -233,16 +196,12 @@ const updateCategoryStatus = async (item) => {
     );
 
     await fetchCategories();
-
   } catch (error) {
-
     console.error(
-      "Error updating category status:",
+      'Error updating category status:',
       error
     );
-
   }
-
 };
 
   if (loading) {

@@ -2,20 +2,25 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 
 import {
+  Box,
   Card,
   Stack,
+  Dialog,
   Divider,
   Popover,
   MenuItem,
   Typography,
   IconButton,
   CardContent,
+  DialogContent,
 } from '@mui/material';
 
 import Label from 'src/components/label';
 import Iconify from 'src/components/iconify';
 
 import { canEditCategory } from './category-access';
+
+// ----------------------------------------------------------------------
 
 export default function CategoryCardRow({
   row,
@@ -24,10 +29,35 @@ export default function CategoryCardRow({
   categories = [],
 }) {
   const [open, setOpen] = useState(null);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const parentCategory = categories.find(
-    (item) => item.id === row.parent_id
+    (item) => Number(item.id) === Number(row.parent_id)
   );
+
+  const apiUrl = import.meta.env.VITE_API_URL || '';
+  const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
+
+  const getFileUrl = (url) => {
+    if (!url) {
+      return null;
+    }
+
+    if (
+      url.startsWith('http://') ||
+      url.startsWith('https://') ||
+      url.startsWith('blob:') ||
+      url.startsWith('data:')
+    ) {
+      return url;
+    }
+
+    return `${apiOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const thumbnailUrl = getFileUrl(row.thumbnail_url);
+  const silicaDatasheetUrl = getFileUrl(row.silica_datasheet_url);
 
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
@@ -47,30 +77,143 @@ export default function CategoryCardRow({
     onToggleStatus?.(row);
   };
 
+  const handleOpenImagePreview = () => {
+    if (thumbnailUrl && !imageError) {
+      setImagePreviewOpen(true);
+    }
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreviewOpen(false);
+  };
+
   return (
     <>
-      <Card>
+      <Card
+        sx={{
+          height: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        {/* CATEGORY IMAGE */}
+        {thumbnailUrl && !imageError ? (
+          <Box
+            component="button"
+            type="button"
+            onClick={handleOpenImagePreview}
+            sx={{
+              p: 0,
+              m: 0,
+              width: '100%',
+              height: 180,
+              border: 0,
+              display: 'block',
+              overflow: 'hidden',
+              position: 'relative',
+              cursor: 'zoom-in',
+              bgcolor: 'background.neutral',
+            }}
+          >
+            <Box
+              component="img"
+              src={thumbnailUrl}
+              alt={`${row.name} thumbnail`}
+              loading="lazy"
+              onError={() => setImageError(true)}
+              sx={{
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                objectFit: 'cover',
+                transition: 'transform 0.3s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)',
+                },
+              }}
+            />
+
+            <Box
+              sx={{
+                right: 12,
+                bottom: 12,
+                width: 34,
+                height: 34,
+                display: 'flex',
+                borderRadius: '50%',
+                position: 'absolute',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'common.white',
+                bgcolor: 'rgba(0, 0, 0, 0.55)',
+              }}
+            >
+              <Iconify
+                icon="solar:magnifer-zoom-in-linear"
+                width={20}
+              />
+            </Box>
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              width: '100%',
+              height: 180,
+              display: 'flex',
+              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              bgcolor: 'background.neutral',
+              color: 'text.disabled',
+            }}
+          >
+            <Iconify
+              icon="solar:gallery-minimalistic-broken"
+              width={42}
+            />
+
+            <Typography
+              variant="caption"
+              sx={{ mt: 1 }}
+            >
+              No thumbnail
+            </Typography>
+          </Box>
+        )}
+
         <CardContent>
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="flex-start"
           >
-            <Stack spacing={0.5} sx={{ flex: 1 }}>
-              <Typography variant="subtitle1">
+            <Stack
+              spacing={0.5}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                variant="subtitle1"
+                noWrap
+              >
                 {row.name}
               </Typography>
 
               <Typography
                 variant="body2"
                 color="text.secondary"
+                noWrap
               >
                 {row.slug}
               </Typography>
             </Stack>
 
             {canEditCategory && (
-              <IconButton onClick={handleOpenMenu}>
+              <IconButton
+                onClick={handleOpenMenu}
+                sx={{ ml: 1 }}
+              >
                 <Iconify icon="eva:more-vertical-fill" />
               </IconButton>
             )}
@@ -79,9 +222,11 @@ export default function CategoryCardRow({
           <Divider sx={{ my: 2 }} />
 
           <Stack spacing={1.5}>
+            {/* PARENT */}
             <Stack
               direction="row"
               justifyContent="space-between"
+              spacing={2}
             >
               <Typography
                 variant="body2"
@@ -90,11 +235,15 @@ export default function CategoryCardRow({
                 Parent
               </Typography>
 
-              <Typography variant="body2">
+              <Typography
+                variant="body2"
+                textAlign="right"
+              >
                 {parentCategory?.name || '-'}
               </Typography>
             </Stack>
 
+            {/* TYPE */}
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -120,69 +269,70 @@ export default function CategoryCardRow({
               </Label>
             </Stack>
 
+            {/* SILICA WARNING */}
             <Stack
-  direction="row"
-  justifyContent="space-between"
-  alignItems="center"
->
-  <Typography
-    variant="body2"
-    color="text.secondary"
-  >
-    Silica Warning
-  </Typography>
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Silica Warning
+              </Typography>
 
-  <Label
-    color={
-      row.silica_warning
-        ? 'warning'
-        : 'default'
-    }
-  >
-    {row.silica_warning
-      ? 'Enabled'
-      : 'Disabled'}
-  </Label>
-</Stack>
+              <Label
+                color={
+                  row.silica_warning
+                    ? 'warning'
+                    : 'default'
+                }
+              >
+                {row.silica_warning
+                  ? 'Enabled'
+                  : 'Disabled'}
+              </Label>
+            </Stack>
 
-<Stack
-  direction="row"
-  justifyContent="space-between"
-  alignItems="center"
->
-  <Typography
-    variant="body2"
-    color="text.secondary"
-  >
-    Datasheet
-  </Typography>
+            {/* DATASHEET */}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Typography
+                variant="body2"
+                color="text.secondary"
+              >
+                Datasheet
+              </Typography>
 
-  {
-    row.silica_datasheet_url ? (
-      <Typography
-        component="a"
-        href={`${import.meta.env.VITE_API_URL.replace('/api','')}${row.silica_datasheet_url}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        sx={{
-          color: 'primary.main',
-          textDecoration: 'none',
-          fontSize: 14,
-          '&:hover': {
-            textDecoration: 'underline',
-          },
-        }}
-      >
-        View PDF
-      </Typography>
-    ) : (
-      <Typography variant="body2">
-        -
-      </Typography>
-    )
-  }
-</Stack>
+              {silicaDatasheetUrl ? (
+                <Typography
+                  component="a"
+                  href={silicaDatasheetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="body2"
+                  sx={{
+                    color: 'primary.main',
+                    textDecoration: 'none',
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
+                  }}
+                >
+                  View PDF
+                </Typography>
+              ) : (
+                <Typography variant="body2">
+                  -
+                </Typography>
+              )}
+            </Stack>
 
+            {/* STATUS */}
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -211,6 +361,7 @@ export default function CategoryCardRow({
         </CardContent>
       </Card>
 
+      {/* ACTION MENU */}
       {canEditCategory && (
         <Popover
           open={Boolean(open)}
@@ -259,13 +410,112 @@ export default function CategoryCardRow({
           </MenuItem>
         </Popover>
       )}
+
+      {/* IMAGE PREVIEW */}
+      <Dialog
+        open={imagePreviewOpen}
+        onClose={handleCloseImagePreview}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{
+            px: 3,
+            py: 2,
+            borderBottom: 1,
+            borderColor: 'divider',
+          }}
+        >
+          <Stack sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h6"
+              noWrap
+            >
+              {row.name}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
+              Category thumbnail
+            </Typography>
+          </Stack>
+
+          <IconButton onClick={handleCloseImagePreview}>
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </Stack>
+
+        <DialogContent
+          sx={{
+            p: 2,
+            minHeight: 300,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.neutral',
+          }}
+        >
+          {thumbnailUrl && !imageError && (
+            <Box
+              component="img"
+              src={thumbnailUrl}
+              alt={row.name}
+              onError={() => {
+                setImageError(true);
+                setImagePreviewOpen(false);
+              }}
+              sx={{
+                width: '100%',
+                maxWidth: 900,
+                maxHeight: '75vh',
+                display: 'block',
+                objectFit: 'contain',
+                borderRadius: 1,
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
 
 CategoryCardRow.propTypes = {
-  row: PropTypes.object.isRequired,
-  categories: PropTypes.array,
+  row: PropTypes.shape({
+    id: PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.string,
+    ]).isRequired,
+    name: PropTypes.string.isRequired,
+    slug: PropTypes.string,
+    parent_id: PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.string,
+    ]),
+    thumbnail_url: PropTypes.string,
+    silica_warning: PropTypes.bool,
+    silica_datasheet_url: PropTypes.string,
+    is_active: PropTypes.bool,
+  }).isRequired,
+  categories: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string,
+      ]).isRequired,
+      name: PropTypes.string.isRequired,
+    })
+  ),
   onEdit: PropTypes.func,
   onToggleStatus: PropTypes.func,
 };
