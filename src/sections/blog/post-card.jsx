@@ -5,8 +5,10 @@ import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
+import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
 import { fDate } from 'src/utils/format-time';
@@ -17,48 +19,81 @@ import SvgColor from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
 
-export default function PostCard({ post, index }) {
-  const { cover, title, view, comment, share, author, createdAt } = post;
+export default function PostCard({ post, index = 0, onEdit }) {
+  if (!post) {
+    return null;
+  }
+
+  const {
+    cover = '',
+    title = 'Untitled post',
+    view = 0,
+    comment = 0,
+    share = 0,
+    author = {},
+    createdAt = null,
+  } = post;
 
   const latestPostLarge = index === 0;
-
   const latestPost = index === 1 || index === 2;
+  const isFeaturedPost = latestPostLarge || latestPost;
 
-  const renderAvatar = (
-    <Avatar
-      alt={author.name}
-      src={author.avatarUrl}
-      sx={{
-        zIndex: 9,
-        width: 32,
-        height: 32,
-        position: 'absolute',
-        left: (theme) => theme.spacing(3),
-        bottom: (theme) => theme.spacing(-2),
-        ...((latestPostLarge || latestPost) && {
-          zIndex: 9,
-          top: 24,
-          left: 24,
-          width: 40,
-          height: 40,
-        }),
-      }}
-    />
+  const handleEdit = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    onEdit(post);
+  };
+
+
+  const renderEditButton = (
+    <Tooltip title="Edit post">
+      <IconButton
+        size="small"
+        onClick={handleEdit}
+        sx={{
+          top: 16,
+          right: 16,
+          zIndex: 20,
+          position: 'absolute',
+          color: 'common.white',
+          bgcolor: (theme) => alpha(theme.palette.grey[900], 0.56),
+          backdropFilter: 'blur(6px)',
+          '&:hover': {
+            bgcolor: (theme) => alpha(theme.palette.grey[900], 0.8),
+          },
+        }}
+      >
+        <Iconify icon="solar:pen-bold" width={18} />
+      </IconButton>
+    </Tooltip>
   );
 
   const renderTitle = (
     <Link
+      component="button"
+      type="button"
       color="inherit"
       variant="subtitle2"
       underline="hover"
+      onClick={handleEdit}
       sx={{
+        p: 0,
+        border: 0,
+        width: 1,
         height: 44,
+        cursor: 'pointer',
+        textAlign: 'left',
         overflow: 'hidden',
+        bgcolor: 'transparent',
         WebkitLineClamp: 2,
         display: '-webkit-box',
         WebkitBoxOrient: 'vertical',
-        ...(latestPostLarge && { typography: 'h5', height: 60 }),
-        ...((latestPostLarge || latestPost) && {
+        ...(latestPostLarge && {
+          height: 60,
+          typography: 'h5',
+        }),
+        ...(isFeaturedPost && {
           color: 'common.white',
         }),
       }}
@@ -67,40 +102,7 @@ export default function PostCard({ post, index }) {
     </Link>
   );
 
-  const renderInfo = (
-    <Stack
-      direction="row"
-      flexWrap="wrap"
-      spacing={1.5}
-      justifyContent="flex-end"
-      sx={{
-        mt: 3,
-        color: 'text.disabled',
-      }}
-    >
-      {[
-        { number: comment, icon: 'eva:message-circle-fill' },
-        { number: view, icon: 'eva:eye-fill' },
-        { number: share, icon: 'eva:share-fill' },
-      ].map((info, _index) => (
-        <Stack
-          key={_index}
-          direction="row"
-          sx={{
-            ...((latestPostLarge || latestPost) && {
-              opacity: 0.48,
-              color: 'common.white',
-            }),
-          }}
-        >
-          <Iconify width={16} icon={info.icon} sx={{ mr: 0.5 }} />
-          <Typography variant="caption">{fShortenNumber(info.number)}</Typography>
-        </Stack>
-      ))}
-    </Stack>
-  );
-
-  const renderCover = (
+  const renderCover = cover ? (
     <Box
       component="img"
       alt={title}
@@ -111,8 +113,27 @@ export default function PostCard({ post, index }) {
         height: 1,
         objectFit: 'cover',
         position: 'absolute',
+        transition: (theme) =>
+          theme.transitions.create('transform', {
+            duration: theme.transitions.duration.standard,
+          }),
       }}
     />
+  ) : (
+    <Stack
+      alignItems="center"
+      justifyContent="center"
+      sx={{
+        top: 0,
+        width: 1,
+        height: 1,
+        position: 'absolute',
+        bgcolor: 'background.neutral',
+        color: 'text.disabled',
+      }}
+    >
+      <Iconify icon="solar:gallery-wide-bold-duotone" width={48} />
+    </Stack>
   );
 
   const renderDate = (
@@ -122,13 +143,13 @@ export default function PostCard({ post, index }) {
       sx={{
         mb: 2,
         color: 'text.disabled',
-        ...((latestPostLarge || latestPost) && {
+        ...(isFeaturedPost && {
           opacity: 0.48,
           color: 'common.white',
         }),
       }}
     >
-      {fDate(createdAt)}
+      {createdAt ? fDate(createdAt) : 'No date'}
     </Typography>
   );
 
@@ -143,26 +164,44 @@ export default function PostCard({ post, index }) {
         bottom: -15,
         position: 'absolute',
         color: 'background.paper',
-        ...((latestPostLarge || latestPost) && { display: 'none' }),
+        ...(isFeaturedPost && {
+          display: 'none',
+        }),
       }}
     />
   );
 
   return (
-    <Grid xs={12} sm={latestPostLarge ? 12 : 6} md={latestPostLarge ? 6 : 3}>
-      <Card>
+    <Grid
+      xs={12}
+      sm={latestPostLarge ? 12 : 6}
+      md={latestPostLarge ? 6 : 3}
+    >
+      <Card
+        sx={{
+          height: 1,
+          position: 'relative',
+          '&:hover .post-cover-image': {
+            transform: 'scale(1.04)',
+          },
+        }}
+      >
         <Box
           sx={{
+            overflow: 'hidden',
             position: 'relative',
             pt: 'calc(100% * 3 / 4)',
-            ...((latestPostLarge || latestPost) && {
+            ...(isFeaturedPost && {
               pt: 'calc(100% * 4 / 3)',
               '&:after': {
                 top: 0,
+                left: 0,
+                zIndex: 1,
                 content: "''",
                 width: '100%',
                 height: '100%',
                 position: 'absolute',
+                pointerEvents: 'none',
                 bgcolor: (theme) => alpha(theme.palette.grey[900], 0.72),
               },
             }),
@@ -176,15 +215,37 @@ export default function PostCard({ post, index }) {
         >
           {renderShape}
 
-          {renderAvatar}
 
-          {renderCover}
+          {cover ? (
+            <Box
+              component="img"
+              className="post-cover-image"
+              alt={title}
+              src={cover}
+              sx={{
+                top: 0,
+                width: 1,
+                height: 1,
+                objectFit: 'cover',
+                position: 'absolute',
+                transition: (theme) =>
+                  theme.transitions.create('transform', {
+                    duration: theme.transitions.duration.standard,
+                  }),
+              }}
+            />
+          ) : (
+            renderCover
+          )}
+
+          {renderEditButton}
         </Box>
 
         <Box
           sx={{
-            p: (theme) => theme.spacing(4, 3, 3, 3),
-            ...((latestPostLarge || latestPost) && {
+            p: (theme) => theme.spacing(4, 3, 3),
+            ...(isFeaturedPost && {
+              zIndex: 2,
               width: 1,
               bottom: 0,
               position: 'absolute',
@@ -195,14 +256,40 @@ export default function PostCard({ post, index }) {
 
           {renderTitle}
 
-          {renderInfo}
         </Box>
       </Card>
     </Grid>
   );
 }
 
+// ----------------------------------------------------------------------
+
 PostCard.propTypes = {
-  post: PropTypes.object.isRequired,
+  post: PropTypes.shape({
+    id: PropTypes.oneOfType([
+      PropTypes.number,
+      PropTypes.string,
+    ]),
+    cover: PropTypes.string,
+    title: PropTypes.string,
+    view: PropTypes.number,
+    comment: PropTypes.number,
+    share: PropTypes.number,
+    createdAt: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+      PropTypes.instanceOf(Date),
+    ]),
+    author: PropTypes.shape({
+      name: PropTypes.string,
+      avatarUrl: PropTypes.string,
+    }),
+  }).isRequired,
   index: PropTypes.number,
+  onEdit: PropTypes.func,
+};
+
+PostCard.defaultProps = {
+  index: 0,
+  onEdit: () => {},
 };
