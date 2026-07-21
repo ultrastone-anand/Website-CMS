@@ -1,6 +1,9 @@
 import * as XLSX from 'xlsx';
 import PropTypes from 'prop-types';
-import { useMemo, useState } from 'react';
+import {
+  useMemo,
+  useState,
+} from 'react';
 
 import {
   Box,
@@ -65,7 +68,9 @@ const missingGroupConfig = {
 
 // ----------------------------------------------------------------------
 
-const getCompletionColor = (percentage) => {
+const getCompletionColor = (
+  percentage
+) => {
   if (percentage < 40) {
     return 'error';
   }
@@ -77,40 +82,56 @@ const getCompletionColor = (percentage) => {
   return 'success';
 };
 
-const getMissingBadgeColors = (missingCount) => {
+const getMissingBadgeColors = (
+  missingCount
+) => {
   if (missingCount >= 8) {
     return {
-      background: 'error.lighter',
-      text: 'error.main',
+      background:
+        'error.lighter',
+
+      text:
+        'error.main',
     };
   }
 
   if (missingCount >= 4) {
     return {
-      background: 'warning.lighter',
-      text: 'warning.main',
+      background:
+        'warning.lighter',
+
+      text:
+        'warning.main',
     };
   }
 
   return {
-    background: 'info.lighter',
-    text: 'info.main',
+    background:
+      'info.lighter',
+
+    text:
+      'info.main',
   };
 };
 
-const formatFieldName = (field) =>
+const formatFieldName = (
+  field
+) =>
   String(field || '')
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (letter) =>
       letter.toUpperCase()
     );
 
-const formatDate = (date) => {
+const formatDate = (
+  date
+) => {
   if (!date) {
     return '';
   }
 
-  const parsedDate = new Date(date);
+  const parsedDate =
+    new Date(date);
 
   if (
     Number.isNaN(
@@ -123,18 +144,50 @@ const formatDate = (date) => {
   return parsedDate.toLocaleDateString();
 };
 
-// Excel worksheet names:
-// - Maximum 31 characters
-// - Cannot contain: \ / ? * [ ] :
-const sanitizeSheetName = (name) => {
-  const sanitizedName = String(
-    name || 'Uncategorized'
-  )
-    .replace(/[\\/?*[\]:]/g, ' ')
-    .trim()
-    .slice(0, 31);
+const formatDateTime = (
+  date
+) => {
+  if (!date) {
+    return '';
+  }
 
-  return sanitizedName || 'Uncategorized';
+  const parsedDate =
+    new Date(date);
+
+  if (
+    Number.isNaN(
+      parsedDate.getTime()
+    )
+  ) {
+    return '';
+  }
+
+  return parsedDate.toLocaleString();
+};
+
+// ----------------------------------------------------------------------
+// EXCEL HELPERS
+// ----------------------------------------------------------------------
+
+const sanitizeSheetName = (
+  name
+) => {
+  const sanitizedName =
+    String(
+      name ||
+        'Uncategorized'
+    )
+      .replace(
+        /[\\/?*[\]:]/g,
+        ' '
+      )
+      .trim()
+      .slice(0, 31);
+
+  return (
+    sanitizedName ||
+    'Uncategorized'
+  );
 };
 
 const createUniqueSheetName = (
@@ -162,7 +215,8 @@ const createUniqueSheetName = (
     sheetName =
       `${baseName.slice(
         0,
-        31 - suffixText.length
+        31 -
+          suffixText.length
       )}${suffixText}`;
 
     suffix += 1;
@@ -175,9 +229,12 @@ const createUniqueSheetName = (
   return sheetName;
 };
 
-const getMissingLabels = (product) => {
+const getMissingLabels = (
+  product
+) => {
   if (
-    product.missingFieldLabels
+    product
+      .missingFieldLabels
       ?.length
   ) {
     return product
@@ -190,7 +247,46 @@ const getMissingLabels = (product) => {
   ).map(formatFieldName);
 };
 
-const getExcelRow = (product) => {
+const getRemarks = (
+  product
+) =>
+  Array.isArray(
+    product.remarks
+  )
+    ? product.remarks
+    : [];
+
+const getAllRemarksText = (
+  product
+) => {
+  const remarks =
+    getRemarks(product);
+
+  return remarks
+    .map((remark, index) => {
+      const author =
+        remark.user?.name ||
+        remark.user?.email ||
+        'Unknown User';
+
+      const date =
+        formatDateTime(
+          remark.createdAt
+        );
+
+      const edited =
+        remark.isEdited
+          ? ' (Edited)'
+          : '';
+
+      return `${index + 1}. ${remark.remark || ''} — ${author}${date ? ` — ${date}` : ''}${edited}`;
+    })
+    .join('\n');
+};
+
+const getExcelRow = (
+  product
+) => {
   const missingLabels =
     getMissingLabels(product);
 
@@ -203,12 +299,22 @@ const getExcelRow = (product) => {
       missingGroups
     )
       .map(
-        ([groupName, fields]) =>
+        ([
+          groupName,
+          fields,
+        ]) =>
           `${formatFieldName(
             groupName
           )}: ${fields.length}`
       )
       .join(', ');
+
+  const latestRemark =
+    product.latestRemark ||
+    null;
+
+  const remarks =
+    getRemarks(product);
 
   return {
     'Product Name':
@@ -226,12 +332,14 @@ const getExcelRow = (product) => {
 
     Priority:
       formatFieldName(
-        product.priority || 'low'
+        product.priority ||
+          'low'
       ),
 
     'Completion Percentage':
       Number(
-        product.completionPercentage
+        product
+          .completionPercentage
       ) || 0,
 
     'Completed Fields':
@@ -241,7 +349,8 @@ const getExcelRow = (product) => {
 
     'Required Fields':
       Number(
-        product.totalRequiredFields
+        product
+          .totalRequiredFields
       ) || 0,
 
     'Missing Count':
@@ -255,12 +364,38 @@ const getExcelRow = (product) => {
     'Missing Fields':
       missingLabels.join(', '),
 
+    'Remarks Count':
+      Number(
+        product.remarksCount
+      ) || remarks.length,
+
+    'Latest Remark':
+      latestRemark?.remark ||
+      '',
+
+    'Latest Remark By':
+      latestRemark?.user
+        ?.name ||
+      latestRemark?.user
+        ?.email ||
+      '',
+
+    'Latest Remark Date':
+      formatDateTime(
+        latestRemark?.createdAt
+      ),
+
+    'All Remarks':
+      getAllRemarksText(
+        product
+      ),
+
     Status:
       product.isPublished
         ? 'Published'
         : 'Unpublished',
 
-    'Last Updated':
+    'Last Product Update':
       formatDate(
         product.updatedAt
       ),
@@ -283,12 +418,26 @@ const setWorksheetWidths = (
     { wch: 35 },
     { wch: 75 },
     { wch: 15 },
+    { wch: 65 },
+    { wch: 24 },
+    { wch: 22 },
+    { wch: 100 },
     { wch: 15 },
+    { wch: 20 },
   ];
 
-  worksheet['!autofilter'] = {
-    ref: worksheet['!ref'],
-  };
+  if (
+    worksheet['!ref']
+  ) {
+    worksheet[
+      '!autofilter'
+    ] = {
+      ref:
+        worksheet[
+          '!ref'
+        ],
+    };
+  }
 };
 
 // ----------------------------------------------------------------------
@@ -297,8 +446,10 @@ export default function AppAttentionRequiredProducts({
   products,
   totalCount,
 }) {
-  const [page, setPage] =
-    useState(0);
+  const [
+    page,
+    setPage,
+  ] = useState(0);
 
   const [
     rowsPerPage,
@@ -308,37 +459,55 @@ export default function AppAttentionRequiredProducts({
   const sortedProducts =
     useMemo(
       () =>
-        [...(products || [])].sort(
-          (a, b) => {
-            const missingDifference =
-              (b.missingCount || 0) -
-              (a.missingCount || 0);
+        [
+          ...(products || []),
+        ].sort((a, b) => {
+          const missingDifference =
+            (b.missingCount ||
+              0) -
+            (a.missingCount ||
+              0);
 
-            if (
-              missingDifference !== 0
-            ) {
-              return missingDifference;
-            }
-
-            return (
-              (a.completionPercentage ||
-                0) -
-              (b.completionPercentage ||
-                0)
-            );
+          if (
+            missingDifference !==
+            0
+          ) {
+            return missingDifference;
           }
-        ),
+
+          const remarkDifference =
+            (b.remarksCount ||
+              0) -
+            (a.remarksCount ||
+              0);
+
+          if (
+            remarkDifference !==
+            0
+          ) {
+            return remarkDifference;
+          }
+
+          return (
+            (a.completionPercentage ||
+              0) -
+            (b.completionPercentage ||
+              0)
+          );
+        }),
       [products]
     );
 
   const visibleProducts =
     useMemo(() => {
       const start =
-        page * rowsPerPage;
+        page *
+        rowsPerPage;
 
       return sortedProducts.slice(
         start,
-        start + rowsPerPage
+        start +
+          rowsPerPage
       );
     }, [
       page,
@@ -366,237 +535,387 @@ export default function AppAttentionRequiredProducts({
     setPage(0);
   };
 
-  const handleExportExcel = () => {
-    try {
-      const workbook =
-        XLSX.utils.book_new();
+  const handleExportExcel =
+    () => {
+      try {
+        const workbook =
+          XLSX.utils.book_new();
 
-      const usedSheetNames =
-        new Set();
+        const usedSheetNames =
+          new Set();
 
-      // ==========================
-      // SUMMARY SHEET
-      // ==========================
+        // ==========================
+        // SUMMARY SHEET
+        // ==========================
 
-      const categorySummaryMap =
-        new Map();
+        const categorySummaryMap =
+          new Map();
 
-      sortedProducts.forEach(
-        (product) => {
-          const categoryName =
-            product.categoryName ||
-            'Uncategorized';
-
-          if (
-            !categorySummaryMap.has(
-              categoryName
-            )
-          ) {
-            categorySummaryMap.set(
-              categoryName,
-              {
-                Category:
-                  categoryName,
-
-                'Products Requiring Attention':
-                  0,
-
-                'Total Missing Fields':
-                  0,
-
-                'High Priority':
-                  0,
-
-                'Medium Priority':
-                  0,
-
-                'Low Priority':
-                  0,
-              }
-            );
-          }
-
-          const summary =
-            categorySummaryMap.get(
-              categoryName
-            );
-
-          summary[
-            'Products Requiring Attention'
-          ] += 1;
-
-          summary[
-            'Total Missing Fields'
-          ] +=
-            Number(
-              product.missingCount
-            ) || 0;
-
-          if (
-            product.priority ===
-            'high'
-          ) {
-            summary[
-              'High Priority'
-            ] += 1;
-          } else if (
-            product.priority ===
-            'medium'
-          ) {
-            summary[
-              'Medium Priority'
-            ] += 1;
-          } else {
-            summary[
-              'Low Priority'
-            ] += 1;
-          }
-        }
-      );
-
-      const summaryRows =
-        Array.from(
-          categorySummaryMap.values()
-        ).sort((a, b) =>
-          a.Category.localeCompare(
-            b.Category
-          )
-        );
-
-      const summaryWorksheet =
-        XLSX.utils.json_to_sheet(
-          summaryRows
-        );
-
-      summaryWorksheet['!cols'] = [
-        { wch: 24 },
-        { wch: 30 },
-        { wch: 24 },
-        { wch: 18 },
-        { wch: 18 },
-        { wch: 18 },
-      ];
-
-      if (
-        summaryWorksheet['!ref']
-      ) {
-        summaryWorksheet[
-          '!autofilter'
-        ] = {
-          ref:
-            summaryWorksheet[
-              '!ref'
-            ],
-        };
-      }
-
-      XLSX.utils.book_append_sheet(
-        workbook,
-        summaryWorksheet,
-        'Summary'
-      );
-
-      usedSheetNames.add(
-        'summary'
-      );
-
-      // ==========================
-      // CATEGORY-WISE SHEETS
-      // ==========================
-
-      const productsByCategory =
-        sortedProducts.reduce(
-          (groups, product) => {
+        sortedProducts.forEach(
+          (product) => {
             const categoryName =
               product.categoryName ||
               'Uncategorized';
 
             if (
-              !groups[
+              !categorySummaryMap.has(
                 categoryName
-              ]
+              )
             ) {
-              groups[
-                categoryName
-              ] = [];
+              categorySummaryMap.set(
+                categoryName,
+                {
+                  Category:
+                    categoryName,
+
+                  'Products Requiring Attention':
+                    0,
+
+                  'Total Missing Fields':
+                    0,
+
+                  'Products With Remarks':
+                    0,
+
+                  'Total Remarks':
+                    0,
+
+                  'High Priority':
+                    0,
+
+                  'Medium Priority':
+                    0,
+
+                  'Low Priority':
+                    0,
+                }
+              );
             }
 
-            groups[
-              categoryName
-            ].push(product);
+            const summary =
+              categorySummaryMap.get(
+                categoryName
+              );
 
-            return groups;
-          },
-          {}
+            summary[
+              'Products Requiring Attention'
+            ] += 1;
+
+            summary[
+              'Total Missing Fields'
+            ] +=
+              Number(
+                product.missingCount
+              ) || 0;
+
+            const remarksCount =
+              Number(
+                product.remarksCount
+              ) ||
+              getRemarks(
+                product
+              ).length;
+
+            summary[
+              'Total Remarks'
+            ] +=
+              remarksCount;
+
+            if (
+              remarksCount > 0
+            ) {
+              summary[
+                'Products With Remarks'
+              ] += 1;
+            }
+
+            if (
+              product.priority ===
+              'high'
+            ) {
+              summary[
+                'High Priority'
+              ] += 1;
+            } else if (
+              product.priority ===
+              'medium'
+            ) {
+              summary[
+                'Medium Priority'
+              ] += 1;
+            } else {
+              summary[
+                'Low Priority'
+              ] += 1;
+            }
+          }
         );
 
-      Object.entries(
-        productsByCategory
-      )
-        .sort(
-          ([categoryA], [
-            categoryB,
-          ]) =>
-            categoryA.localeCompare(
-              categoryB
+        const summaryRows =
+          Array.from(
+            categorySummaryMap.values()
+          ).sort((a, b) =>
+            a.Category.localeCompare(
+              b.Category
             )
+          );
+
+        const summaryWorksheet =
+          XLSX.utils.json_to_sheet(
+            summaryRows
+          );
+
+        summaryWorksheet[
+          '!cols'
+        ] = [
+          { wch: 24 },
+          { wch: 30 },
+          { wch: 24 },
+          { wch: 24 },
+          { wch: 18 },
+          { wch: 18 },
+          { wch: 18 },
+          { wch: 18 },
+        ];
+
+        if (
+          summaryWorksheet[
+            '!ref'
+          ]
+        ) {
+          summaryWorksheet[
+            '!autofilter'
+          ] = {
+            ref:
+              summaryWorksheet[
+                '!ref'
+              ],
+          };
+        }
+
+        XLSX.utils.book_append_sheet(
+          workbook,
+          summaryWorksheet,
+          'Summary'
+        );
+
+        usedSheetNames.add(
+          'summary'
+        );
+
+        // ==========================
+        // CATEGORY-WISE SHEETS
+        // ==========================
+
+        const productsByCategory =
+          sortedProducts.reduce(
+            (
+              groups,
+              product
+            ) => {
+              const categoryName =
+                product.categoryName ||
+                'Uncategorized';
+
+              if (
+                !groups[
+                  categoryName
+                ]
+              ) {
+                groups[
+                  categoryName
+                ] = [];
+              }
+
+              groups[
+                categoryName
+              ].push(product);
+
+              return groups;
+            },
+            {}
+          );
+
+        Object.entries(
+          productsByCategory
         )
-        .forEach(
-          ([
-            categoryName,
-            categoryProducts,
-          ]) => {
-            const rows =
-              categoryProducts.map(
-                getExcelRow
+          .sort(
+            ([
+              categoryA,
+            ], [
+              categoryB,
+            ]) =>
+              categoryA.localeCompare(
+                categoryB
+              )
+          )
+          .forEach(
+            ([
+              categoryName,
+              categoryProducts,
+            ]) => {
+              const rows =
+                categoryProducts.map(
+                  getExcelRow
+                );
+
+              const worksheet =
+                XLSX.utils.json_to_sheet(
+                  rows
+                );
+
+              setWorksheetWidths(
+                worksheet
               );
 
-            const worksheet =
-              XLSX.utils.json_to_sheet(
-                rows
+              const sheetName =
+                createUniqueSheetName(
+                  categoryName,
+                  usedSheetNames
+                );
+
+              XLSX.utils.book_append_sheet(
+                workbook,
+                worksheet,
+                sheetName
+              );
+            }
+          );
+
+        // ==========================
+        // ALL REMARKS SHEET
+        // ==========================
+
+        const allRemarkRows =
+          [];
+
+        sortedProducts.forEach(
+          (product) => {
+            const remarks =
+              getRemarks(
+                product
               );
 
-            setWorksheetWidths(
-              worksheet
-            );
+            remarks.forEach(
+              (remark) => {
+                allRemarkRows.push({
+                  'Product Name':
+                    product.name ||
+                    '',
 
-            const sheetName =
-              createUniqueSheetName(
-                categoryName,
-                usedSheetNames
-              );
+                  Slug:
+                    product.slug ||
+                    '',
 
-            XLSX.utils.book_append_sheet(
-              workbook,
-              worksheet,
-              sheetName
+                  Category:
+                    product.categoryName ||
+                    'Uncategorized',
+
+                  Remark:
+                    remark.remark ||
+                    '',
+
+                  'Remark By':
+                    remark.user
+                      ?.name ||
+                    remark.user
+                      ?.email ||
+                    'Unknown User',
+
+                  Email:
+                    remark.user
+                      ?.email ||
+                    '',
+
+                  Edited:
+                    remark.isEdited
+                      ? 'Yes'
+                      : 'No',
+
+                  'Created At':
+                    formatDateTime(
+                      remark.createdAt
+                    ),
+
+                  'Updated At':
+                    formatDateTime(
+                      remark.updatedAt
+                    ),
+                });
+              }
             );
           }
         );
 
-      const date =
-        new Date()
-          .toISOString()
-          .slice(0, 10);
+        if (
+          allRemarkRows.length >
+          0
+        ) {
+          const remarksWorksheet =
+            XLSX.utils.json_to_sheet(
+              allRemarkRows
+            );
 
-      XLSX.writeFile(
-        workbook,
-        `attention-required-products-${date}.xlsx`
-      );
-    } catch (error) {
-      console.error(
-        'Excel Export Error:',
-        error
-      );
-    }
-  };
+          remarksWorksheet[
+            '!cols'
+          ] = [
+            { wch: 28 },
+            { wch: 28 },
+            { wch: 20 },
+            { wch: 90 },
+            { wch: 24 },
+            { wch: 30 },
+            { wch: 12 },
+            { wch: 24 },
+            { wch: 24 },
+          ];
+
+          if (
+            remarksWorksheet[
+              '!ref'
+            ]
+          ) {
+            remarksWorksheet[
+              '!autofilter'
+            ] = {
+              ref:
+                remarksWorksheet[
+                  '!ref'
+                ],
+            };
+          }
+
+          XLSX.utils.book_append_sheet(
+            workbook,
+            remarksWorksheet,
+            'All Remarks'
+          );
+        }
+
+        const date =
+          new Date()
+            .toISOString()
+            .slice(0, 10);
+
+        XLSX.writeFile(
+          workbook,
+          `attention-required-products-${date}.xlsx`
+        );
+      } catch (error) {
+        console.error(
+          'Excel Export Error:',
+          error
+        );
+      }
+    };
 
   if (!products?.length) {
     return (
       <Card
         sx={{
           p: 4,
-          textAlign: 'center',
+          textAlign:
+            'center',
         }}
       >
         <Iconify
@@ -648,8 +967,9 @@ export default function AppAttentionRequiredProducts({
           px: 3,
           py: 2.5,
 
-          borderBottom: (theme) =>
-            `1px solid ${theme.palette.divider}`,
+          borderBottom:
+            (theme) =>
+              `1px solid ${theme.palette.divider}`,
         }}
       >
         <Box>
@@ -681,7 +1001,8 @@ export default function AppAttentionRequiredProducts({
           >
             Products with missing
             information,
-            specifications, or media.
+            specifications, media,
+            or pending remarks.
           </Typography>
         </Box>
 
@@ -731,7 +1052,7 @@ export default function AppAttentionRequiredProducts({
       <TableContainer>
         <Table
           sx={{
-            minWidth: 1050,
+            minWidth: 1350,
           }}
         >
           <TableHead>
@@ -762,6 +1083,14 @@ export default function AppAttentionRequiredProducts({
 
               <TableCell>
                 Missing Details
+              </TableCell>
+
+              <TableCell
+                sx={{
+                  minWidth: 280,
+                }}
+              >
+                Latest Remark
               </TableCell>
 
               <TableCell align="center">
@@ -799,6 +1128,22 @@ export default function AppAttentionRequiredProducts({
                     product.missingCount ||
                       0
                   );
+
+                const remarks =
+                  getRemarks(
+                    product
+                  );
+
+                const latestRemark =
+                  product.latestRemark ||
+                  remarks[0] ||
+                  null;
+
+                const remarksCount =
+                  Number(
+                    product.remarksCount
+                  ) ||
+                  remarks.length;
 
                 return (
                   <TableRow
@@ -1025,6 +1370,123 @@ export default function AppAttentionRequiredProducts({
                       </Stack>
                     </TableCell>
 
+                    {/* REMARKS */}
+
+                    <TableCell>
+                      {latestRemark ? (
+                        <Tooltip
+                          placement="top-start"
+                          title={
+                            <Box
+                              sx={{
+                                whiteSpace:
+                                  'pre-line',
+                                maxWidth:
+                                  450,
+                              }}
+                            >
+                              {getAllRemarksText(
+                                product
+                              )}
+                            </Box>
+                          }
+                        >
+                          <Stack spacing={0.75}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                overflow:
+                                  'hidden',
+
+                                display:
+                                  '-webkit-box',
+
+                                WebkitBoxOrient:
+                                  'vertical',
+
+                                WebkitLineClamp:
+                                  2,
+                              }}
+                            >
+                              {latestRemark.remark}
+                            </Typography>
+
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              flexWrap="wrap"
+                              alignItems="center"
+                              useFlexGap
+                            >
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                              >
+                                {latestRemark
+                                  .user
+                                  ?.name ||
+                                  latestRemark
+                                    .user
+                                    ?.email ||
+                                  'Unknown User'}
+                              </Typography>
+
+                              {remarksCount >
+                                1 && (
+                                <Chip
+                                  size="small"
+                                  variant="outlined"
+                                  label={`${remarksCount} remarks`}
+                                />
+                              )}
+
+                              {latestRemark.isEdited && (
+                                <Chip
+                                  size="small"
+                                  color="info"
+                                  variant="soft"
+                                  label="Edited"
+                                />
+                              )}
+                            </Stack>
+
+                            {latestRemark.createdAt && (
+                              <Typography
+                                variant="caption"
+                                color="text.disabled"
+                              >
+                                {formatDateTime(
+                                  latestRemark.createdAt
+                                )}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Tooltip>
+                      ) : (
+                        <Stack
+                          direction="row"
+                          spacing={0.75}
+                          alignItems="center"
+                        >
+                          <Iconify
+                            icon="solar:chat-round-line-outline"
+                            width={18}
+                            sx={{
+                              color:
+                                'text.disabled',
+                            }}
+                          />
+
+                          <Typography
+                            variant="body2"
+                            color="text.disabled"
+                          >
+                            No remarks
+                          </Typography>
+                        </Stack>
+                      )}
+                    </TableCell>
+
                     {/* STATUS */}
 
                     <TableCell align="center">
@@ -1109,8 +1571,9 @@ export default function AppAttentionRequiredProducts({
         showFirstButton
         showLastButton
         sx={{
-          borderTop: (theme) =>
-            `1px solid ${theme.palette.divider}`,
+          borderTop:
+            (theme) =>
+              `1px solid ${theme.palette.divider}`,
         }}
       />
     </Card>
@@ -1118,64 +1581,144 @@ export default function AppAttentionRequiredProducts({
 }
 
 AppAttentionRequiredProducts.propTypes = {
-  products: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.oneOfType([
-        PropTypes.string,
-        PropTypes.number,
-      ]).isRequired,
+  products:
+    PropTypes.arrayOf(
+      PropTypes.shape({
+        id:
+          PropTypes.oneOfType([
+            PropTypes.string,
+            PropTypes.number,
+          ]).isRequired,
 
-      productId:
-        PropTypes.string,
+        productId:
+          PropTypes.string,
 
-      name:
-        PropTypes.string.isRequired,
-
-      slug:
-        PropTypes.string,
-
-      categoryName:
-        PropTypes.string,
-
-      priority:
-        PropTypes.oneOf([
-          'high',
-          'medium',
-          'low',
-        ]),
-
-      completionPercentage:
-        PropTypes.number,
-
-      completedCount:
-        PropTypes.number,
-
-      totalRequiredFields:
-        PropTypes.number,
-
-      missingCount:
-        PropTypes.number,
-
-      missingFields:
-        PropTypes.arrayOf(
+        name:
           PropTypes.string
-        ),
+            .isRequired,
 
-      missingFieldLabels:
-        PropTypes.arrayOf(
-          PropTypes.string
-        ),
+        slug:
+          PropTypes.string,
 
-      missingGroups:
-        PropTypes.object,
+        categoryName:
+          PropTypes.string,
 
-      isPublished:
-        PropTypes.bool,
+        priority:
+          PropTypes.oneOf([
+            'high',
+            'medium',
+            'low',
+          ]),
 
-      updatedAt:
-        PropTypes.string,
-    })
-  ),
+        completionPercentage:
+          PropTypes.number,
+
+        completedCount:
+          PropTypes.number,
+
+        totalRequiredFields:
+          PropTypes.number,
+
+        missingCount:
+          PropTypes.number,
+
+        missingFields:
+          PropTypes.arrayOf(
+            PropTypes.string
+          ),
+
+        missingFieldLabels:
+          PropTypes.arrayOf(
+            PropTypes.string
+          ),
+
+        missingGroups:
+          PropTypes.object,
+
+        isPublished:
+          PropTypes.bool,
+
+        updatedAt:
+          PropTypes.string,
+
+        remarksCount:
+          PropTypes.number,
+
+        latestRemark:
+          PropTypes.shape({
+            id:
+              PropTypes.oneOfType([
+                PropTypes.string,
+                PropTypes.number,
+              ]),
+
+            remark:
+              PropTypes.string,
+
+            isEdited:
+              PropTypes.bool,
+
+            createdAt:
+              PropTypes.string,
+
+            updatedAt:
+              PropTypes.string,
+
+            user:
+              PropTypes.shape({
+                id:
+                  PropTypes.oneOfType([
+                    PropTypes.string,
+                    PropTypes.number,
+                  ]),
+
+                name:
+                  PropTypes.string,
+
+                email:
+                  PropTypes.string,
+              }),
+          }),
+
+        remarks:
+          PropTypes.arrayOf(
+            PropTypes.shape({
+              id:
+                PropTypes.oneOfType([
+                  PropTypes.string,
+                  PropTypes.number,
+                ]),
+
+              remark:
+                PropTypes.string,
+
+              isEdited:
+                PropTypes.bool,
+
+              createdAt:
+                PropTypes.string,
+
+              updatedAt:
+                PropTypes.string,
+
+              user:
+                PropTypes.shape({
+                  id:
+                    PropTypes.oneOfType([
+                      PropTypes.string,
+                      PropTypes.number,
+                    ]),
+
+                  name:
+                    PropTypes.string,
+
+                  email:
+                    PropTypes.string,
+                }),
+            })
+          ),
+      })
+    ),
 
   totalCount:
     PropTypes.number,
