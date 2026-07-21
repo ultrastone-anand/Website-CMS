@@ -10,16 +10,17 @@ export const UserPage = lazy(() => import('src/pages/user'));
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LoginPage = lazy(() => import('src/pages/login'));
 export const LookupPage = lazy(() => import('src/pages/lookup'));
+export const CareerPage = lazy(() => import('src/pages/carrer'));
 export const ReportPage = lazy(() => import('src/pages/reports'));
 export const SocialsPage = lazy(() => import('src/pages/socials'));
 export const CompanyPage = lazy(() => import('src/pages/company'));
+export const BulkDescPage = lazy(() => import('src/pages/bulkdesc'));
 export const ActivityPage = lazy(() => import('src/pages/activity'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const CategorysPage = lazy(() => import('src/pages/category'));
 export const LeadPage = lazy(() => import('src/pages/leadManagement'));
 export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
-export const BulkDescPage = lazy(() => import('src/pages/bulkdesc'));
 export const GalleryPage = lazy(() => import('src/pages/inspirationGallery'));
 export const AboutusPage = lazy(() => import('src/pages/staticpages/about_us'));
 export const ProcessPage = lazy(() => import('src/pages/staticpages/our_process'));
@@ -68,6 +69,7 @@ export default function Router() {
         { path: 'aboutus', element: <AboutusPage /> },
         { path: 'process', element: <ProcessPage /> },
         { path: 'gallery', element: <GalleryPage /> },
+        { path: 'career', element: <CareerPage /> },
         // { path: 'meu', element: <MeuPage /> },
         // { path: 'videos', element: <VideoPage /> },
         // { path: 'merchandise ', element: <MerchandisePage /> },

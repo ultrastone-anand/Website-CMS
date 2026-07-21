@@ -39,7 +39,13 @@ export const getNavConfig = () => {
       title: 'Bulk Description',
       path: '/dashboard/bulkdesc',
       icon: icon('ic_desc'),
+    },   
+   {
+      title: 'Career',
+      path: '/dashboard/career',
+      icon: icon('ic_job'),
     },
+ 
  
     // Hide for role_id = 6
     ...(roleId !== 6
