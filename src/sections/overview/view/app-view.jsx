@@ -1,18 +1,15 @@
-import { useState, useEffect } from 'react';
+import {
+  useState,
+  useEffect,
+} from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
-  Card,
-  Table,
   Dialog,
   Button,
-  TableRow,
-  TableBody,
-  TableCell,
-  TableHead,
   Container,
-    TextField,
+  TextField,
   Typography,
   IconButton,
   DialogTitle,
@@ -22,55 +19,146 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { useRouter } from 'src/routes/hooks';
+import {
+  useRouter,
+} from 'src/routes/hooks';
 
-import { updateUser } from 'src/services/user.service';
-import { getDashboard } from 'src/services/dashboard.service';
+import {
+  updateUser,
+} from 'src/services/user.service';
+import {
+  getDashboard,
+} from 'src/services/dashboard.service';
 
 import Iconify from 'src/components/iconify';
 
 import AppCurrentVisits from '../app-current-visits';
 import AppWidgetSummary from '../app-widget-summary';
 import AppOrderTimeline from '../app-order-timeline';
+import AppAttentionRequiredProducts from '../app-attention-required-products';
 
-  const roleMap = {
-    1: 'admin',
-    2: 'admin',
-    3: 'designer',
-    4: 'seo',
-    5: 'blog',
-  };
+const roleMap = {
+  1: 'admin',
+  2: 'admin',
+  3: 'designer',
+  4: 'seo',
+  5: 'blog',
+};
+
 export default function AppView() {
-  const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [openPasswordModal, setOpenPasswordModal] =useState(false);
-  const [showPassword, setShowPassword] =useState(false);
-  const [newPassword, setNewPassword] =useState('');
-  const user = JSON.parse(sessionStorage.getItem('user') || '{}');
-  const role = roleMap[user?.role_id] || 'admin';
-
   const router = useRouter();
 
+  const [dashboard, setDashboard] =
+    useState(null);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [
+    openPasswordModal,
+    setOpenPasswordModal,
+  ] = useState(false);
+
+  const [
+    showPassword,
+    setShowPassword,
+  ] = useState(false);
+
+  const [
+    newPassword,
+    setNewPassword,
+  ] = useState('');
+
+  const user = JSON.parse(
+    sessionStorage.getItem('user') ||
+      '{}'
+  );
+
+  const role =
+    roleMap[user?.role_id] ||
+    'admin';
+
   useEffect(() => {
-    if (user.must_change_password) {
+    if (
+      user.must_change_password
+    ) {
       setOpenPasswordModal(true);
     }
   }, [user.must_change_password]);
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const response = await getDashboard(role);
-        setDashboard(response.data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const fetchDashboard =
+      async () => {
+        try {
+          setLoading(true);
+
+          const response =
+            await getDashboard(
+              role
+            );
+
+          setDashboard(
+            response.data
+          );
+        } catch (error) {
+          console.error(
+            'Dashboard Error:',
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     fetchDashboard();
   }, [role]);
+
+  const handlePasswordChange =
+    async () => {
+      try {
+        await updateUser(
+          user.user_id,
+          {
+            password:
+              newPassword,
+          }
+        );
+
+        const updatedUser = {
+          ...user,
+          must_change_password:
+            false,
+        };
+
+        sessionStorage.setItem(
+          'user',
+          JSON.stringify(
+            updatedUser
+          )
+        );
+
+        setOpenPasswordModal(
+          false
+        );
+
+        setNewPassword('');
+
+        alert(
+          'Password changed successfully'
+        );
+      } catch (error) {
+        console.error(
+          'Password Update Error:',
+          error
+        );
+      }
+    };
+
+  const handleLogout = () => {
+    sessionStorage.clear();
+
+    router.replace('/login');
+  };
 
   if (loading) {
     return (
@@ -78,7 +166,8 @@ export default function AppView() {
         sx={{
           height: '70vh',
           display: 'flex',
-          justifyContent: 'center',
+          justifyContent:
+            'center',
           alignItems: 'center',
         }}
       >
@@ -87,102 +176,112 @@ export default function AppView() {
     );
   }
 
-  const summaryCards = dashboard?.summaryCards || {};
-
-
-const handlePasswordChange = async () => {
-  try {
-    await updateUser(
-      user.user_id,
-      {
-        password: newPassword,
-      }
-    );
-
-    const updatedUser = {
-      ...user,
-      must_change_password: false,
-    };
-
-    sessionStorage.setItem(
-      'user',
-      JSON.stringify(updatedUser)
-    );
-
-    setOpenPasswordModal(false);
-
-    alert(
-      'Password changed successfully'
-    );
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const handleLogout = () => {
-  sessionStorage.clear();
-
-
-  router.replace('/login');
-};
+  const summaryCards =
+    dashboard?.summaryCards ||
+    {};
 
   return (
     <Container maxWidth={false}>
-      <Typography variant="h4" sx={{ mb: 4 }}>
+      <Typography
+        variant="h4"
+        sx={{
+          mb: 4,
+        }}
+      >
         Dashboard
       </Typography>
 
-      <Grid container spacing={3}>
+      <Grid
+        container
+        spacing={3}
+      >
         {/* SUMMARY CARDS */}
 
-        {Object.entries(summaryCards).map(([title, total]) => (
-          <Grid key={title} xs={12} sm={6} md={3}>
+        {Object.entries(
+          summaryCards
+        ).map(([title, total]) => (
+          <Grid
+            key={title}
+            xs={12}
+            sm={6}
+            md={3}
+          >
             <AppWidgetSummary
               title={title
-                .replace(/([A-Z])/g, ' $1')
-                .replace(/^./, (str) => str.toUpperCase())}
+                .replace(
+                  /([A-Z])/g,
+                  ' $1'
+                )
+                .replace(
+                  /^./,
+                  (text) =>
+                    text.toUpperCase()
+                )}
               total={total}
             />
           </Grid>
         ))}
 
-        {/* MISSING REPORTS */}
+        {/* MISSING REPORT */}
 
         {dashboard?.missingReports && (
-          <Grid xs={12} lg={4}>
+          <Grid
+            xs={12}
+            lg={4}
+          >
             <AppCurrentVisits
               title="Missing Content Report"
               chart={{
                 series: [
                   {
-                    label: 'Featured Images',
+                    label:
+                      'Featured Images',
+
                     value:
-                      dashboard.missingReports
-                        .missingFeaturedImages,
+                      dashboard
+                        .missingReports
+                        .missingFeaturedImages ||
+                      0,
                   },
                   {
-                    label: 'Gallery Images',
+                    label:
+                      'Gallery Images',
+
                     value:
-                      dashboard.missingReports
-                        .missingGalleryImages,
+                      dashboard
+                        .missingReports
+                        .missingGalleryImages ||
+                      0,
                   },
                   {
-                    label: 'Videos',
+                    label:
+                      'Videos',
+
                     value:
-                      dashboard.missingReports
-                        .missingVideos,
+                      dashboard
+                        .missingReports
+                        .missingVideos ||
+                      0,
                   },
                   {
-                    label: 'Descriptions',
+                    label:
+                      'Descriptions',
+
                     value:
-                      dashboard.missingReports
-                        .missingLongDescriptions,
+                      dashboard
+                        .missingReports
+                        .missingLongDescriptions ||
+                      0,
                   },
                   {
-                    label: 'Origin Country',
+                    label:
+                      'Origin Country',
+
                     value:
-                      dashboard.missingReports
-                        .missingOriginCountry,
+                      dashboard
+                        .missingReports
+                        .missingOriginCountry ||
+                      0,
                   },
                 ],
               }}
@@ -192,20 +291,40 @@ const handleLogout = () => {
 
         {/* DAILY ACTIVITY */}
 
-        {dashboard?.dailyActivities?.length > 0 && (
-          <Grid xs={12} lg={8}>
+        {dashboard
+          ?.dailyActivities
+          ?.length > 0 && (
+          <Grid
+            xs={12}
+            lg={8}
+          >
             <AppOrderTimeline
               title="Top 5 Recent Activities"
               list={dashboard.dailyActivities.map(
-                (item, index) => ({
-                  id: item.id || index,
-                  title: `${item.created_by_name || 'System'} - ${
+                (
+                  item,
+                  index
+                ) => ({
+                  id:
+                    item.id ||
+                    index,
+
+                  title: `${
+                    item.created_by_name ||
+                    'System'
+                  } - ${
                     item.description ||
                     item.action ||
                     'Activity'
                   }`,
-                  type: `order${(index % 5) + 1}`,
-                  time: item.created_at,
+
+                  type: `order${
+                    (index % 5) +
+                    1
+                  }`,
+
+                  time:
+                    item.created_at,
                 })
               )}
             />
@@ -214,140 +333,129 @@ const handleLogout = () => {
 
         {/* ATTENTION REQUIRED PRODUCTS */}
 
-        {dashboard?.attentionRequiredProducts?.length > 0 && (
+        {dashboard
+          ?.attentionRequiredProducts && (
           <Grid xs={12}>
-            <Card sx={{ p: 3 }}>
-              <Typography
-                variant="h6"
-                sx={{ mb: 3 }}
-              >
-                Attention Required Products
-              </Typography>
-
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>
-                      Product Name
-                    </TableCell>
-
-                    <TableCell align="center">
-                      Missing Count
-                    </TableCell>
-
-                    <TableCell>
-                      Missing Fields
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-
-                <TableBody>
-                  {dashboard.attentionRequiredProducts.map(
-                    (product) => (
-                      <TableRow
-                        key={product.id}
-                        hover
-                      >
-                        <TableCell>
-                          {product.name}
-                        </TableCell>
-
-                        <TableCell align="center">
-                          <Typography
-                            color={
-                              product.missingCount >= 5
-                                ? 'error.main'
-                                : 'warning.main'
-                            }
-                            fontWeight={700}
-                          >
-                            {product.missingCount}
-                          </Typography>
-                        </TableCell>
-
-                        <TableCell>
-                          {product.missingFields.join(
-                            ', '
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  )}
-                </TableBody>
-              </Table>
-            </Card>
+            <AppAttentionRequiredProducts
+              products={
+                dashboard
+                  .attentionRequiredProducts
+              }
+              totalCount={
+                dashboard
+                  .summaryCards
+                  ?.productsRequiringAttention ||
+                0
+              }
+            />
           </Grid>
         )}
       </Grid>
 
+      {/* PASSWORD CHANGE DIALOG */}
+
       <Dialog
-  open={openPasswordModal}
-  disableEscapeKeyDown
->
-  <DialogTitle>
-    Change Password
-  </DialogTitle>
+        open={
+          openPasswordModal
+        }
+        disableEscapeKeyDown
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>
+          Change Password
+        </DialogTitle>
 
-  <DialogContent>
-<TextField
-  fullWidth
-  margin="normal"
-  label="New Password"
-  type={
-    showPassword
-      ? 'text'
-      : 'password'
-  }
-  value={newPassword}
-  onChange={(e) =>
-    setNewPassword(
-      e.target.value
-    )
-  }
-  InputProps={{
-    endAdornment: (
-      <InputAdornment position="end">
-        <IconButton
-          onClick={() =>
-            setShowPassword(
-              !showPassword
-            )
-          }
-          edge="end"
+        <DialogContent>
+          <TextField
+            fullWidth
+            autoFocus
+            margin="normal"
+            label="New Password"
+            type={
+              showPassword
+                ? 'text'
+                : 'password'
+            }
+            value={newPassword}
+            onChange={(
+              event
+            ) =>
+              setNewPassword(
+                event.target.value
+              )
+            }
+            onKeyDown={(
+              event
+            ) => {
+              if (
+                event.key ===
+                  'Enter' &&
+                newPassword
+              ) {
+                handlePasswordChange();
+              }
+            }}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    edge="end"
+                    aria-label={
+                      showPassword
+                        ? 'Hide password'
+                        : 'Show password'
+                    }
+                    onClick={() =>
+                      setShowPassword(
+                        (previous) =>
+                          !previous
+                      )
+                    }
+                  >
+                    <Iconify
+                      icon={
+                        showPassword
+                          ? 'eva:eye-fill'
+                          : 'eva:eye-off-fill'
+                      }
+                    />
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+          }}
         >
-          {showPassword ? (
-            <Iconify icon="eva:eye-fill" />
-          ) : (
-            <Iconify icon="eva:eye-off-fill" />
-          )}
-        </IconButton>
-      </InputAdornment>
-    ),
-  }}
-/>
-  </DialogContent>
+          <Button
+            variant="contained"
+            onClick={
+              handlePasswordChange
+            }
+            disabled={
+              !newPassword.trim()
+            }
+          >
+            Update Password
+          </Button>
 
-  <DialogActions>
-    <Button
-      variant="contained"
-      onClick={
-        handlePasswordChange
-      }
-      disabled={!newPassword}
-    >
-      Update Password
-    </Button>
-        <Button
-      variant="contained"
-      color="error"
-      onClick={
-        handleLogout
-      }
-    >
-      Logout
-    </Button>
-  </DialogActions>
-</Dialog>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={
+              handleLogout
+            }
+          >
+            Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }
