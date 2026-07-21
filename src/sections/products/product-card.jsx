@@ -15,9 +15,12 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContentText from '@mui/material/DialogContentText';
 
+import { getProductCardImageUrl } from 'src/utils/Mediahelper';
+
 import Iconify from 'src/components/iconify';
 
 import { canView, canEditIdentity } from './role-access';
+
 
 
 export default function ShopProductCard({
@@ -30,9 +33,10 @@ export default function ShopProductCard({
 }) {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
 
-  // const handleDeleteClick = () => {
-  //   setOpenDeleteDialog(true);
-  // };
+const optimizedImageUrl =
+  getProductCardImageUrl(
+    product.closeup_image
+  );
 
   const handleCloseDialog = () => {
     setOpenDeleteDialog(false);
@@ -81,20 +85,27 @@ export default function ShopProductCard({
         >
 
           <Box
-            component="img"
-            alt={product.name}
-            src={
-              product.closeup_image ||
-              '/assets/placeholder.png'
-            }
-            sx={{
-              top: 0,
-              width: 1,
-              height: 1,
-              objectFit: 'cover',
-              position: 'absolute',
-            }}
-          /> </Box>
+  component="img"
+  alt={product.name}
+  src={optimizedImageUrl}
+  loading="lazy"
+  decoding="async"
+  onError={(event) => {
+    event.currentTarget.onerror =
+      null;
+
+    event.currentTarget.src =
+      '/assets/placeholder.png';
+  }}
+  sx={{
+    top: 0,
+    left: 0,
+    width: 1,
+    height: 1,
+    objectFit: 'cover',
+    position: 'absolute',
+  }}
+/></Box>
 
         <Stack
           spacing={2}
