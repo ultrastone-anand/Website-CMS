@@ -377,3 +377,46 @@ export const uploadVideoDirectToR2 = async (file) => {
     alt_text: "",
   };
 };
+
+// ================= SEARCH PRODUCTS =================
+
+export const searchProducts = async ({
+  query,
+  categoryId = null,
+  status = 'active',
+  page = 1,
+  limit = 24,
+}) => {
+  const params = new URLSearchParams();
+
+  params.set('q', query);
+  params.set('status', status);
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+
+  if (categoryId) {
+    params.set(
+      'category_id',
+      String(categoryId)
+    );
+  }
+
+  const response = await fetch(
+    `${API_URL}/stones/search/products?${params.toString()}`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        'Failed to search products'
+    );
+  }
+
+  return data;
+};

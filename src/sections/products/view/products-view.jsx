@@ -1,18 +1,29 @@
-import { useState, useEffect } from 'react';
+import {
+  useRef,
+  useState,
+  useEffect,
+  useCallback,
+} from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Grid from '@mui/material/Unstable_Grid2';
+import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
-import { Checkbox, TextField, Autocomplete } from '@mui/material';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { getCategories } from 'src/services/category.service';
+import {
+  getCategories,
+} from 'src/services/category.service';
 import {
   createProduct,
   deleteProduct,
   updateProduct,
+  searchProducts,
   getProductDetail,
   updateProductStatus,
   updatePublishStatus,
@@ -24,32 +35,83 @@ import {
 import Iconify from 'src/components/iconify';
 
 import ProductCard from '../product-card';
-import { canEditIdentity } from '../role-access';
+import {
+  canEditIdentity,
+} from '../role-access';
 import ProductQuickEdit from '../product-quick-edit';
 
 export default function ProductsView() {
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [showBin, setShowBin] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('')
-  const [categories, setCategories] = useState([]);
-  const [currentProduct, setCurrentProduct] = useState(null);
-  const [deletedMediaIds, setDeletedMediaIds] = useState([]);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [productModalOpen, setProductModalOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory,] = useState(null);
+  const searchRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  const [products, setProducts] =
+    useState([]);
 
-  useEffect(() => {
-    if (selectedCategory) {
-      loadProducts(
-        selectedCategory.slug
-      );
-    }
-  }, [selectedCategory]);
+  const [
+    searchResults,
+    setSearchResults,
+  ] = useState([]);
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [
+    productsLoading,
+    setProductsLoading,
+  ] = useState(false);
+
+  const [
+    searchLoading,
+    setSearchLoading,
+  ] = useState(false);
+
+  const [showBin, setShowBin] =
+    useState(false);
+
+  const [
+    searchTerm,
+    setSearchTerm,
+  ] = useState('');
+
+  const [
+    categories,
+    setCategories,
+  ] = useState([]);
+
+  const [
+    currentProduct,
+    setCurrentProduct,
+  ] = useState(null);
+
+  const [
+    deletedMediaIds,
+    setDeletedMediaIds,
+  ] = useState([]);
+
+  const [
+    selectedProducts,
+    setSelectedProducts,
+  ] = useState([]);
+
+  const [
+    productModalOpen,
+    setProductModalOpen,
+  ] = useState(false);
+
+  const [
+    selectedCategory,
+    setSelectedCategory,
+  ] = useState(null);
+
+  const normalizedSearchTerm =
+    searchTerm.trim();
+
+  const isGlobalSearch =
+    !selectedCategory &&
+    normalizedSearchTerm.length >= 2;
+
+  // ==============================
+  // LOAD CATEGORIES
+  // ==============================
 
   const loadCategories = async () => {
     try {
@@ -60,475 +122,871 @@ export default function ProductsView() {
         response.data || [];
 
       const activeCategories = data
-        .filter((item) => item.is_active)
+        .filter(
+          (item) => item.is_active
+        )
         .sort((a, b) =>
-          a.name.localeCompare(b.name)
+          (a.name || '').localeCompare(
+            b.name || ''
+          )
         );
 
       setCategories(
         activeCategories
       );
 
-      if (
-        activeCategories.length > 0
-      ) {
-        setSelectedCategory(
-          activeCategories[0]
-        );
-      }
+      // Do not automatically load
+      // the first category.
+      setSelectedCategory(null);
     } catch (error) {
-      console.error(error);
+      console.error(
+        'Load Categories Error:',
+        error
+      );
     }
   };
 
-  const loadProducts = async (slug) => {
+  // ==============================
+  // LOAD CATEGORY PRODUCTS
+  // ==============================
+
+  const loadProducts = async (
+    slug
+  ) => {
+    if (!slug) {
+      setProducts([]);
+      return;
+    }
+
     try {
+      setProductsLoading(true);
+
       const response =
         await getProductsByCategory(
           slug
         );
 
-      const sortedProducts = (
-        response.products || []
-      ).sort((a, b) =>
-        a.name.localeCompare(b.name)
+      const sortedProducts = [
+        ...(response.products || []),
+      ].sort((a, b) =>
+        (a.name || '').localeCompare(
+          b.name || ''
+        )
       );
 
-      setProducts(sortedProducts);
+      setProducts(
+        sortedProducts
+      );
     } catch (error) {
-      console.error(error);
+      console.error(
+        'Load Products Error:',
+        error
+      );
+
+      setProducts([]);
+    } finally {
+      setProductsLoading(false);
     }
   };
+
+  // ==============================
+  // GLOBAL PRODUCT SEARCH
+  // ==============================
+
+  const loadGlobalSearchResults = useCallback(
+    async ({
+      query,
+      binStatus,
+    }) => {
+      const normalizedQuery =
+        String(query || '').trim();
+
+      if (
+        normalizedQuery.length < 2
+      ) {
+        setSearchResults([]);
+        return;
+      }
+
+      const requestId =
+        searchRequestIdRef.current + 1;
+
+      searchRequestIdRef.current =
+        requestId;
+
+      try {
+        setSearchLoading(true);
+
+        const response =
+          await searchProducts({
+            query:
+              normalizedQuery,
+
+            status:
+              binStatus
+                ? 'inactive'
+                : 'active',
+
+            page: 1,
+            limit: 50,
+          });
+
+        if (
+          requestId !==
+          searchRequestIdRef.current
+        ) {
+          return;
+        }
+
+        const results = [
+          ...(response.data || []),
+        ].sort((a, b) =>
+          (a.name || '').localeCompare(
+            b.name || ''
+          )
+        );
+
+        setSearchResults(
+          results
+        );
+      } catch (error) {
+        if (
+          requestId !==
+          searchRequestIdRef.current
+        ) {
+          return;
+        }
+
+        console.error(
+          'Global Product Search Error:',
+          error
+        );
+
+        setSearchResults([]);
+      } finally {
+        if (
+          requestId ===
+          searchRequestIdRef.current
+        ) {
+          setSearchLoading(false);
+        }
+      }
+    },
+    []
+  );
+
+  // ==============================
+  // REFRESH CURRENT VIEW
+  // ==============================
+
+  const refreshCurrentView =
+    async () => {
+      if (
+        selectedCategory?.slug
+      ) {
+        await loadProducts(
+          selectedCategory.slug
+        );
+
+        return;
+      }
+
+      if (
+        normalizedSearchTerm.length >=
+        2
+      ) {
+        await loadGlobalSearchResults({
+          query:
+            normalizedSearchTerm,
+
+          binStatus:
+            showBin,
+        });
+      }
+    };
+
+  // ==============================
+  // INITIAL CATEGORY LOAD
+  // ==============================
+
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // ==============================
+  // CATEGORY CHANGE
+  // ==============================
+
+  useEffect(() => {
+    searchRequestIdRef.current += 1;
+    setSearchLoading(false);
+    setSelectedProducts([]);
+
+    if (
+      selectedCategory?.slug
+    ) {
+      setSearchResults([]);
+
+      loadProducts(
+        selectedCategory.slug
+      );
+    } else {
+      setProducts([]);
+    }
+  }, [selectedCategory]);
+
+  // ==============================
+  // DEBOUNCED GLOBAL SEARCH
+  // ==============================
+
+  useEffect(() => {
+    if (selectedCategory) {
+      return undefined;
+    }
+
+    if (
+      normalizedSearchTerm.length < 2
+    ) {
+      searchRequestIdRef.current += 1;
+
+      setSearchResults([]);
+      setSearchLoading(false);
+
+      return undefined;
+    }
+
+    const timeoutId =
+      window.setTimeout(() => {
+        loadGlobalSearchResults({
+          query:
+            normalizedSearchTerm,
+
+          binStatus:
+            showBin,
+        });
+      }, 400);
+
+    return () => {
+      window.clearTimeout(
+        timeoutId
+      );
+    };
+  }, [
+    normalizedSearchTerm,
+    selectedCategory,
+    showBin,
+    loadGlobalSearchResults,
+  ]);
+  // ==============================
+  // PRODUCT MODAL
+  // ==============================
 
   const handleAddProduct = () => {
     setCurrentProduct(null);
+    setDeletedMediaIds([]);
     setProductModalOpen(true);
   };
 
-  const handleEditProduct = async (product) => {
-    try {
-      const response =
-        await getProductDetail(
-          product.slug
+  const handleEditProduct =
+    async (product) => {
+      try {
+        const response =
+          await getProductDetail(
+            product.slug
+          );
+
+        setCurrentProduct(
+          response.product
         );
 
-      setCurrentProduct(
-        response.product
-      );
-
-      setProductModalOpen(true);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+        setDeletedMediaIds([]);
+        setProductModalOpen(true);
+      } catch (error) {
+        console.error(
+          'Product Detail Error:',
+          error
+        );
+      }
+    };
 
   const handleCloseModal = () => {
     setProductModalOpen(false);
     setCurrentProduct(null);
+    setDeletedMediaIds([]);
   };
 
-const buildProductFormData = (
-  payload,
-  uploadedFeaturedVideos = []
-) => {
-  const data = new FormData();
+  // ==============================
+  // BUILD PRODUCT FORM DATA
+  // ==============================
 
-  // BASIC
-  [
-    'name',
-    'slug',
-    'small_description',
-    'long_description',
-    'category_id',
-    'pattern',
-    'stone_group',
-    'origin_country',
-    'pantone_colour',
-    'variation_level',
-    'sealer',
-  ].forEach((key) => {
-    data.append(key, payload[key] ?? '');
-  });
+  const buildProductFormData = (
+    payload,
+    uploadedFeaturedVideos = []
+  ) => {
+    const data = new FormData();
 
-  // ARRAYS
-  [
-    'finishes_available',
-    'thicknesses_cm',
-    'average_sizes_inches',
-  ].forEach((key) => {
-    data.append(
-      key,
-      JSON.stringify(payload[key] || [])
-    );
-  });
-
-  // BOOLEANS
-  [
-    'translucent',
-    'cut_to_size',
-    'color_enhancing',
-    'countertops_vanities',
-    'interior_floor',
-    'interior_wall',
-    'shower_wall',
-    'shower_floor',
-    'exterior_floor',
-    'exterior_wall',
-    'pool_fountain',
-    'fireplace',
-    'furniture_top',
-    'is_featured',
-    'is_trending',
-    'is_new_arrival',
-    'silica_warning',
-    'is_active',
-  ].forEach((key) => {
-    data.append(
-      key,
-      String(Boolean(payload[key]))
-    );
-  });
-
-  // This is text, not boolean
-  data.append(
-    'silica_warning_message',
-    payload.silica_warning_message ?? ''
-  );
-
-  // SPECIFICATIONS
-  [
-    'abrasion_resistance',
-    'stain_resistance',
-    'etching_resistance',
-    'heat_resistance',
-    'uv_resistance',
-    'color_range',
-    'movement_index',
-  ].forEach((key) => {
-    data.append(key, payload[key] ?? '');
-  });
-
-  // SEO TEXT FIELDS
-  [
-    'meta_title',
-    'meta_description',
-    'canonical_url',
-    'og_title',
-    'og_description',
-    'og_image',
-    'seo_content',
-  ].forEach((key) => {
-    data.append(key, payload[key] ?? '');
-  });
-
-  // SCHEMA JSON
-  data.append(
-    'schema_markup',
-    JSON.stringify(
-      payload.schema_markup || {}
-    )
-  );
-
-  // SEO BOOLEANS
-  ['robots_index', 'robots_follow'].forEach(
-    (key) => {
+    // BASIC
+    [
+      'name',
+      'slug',
+      'small_description',
+      'long_description',
+      'category_id',
+      'pattern',
+      'stone_group',
+      'origin_country',
+      'pantone_colour',
+      'variation_level',
+      'sealer',
+    ].forEach((key) => {
       data.append(
         key,
-        String(payload[key] ?? true)
+        payload[key] ?? ''
       );
-    }
-  );
+    });
 
-  // IMAGE FILES ONLY
-  [
-    'closeup_images',
-    'slab_images',
-    'application_images',
-    'bookmatch_slipmatch',
-  ].forEach((field) => {
-    (payload[field] || []).forEach(
-      (file) => {
-        if (file instanceof File) {
-          data.append(field, file);
-        }
-      }
-    );
-  });
+    // ARRAYS
+    [
+      'finishes_available',
+      'thicknesses_cm',
+      'average_sizes_inches',
+    ].forEach((key) => {
+      data.append(
+        key,
+        JSON.stringify(
+          payload[key] || []
+        )
+      );
+    });
 
-  // NEW VIDEOS ALREADY UPLOADED DIRECTLY TO R2
-  data.append(
-    'uploaded_featured_videos',
-    JSON.stringify(uploadedFeaturedVideos)
-  );
+    // BOOLEANS
+    [
+      'translucent',
+      'cut_to_size',
+      'color_enhancing',
+      'countertops_vanities',
+      'interior_floor',
+      'interior_wall',
+      'shower_wall',
+      'shower_floor',
+      'exterior_floor',
+      'exterior_wall',
+      'pool_fountain',
+      'fireplace',
+      'furniture_top',
+      'is_featured',
+      'is_trending',
+      'is_new_arrival',
+      'silica_warning',
+      'is_active',
+    ].forEach((key) => {
+      data.append(
+        key,
+        String(
+          Boolean(payload[key])
+        )
+      );
+    });
 
-  // EXISTING PRODUCT MEDIA
-  data.append(
-    'existing_media',
-    JSON.stringify(payload.media || [])
-  );
-
-  // DELETED MEDIA
-  data.append(
-    'deleted_media',
-    JSON.stringify(deletedMediaIds)
-  );
-
-  // FAQS
-  data.append(
-    'faqs',
-    JSON.stringify(payload.faqs || [])
-  );
-
-  // SILICA DATASHEET
-  if (
-    payload.silica_warning_datasheet instanceof
-    File
-  ) {
+    // SILICA WARNING TEXT
     data.append(
-      'silica_datasheet',
-      payload.silica_warning_datasheet
-    );
-  }
-
-  return data;
-};
-
-const uploadFeaturedVideos = async (
-  featuredVideos = []
-) => {
-  const newVideoFiles =
-    featuredVideos.filter(
-      (video) => video instanceof File
+      'silica_warning_message',
+      payload
+        .silica_warning_message ??
+      ''
     );
 
-  if (newVideoFiles.length === 0) {
-    return [];
-  }
+    // SPECIFICATIONS
+    [
+      'abrasion_resistance',
+      'stain_resistance',
+      'etching_resistance',
+      'heat_resistance',
+      'uv_resistance',
+      'color_range',
+      'movement_index',
+    ].forEach((key) => {
+      data.append(
+        key,
+        payload[key] ?? ''
+      );
+    });
 
-  const uploadedVideos =
-    await Promise.all(
-      newVideoFiles.map((file) =>
-        uploadVideoDirectToR2(file)
+    // SEO TEXT
+    [
+      'meta_title',
+      'meta_description',
+      'canonical_url',
+      'og_title',
+      'og_description',
+      'og_image',
+      'seo_content',
+    ].forEach((key) => {
+      data.append(
+        key,
+        payload[key] ?? ''
+      );
+    });
+
+    // SCHEMA MARKUP
+    data.append(
+      'schema_markup',
+      JSON.stringify(
+        payload.schema_markup ||
+        {}
       )
     );
 
-  return uploadedVideos;
-};
-
-const handleSubmit = async (payload) => {
-  try {
-    setLoading(true);
-
-    // Step 1: Upload new video files directly to R2
-    const uploadedFeaturedVideos =
-      await uploadFeaturedVideos(
-        payload.featured_videos
-      );
-
-    // Step 2: Build product form without raw videos
-    const formData =
-      buildProductFormData(
-        payload,
-        uploadedFeaturedVideos
-      );
-
-    // Step 3: Create or update product
-    if (currentProduct?.id) {
-      await updateProduct(
-        currentProduct.id,
-        formData
-      );
-    } else {
-      await createProduct(formData);
-    }
-
-    setDeletedMediaIds([]);
-    handleCloseModal();
-
-    if (selectedCategory) {
-      await loadProducts(
-        selectedCategory.slug
-      );
-    }
-  } catch (error) {
-    console.error(
-      'Product Save Error:',
-      error
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-  const handleDeleteProduct = async (productId) => {
-    try {
-      await deleteProduct(productId);
-      if (selectedCategory) { await loadProducts(selectedCategory.slug); }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const filteredProducts = products
-    .filter((product) => {
-      const searchMatch = product.name
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase());
-
-      const statusMatch = showBin
-        ? !product.is_active
-        : product.is_active;
-
-      return searchMatch && statusMatch;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-
-  // const handleBulkDelete = async () => {
-  //   try {
-  //     if (selectedProducts.length === 0) return;
-
-  //     const confirmed = window.confirm(
-  //       `Delete ${selectedProducts.length} products?`
-  //     );
-
-  //     if (!confirmed) return;
-
-  //     const idsToDelete = [...selectedProducts];
-
-  //     await bulkdeleteProduct(idsToDelete);
-
-
-  //     setProducts((prevProducts) =>
-  //       prevProducts.filter(
-  //         (product) =>
-  //           !idsToDelete.includes(product.id)
-  //       )
-  //     );
-
-  //     setSelectedProducts([]);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
-
-  const handleBulkDeactivate = async () => {
-    try {
-
-      if (selectedProducts.length === 0) {
-        return;
-      }
-
-      const confirmed = window.confirm(
-        `Deactivate ${selectedProducts.length} products?`
-      );
-
-      if (!confirmed) {
-        return;
-      }
-
-      const idsToDeactivate = [
-        ...selectedProducts,
-      ];
-
-      await bulkupdateProductStatus(
-        idsToDeactivate,
-        false
-      );
-
-      setProducts((prevProducts) =>
-        prevProducts.map((product) =>
-          idsToDeactivate.includes(
-            product.id
-          )
-            ? {
-              ...product,
-              is_active: false,
-            }
-            : product
+    // SEO BOOLEANS
+    [
+      'robots_index',
+      'robots_follow',
+    ].forEach((key) => {
+      data.append(
+        key,
+        String(
+          payload[key] ?? true
         )
       );
+    });
 
-      setSelectedProducts([]);
+    // IMAGE FILES
+    [
+      'closeup_images',
+      'slab_images',
+      'application_images',
+      'bookmatch_slipmatch',
+    ].forEach((field) => {
+      (
+        payload[field] || []
+      ).forEach((file) => {
+        if (
+          file instanceof File
+        ) {
+          data.append(
+            field,
+            file
+          );
+        }
+      });
+    });
 
-    } catch (error) {
+    // VIDEOS ALREADY UPLOADED TO R2
+    data.append(
+      'uploaded_featured_videos',
+      JSON.stringify(
+        uploadedFeaturedVideos
+      )
+    );
 
-      console.error(error);
+    // EXISTING MEDIA
+    data.append(
+      'existing_media',
+      JSON.stringify(
+        payload.media || []
+      )
+    );
 
+    // DELETED MEDIA
+    data.append(
+      'deleted_media',
+      JSON.stringify(
+        deletedMediaIds
+      )
+    );
+
+    // FAQS
+    data.append(
+      'faqs',
+      JSON.stringify(
+        payload.faqs || []
+      )
+    );
+
+    // SILICA DATASHEET
+    if (
+      payload
+        .silica_warning_datasheet instanceof
+      File
+    ) {
+      data.append(
+        'silica_datasheet',
+        payload
+          .silica_warning_datasheet
+      );
     }
+
+    return data;
   };
+
+  // ==============================
+  // UPLOAD FEATURED VIDEOS
+  // ==============================
+
+  const uploadFeaturedVideos =
+    async (
+      featuredVideos = []
+    ) => {
+      const newVideoFiles =
+        featuredVideos.filter(
+          (video) =>
+            video instanceof File
+        );
+
+      if (
+        newVideoFiles.length === 0
+      ) {
+        return [];
+      }
+
+      return Promise.all(
+        newVideoFiles.map((file) =>
+          uploadVideoDirectToR2(
+            file
+          )
+        )
+      );
+    };
+
+  // ==============================
+  // CREATE / UPDATE PRODUCT
+  // ==============================
+
+  const handleSubmit =
+    async (payload) => {
+      try {
+        setLoading(true);
+
+        const uploadedFeaturedVideos =
+          await uploadFeaturedVideos(
+            payload.featured_videos
+          );
+
+        const formData =
+          buildProductFormData(
+            payload,
+            uploadedFeaturedVideos
+          );
+
+        if (
+          currentProduct?.id
+        ) {
+          await updateProduct(
+            currentProduct.id,
+            formData
+          );
+        } else {
+          await createProduct(
+            formData
+          );
+        }
+
+        setDeletedMediaIds([]);
+        handleCloseModal();
+
+        await refreshCurrentView();
+      } catch (error) {
+        console.error(
+          'Product Save Error:',
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+  // ==============================
+  // DELETE PRODUCT
+  // ==============================
+
+  const handleDeleteProduct =
+    async (productId) => {
+      try {
+        await deleteProduct(
+          productId
+        );
+
+        setSelectedProducts(
+          (previous) =>
+            previous.filter(
+              (id) =>
+                id !== productId
+            )
+        );
+
+        await refreshCurrentView();
+      } catch (error) {
+        console.error(
+          'Delete Product Error:',
+          error
+        );
+      }
+    };
+
+  // ==============================
+  // BULK DEACTIVATE
+  // ==============================
+
+  const handleBulkDeactivate =
+    async () => {
+      try {
+        if (
+          selectedProducts.length ===
+          0
+        ) {
+          return;
+        }
+
+        const confirmed =
+          window.confirm(
+            `Deactivate ${selectedProducts.length} products?`
+          );
+
+        if (!confirmed) {
+          return;
+        }
+
+        const idsToDeactivate = [
+          ...selectedProducts,
+        ];
+
+        await bulkupdateProductStatus(
+          idsToDeactivate,
+          false
+        );
+
+        setProducts(
+          (previousProducts) =>
+            previousProducts.map(
+              (product) =>
+                idsToDeactivate.includes(
+                  product.id
+                )
+                  ? {
+                    ...product,
+                    is_active:
+                      false,
+                    is_published:
+                      false,
+                  }
+                  : product
+            )
+        );
+
+        setSearchResults(
+          (previousResults) => {
+            if (!showBin) {
+              return previousResults.filter(
+                (product) =>
+                  !idsToDeactivate.includes(
+                    product.id
+                  )
+              );
+            }
+
+            return previousResults.map(
+              (product) =>
+                idsToDeactivate.includes(
+                  product.id
+                )
+                  ? {
+                    ...product,
+                    is_active:
+                      false,
+                    is_published:
+                      false,
+                  }
+                  : product
+            );
+          }
+        );
+
+        setSelectedProducts([]);
+
+        await refreshCurrentView();
+      } catch (error) {
+        console.error(
+          'Bulk Deactivate Error:',
+          error
+        );
+      }
+    };
+
+  // ==============================
+  // SELECT PRODUCT
+  // ==============================
 
   const handleSelectProduct = (
     productId
   ) => {
-    setSelectedProducts((prev) =>
-      prev.includes(productId)
-        ? prev.filter(
-          (id) => id !== productId
-        )
-        : [...prev, productId]
+    setSelectedProducts(
+      (previous) =>
+        previous.includes(productId)
+          ? previous.filter(
+            (id) =>
+              id !== productId
+          )
+          : [
+            ...previous,
+            productId,
+          ]
     );
   };
 
-  const handleProductStatusChange = async (
-    productId,
-    status
-  ) => {
-    try {
+  // ==============================
+  // STATUS CHANGE
+  // ==============================
 
-      await updateProductStatus(
-        productId,
-        status
-      );
+  const handleProductStatusChange =
+    async (
+      productId,
+      status
+    ) => {
+      try {
+        await updateProductStatus(
+          productId,
+          status
+        );
 
-      if (selectedCategory) {
-        await loadProducts(
-          selectedCategory.slug
+        setSelectedProducts(
+          (previous) =>
+            previous.filter(
+              (id) =>
+                id !== productId
+            )
+        );
+
+        await refreshCurrentView();
+      } catch (error) {
+        console.error(
+          'Status Update Error:',
+          error
         );
       }
-    } catch (error) {
-      console.error(
-        "Status Update Error:",
-        error
-      );
-    }
-  };
+    };
 
-  const handlePublishProduct = async (
-    productId,
-    currentPublishStatus
-  ) => {
-    console.log(productId, currentPublishStatus)
-    try {
+  // ==============================
+  // PUBLISH CHANGE
+  // ==============================
 
-      await updatePublishStatus(
-        productId,
-        currentPublishStatus
-      );
+  const handlePublishProduct =
+    async (
+      productId,
+      currentPublishStatus
+    ) => {
+      try {
+        await updatePublishStatus(
+          productId,
+          currentPublishStatus
+        );
 
-      if (selectedCategory) {
-        await loadProducts(
-          selectedCategory.slug
+        await refreshCurrentView();
+      } catch (error) {
+        console.error(
+          'Publish Update Error:',
+          error
         );
       }
+    };
 
-    } catch (error) {
+  // ==============================
+  // DISPLAYED PRODUCTS
+  // ==============================
 
-      console.error(
-        "Publish Update Error:",
-        error
+  const sourceProducts =
+    selectedCategory
+      ? products
+      : searchResults;
+
+  const filteredProducts = [
+    ...sourceProducts,
+  ]
+    .filter((product) => {
+      if (!selectedCategory) {
+        // Global search API already
+        // filters search and status.
+        return true;
+      }
+
+      const searchMatch =
+        (product.name || '')
+          .toLowerCase()
+          .includes(
+            normalizedSearchTerm.toLowerCase()
+          );
+
+      const statusMatch =
+        showBin
+          ? !product.is_active
+          : product.is_active;
+
+      return (
+        searchMatch &&
+        statusMatch
       );
+    })
+    .sort((a, b) =>
+      (a.name || '').localeCompare(
+        b.name || ''
+      )
+    );
 
-    }
+  const activeCount =
+    sourceProducts.filter(
+      (product) =>
+        product.is_active
+    ).length;
 
-  };
+  const inactiveCount =
+    sourceProducts.filter(
+      (product) =>
+        !product.is_active
+    ).length;
 
-  const activeCount = products.filter((p) => p.is_active).length;
-  const inactiveCount = products.filter((p) => !p.is_active).length;
-  const publishedCount = products.filter((p) => p.is_published).length;
+  const publishedCount =
+    sourceProducts.filter(
+      (product) =>
+        product.is_published
+    ).length;
+
+  const filteredProductIds =
+    filteredProducts.map(
+      (product) =>
+        product.id
+    );
+
+  const selectedFilteredCount =
+    filteredProductIds.filter(
+      (id) =>
+        selectedProducts.includes(
+          id
+        )
+    ).length;
+
+  const isAllFilteredSelected =
+    filteredProducts.length > 0 &&
+    selectedFilteredCount ===
+    filteredProducts.length;
+
+  const isSomeFilteredSelected =
+    selectedFilteredCount > 0 &&
+    selectedFilteredCount <
+    filteredProducts.length;
+
+  const pageIsLoading =
+    productsLoading ||
+    searchLoading;
+
+  const shouldShowSummary =
+    Boolean(selectedCategory) ||
+    isGlobalSearch;
+
+  // ==============================
+  // RENDER
+  // ==============================
 
   return (
     <Container maxWidth={false}>
-
       <Stack
         direction="row"
         alignItems="center"
@@ -543,8 +1001,8 @@ const handleSubmit = async (payload) => {
           direction="row"
           spacing={2}
         >
-
-          {selectedProducts.length > 0 ? (
+          {selectedProducts.length >
+            0 ? (
             <Stack
               direction="row"
               spacing={2}
@@ -554,7 +1012,10 @@ const handleSubmit = async (payload) => {
                 variant="subtitle1"
                 fontWeight={600}
               >
-                {selectedProducts.length} Selected
+                {
+                  selectedProducts.length
+                }{' '}
+                Selected
               </Typography>
 
               <Button
@@ -563,7 +1024,9 @@ const handleSubmit = async (payload) => {
                 startIcon={
                   <Iconify icon="solar:trash-bin-trash-outline" />
                 }
-                onClick={handleBulkDeactivate}
+                onClick={
+                  handleBulkDeactivate
+                }
               >
                 Move to Bin
               </Button>
@@ -571,7 +1034,11 @@ const handleSubmit = async (payload) => {
               <Button
                 color="inherit"
                 variant="text"
-                onClick={() => setSelectedProducts([])}
+                onClick={() =>
+                  setSelectedProducts(
+                    []
+                  )
+                }
               >
                 Cancel
               </Button>
@@ -581,8 +1048,12 @@ const handleSubmit = async (payload) => {
               <Button
                 variant="contained"
                 color="inherit"
-                startIcon={<Iconify icon="eva:plus-fill" />}
-                onClick={handleAddProduct}
+                startIcon={
+                  <Iconify icon="eva:plus-fill" />
+                }
+                onClick={
+                  handleAddProduct
+                }
               >
                 New Product
               </Button>
@@ -592,40 +1063,84 @@ const handleSubmit = async (payload) => {
       </Stack>
 
       <Stack
-        direction={{ xs: "column", md: "row" }}
+        direction={{
+          xs: 'column',
+          md: 'row',
+        }}
         spacing={2}
         alignItems="center"
         sx={{ mb: 4 }}
       >
         <Autocomplete
-          sx={{ flex: 1, minWidth: 280 }}
+          clearOnEscape
+          sx={{
+            flex: 1,
+            minWidth: 280,
+          }}
           options={categories}
           value={selectedCategory}
           onChange={(_, value) => {
             setSelectedProducts([]);
+            setSearchResults([]);
             setSelectedCategory(value);
           }}
-          getOptionLabel={(option) => option?.name || ""}
+          getOptionLabel={(option) =>
+            option?.name || ''
+          }
+          isOptionEqualToValue={(
+            option,
+            value
+          ) => option.id === value.id}
           renderInput={(params) => (
             <TextField
               {...params}
               label="Category"
+              placeholder="Optional"
+              fullWidth
             />
           )}
         />
 
         <TextField
-          sx={{ flex: 1, minWidth: 300 }}
+          fullWidth
+          sx={{
+            flex: 1,
+            minWidth: 300,
+          }}
           label="Search Products"
+          placeholder={
+            selectedCategory
+              ? `Search in ${selectedCategory.name}`
+              : 'Search across all products'
+          }
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(event) => {
+            setSelectedProducts([]);
+            setSearchTerm(
+              event.target.value
+            );
+          }}
+          InputProps={{
+            endAdornment:
+              searchLoading ? (
+                <CircularProgress
+                  size={20}
+                  sx={{ mr: 1 }}
+                />
+              ) : null,
+          }}
         />
 
         <Box
           sx={{
-            display: "flex",
-            bgcolor: "background.neutral",
-            border: (theme) => `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            alignItems: 'center',
+            flexShrink: 0,
+            height: 56,
+            bgcolor:
+              'background.neutral',
+            border: (theme) =>
+              `1px solid ${theme.palette.divider}`,
             borderRadius: 2,
             p: 0.5,
             gap: 0.5,
@@ -633,10 +1148,19 @@ const handleSubmit = async (payload) => {
         >
           <Button
             disableElevation
-            variant={!showBin ? "contained" : "text"}
-            color={!showBin ? "primary" : "inherit"}
+            variant={
+              !showBin
+                ? 'contained'
+                : 'text'
+            }
+            color={
+              !showBin
+                ? 'primary'
+                : 'inherit'
+            }
             sx={{
               minWidth: 110,
+              height: 40,
               borderRadius: 1.5,
             }}
             onClick={() => {
@@ -649,13 +1173,22 @@ const handleSubmit = async (payload) => {
 
           <Button
             disableElevation
-            variant={showBin ? "contained" : "text"}
-            color={showBin ? "warning" : "inherit"}
+            variant={
+              showBin
+                ? 'contained'
+                : 'text'
+            }
+            color={
+              showBin
+                ? 'warning'
+                : 'inherit'
+            }
             startIcon={
               <Iconify icon="solar:trash-bin-trash-outline" />
             }
             sx={{
               minWidth: 110,
+              height: 40,
               borderRadius: 1.5,
             }}
             onClick={() => {
@@ -664,32 +1197,43 @@ const handleSubmit = async (payload) => {
             }}
           >
             Bin
-            {!showBin && (
-              <Box
-                component="span"
-                sx={{
-                  ml: 1,
-                  px: 0.8,
-                  py: 0.2,
-                  borderRadius: 5,
-                  bgcolor: "warning.main",
-                  color: "common.white",
-                  fontSize: 12,
-                  fontWeight: 700,
-                }}
-              >
-                {products.filter((p) => !p.is_active).length}
-              </Box>
-            )}
+
+            {!showBin &&
+              selectedCategory && (
+                <Box
+                  component="span"
+                  sx={{
+                    ml: 1,
+                    px: 0.8,
+                    py: 0.2,
+                    borderRadius: 5,
+                    bgcolor:
+                      'warning.main',
+                    color:
+                      'common.white',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
+                  {inactiveCount}
+                </Box>
+              )}
           </Button>
         </Box>
       </Stack>
 
-      {selectedCategory && (
+      {shouldShowSummary && (
         <Stack
-          direction="row"
+          direction={{
+            xs: 'column',
+            sm: 'row',
+          }}
           justifyContent="space-between"
-          alignItems="center"
+          alignItems={{
+            xs: 'flex-start',
+            sm: 'center',
+          }}
+          spacing={2}
           sx={{ mb: 4 }}
         >
           <Box>
@@ -697,149 +1241,272 @@ const handleSubmit = async (payload) => {
               variant="h6"
               fontWeight={700}
             >
-              {selectedCategory.name}
+              {selectedCategory
+                ? selectedCategory.name
+                : 'Search Results'}
             </Typography>
 
             <Typography
               variant="body2"
               color="text.secondary"
             >
-              <Box component="span" fontWeight={600}>
+              <Box
+                component="span"
+                fontWeight={600}
+              >
                 {activeCount}
-              </Box>{" "}
-              Active {activeCount !== 1 ? "Products" : "Product"}
-              {" • "}
-              <Box component="span" fontWeight={600}>
+              </Box>{' '}
+              Active{' '}
+              {activeCount !== 1
+                ? 'Products'
+                : 'Product'}
+
+              {' • '}
+
+              <Box
+                component="span"
+                fontWeight={600}
+              >
                 {inactiveCount}
-              </Box>{" "}
+              </Box>{' '}
               In Bin
-              {" • "}
-              <Box component="span" fontWeight={600}>
+
+              {' • '}
+
+              <Box
+                component="span"
+                fontWeight={600}
+              >
                 {publishedCount}
-              </Box>{" "}
+              </Box>{' '}
               Published
             </Typography>
           </Box>
 
-          {filteredProducts.length > 0 && (
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-            >
-              <Checkbox
-                checked={
-                  filteredProducts.length > 0 &&
-                  selectedProducts.length ===
-                  filteredProducts.length
-                }
-                indeterminate={
-                  selectedProducts.length > 0 &&
-                  selectedProducts.length <
-                  filteredProducts.length
-                }
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedProducts(
-                      filteredProducts.map(
-                        (p) => p.id
-                      )
-                    );
-                  } else {
-                    setSelectedProducts([]);
+          {filteredProducts.length >
+            0 && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+              >
+                <Checkbox
+                  checked={
+                    isAllFilteredSelected
                   }
-                }}
-              />
+                  indeterminate={
+                    isSomeFilteredSelected
+                  }
+                  onChange={(
+                    event
+                  ) => {
+                    if (
+                      event.target
+                        .checked
+                    ) {
+                      setSelectedProducts(
+                        (previous) => [
+                          ...new Set([
+                            ...previous,
+                            ...filteredProductIds,
+                          ]),
+                        ]
+                      );
+                    } else {
+                      setSelectedProducts(
+                        (previous) =>
+                          previous.filter(
+                            (id) =>
+                              !filteredProductIds.includes(
+                                id
+                              )
+                          )
+                      );
+                    }
+                  }}
+                />
 
-              <Typography>
-                Select All
-              </Typography>
-            </Stack>
-          )}
+                <Typography>
+                  Select All
+                </Typography>
+              </Stack>
+            )}
         </Stack>
       )}
 
-      <Grid
-        container
-        spacing={3}
-      >
-        {filteredProducts.map(
-          (product) => (
-            <Grid
-              key={product.id}
-              xs={12}
-              sm={6}
-              md={4}
-              lg={3}
+      {!selectedCategory &&
+        normalizedSearchTerm.length <
+        2 && (
+          <Box
+            sx={{
+              py: 10,
+              textAlign: 'center',
+            }}
+          >
+            <Iconify
+              icon="eva:search-fill"
+              width={48}
+              sx={{
+                mb: 2,
+                color:
+                  'text.disabled',
+              }}
+            />
+
+            <Typography
+              variant="h6"
+              color="text.secondary"
             >
-              <Box position="relative">
-                <Checkbox
-                  checked={selectedProducts.includes(
-                    product.id
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                  }}
-                  onChange={(e) => {
-                    e.stopPropagation();
+              Search for a product
+            </Typography>
 
-                    handleSelectProduct(
-                      product.id
-                    );
-                  }}
-                  sx={{
-                    position: "absolute",
-                    top: 8,
-                    left: 8,
-                    zIndex: 1000,
-                    bgcolor: "background.paper",
-                    borderRadius: "50%",
-                  }}
-                />
-
-                <ProductCard
-                  product={product}
-                  categories={
-                    selectedCategory
-                  }
-                  onEdit={
-                    handleEditProduct
-                  }
-                  onDelete={
-                    handleDeleteProduct
-                  }
-                  onStatusChange={
-                    handleProductStatusChange
-                  }
-                  onPublish={
-                    handlePublishProduct
-                  }
-                />
-              </Box>
-            </Grid>
-          )
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1 }}
+            >
+              Enter at least 2
+              characters or select a
+              category.
+            </Typography>
+          </Box>
         )}
-      </Grid>
 
-      {products.length === 0 && (
+      {pageIsLoading && (
         <Box
           sx={{
             py: 10,
-            textAlign: 'center',
+            display: 'flex',
+            flexDirection:
+              'column',
+            alignItems: 'center',
+            justifyContent:
+              'center',
+            gap: 2,
           }}
         >
+          <CircularProgress
+            size={32}
+          />
+
           <Typography
-            variant="h6"
+            variant="body2"
             color="text.secondary"
           >
-            No products found
+            {searchLoading
+              ? 'Searching products...'
+              : 'Loading products...'}
           </Typography>
         </Box>
       )}
 
-      <ProductQuickEdit open={
-        productModalOpen
-      }
+      {!pageIsLoading && (
+        <Grid
+          container
+          spacing={3}
+        >
+          {filteredProducts.map(
+            (product) => (
+              <Grid
+                key={product.id}
+                xs={12}
+                sm={6}
+                md={4}
+                lg={3}
+              >
+                <Box position="relative">
+                  <Checkbox
+                    checked={selectedProducts.includes(
+                      product.id
+                    )}
+                    onClick={(
+                      event
+                    ) => {
+                      event.stopPropagation();
+                    }}
+                    onChange={(
+                      event
+                    ) => {
+                      event.stopPropagation();
+
+                      handleSelectProduct(
+                        product.id
+                      );
+                    }}
+                    sx={{
+                      position:
+                        'absolute',
+                      top: 8,
+                      left: 8,
+                      zIndex: 1000,
+                      bgcolor:
+                        'background.paper',
+                      borderRadius:
+                        '50%',
+                    }}
+                  />
+
+                  <ProductCard
+                    product={
+                      product
+                    }
+                    categories={
+                      selectedCategory ||
+                      product.category ||
+                      product.stone_categories ||
+                      null
+                    }
+                    onEdit={
+                      handleEditProduct
+                    }
+                    onDelete={
+                      handleDeleteProduct
+                    }
+                    onStatusChange={
+                      handleProductStatusChange
+                    }
+                    onPublish={
+                      handlePublishProduct
+                    }
+                  />
+                </Box>
+              </Grid>
+            )
+          )}
+        </Grid>
+      )}
+
+      {!pageIsLoading &&
+        shouldShowSummary &&
+        filteredProducts.length ===
+        0 && (
+          <Box
+            sx={{
+              py: 10,
+              textAlign: 'center',
+            }}
+          >
+            <Typography
+              variant="h6"
+              color="text.secondary"
+            >
+              No products found
+            </Typography>
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{ mt: 1 }}
+            >
+              Try another search term
+              or select a different
+              category.
+            </Typography>
+          </Box>
+        )}
+
+      <ProductQuickEdit
+        open={productModalOpen}
         onClose={
           handleCloseModal
         }
@@ -852,11 +1519,13 @@ const handleSubmit = async (payload) => {
         onSubmit={
           handleSubmit
         }
-        loading={
-          loading
+        loading={loading}
+        deletedMediaIds={
+          deletedMediaIds
         }
-        deletedMediaIds={deletedMediaIds}
-        setDeletedMediaIds={setDeletedMediaIds}
+        setDeletedMediaIds={
+          setDeletedMediaIds
+        }
       />
     </Container>
   );

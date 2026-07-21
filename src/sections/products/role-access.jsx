@@ -12,7 +12,7 @@ export const canEditIdentity = () =>
     [1, 3 ,4].includes(getRoleId());
 
 export const canEditDescription = () =>
-    [1, 5].includes(getRoleId());
+    [1, 5 , 6].includes(getRoleId());
 
 export const canEditStoneDetails = () =>
     [1, 3, 4].includes(getRoleId());
