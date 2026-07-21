@@ -39,13 +39,13 @@ import {
     saveGalleryImages,
     deleteGalleryImage,
     getGalleryCategories,
+    updateGalleryImageAlt,
     updateGalleryCategory,
     deleteGalleryCategory,
     createGalleryCategory,
     uploadGalleryImageToR2,
     createGalleryUploadUrls,
 } from 'src/services/gallery.service';
-
 
 const ALLOWED_TYPES = [
     'image/jpeg',
@@ -57,11 +57,15 @@ const ALLOWED_TYPES = [
     'video/quicktime',
 ];
 
+const MAX_ALT_LENGTH = 250;
+
 const isVideoFile = (file) =>
     file?.type?.startsWith('video/');
 
 const isVideoUrl = (url = '') => {
-    const cleanUrl = url.split('?')[0].toLowerCase();
+    const cleanUrl = url
+        .split('?')[0]
+        .toLowerCase();
 
     return (
         cleanUrl.endsWith('.mp4') ||
@@ -69,6 +73,15 @@ const isVideoUrl = (url = '') => {
         cleanUrl.endsWith('.mov')
     );
 };
+
+const createDefaultAltText = (
+    fileName = ''
+) =>
+    fileName
+        .replace(/\.[^/.]+$/, '')
+        .replace(/[-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
 
 const getCategoryId = (category) =>
     category?.id ??
@@ -108,15 +121,32 @@ const getImageName = (image) =>
     image?.filename ??
     'Gallery media';
 
+const getImageAlt = (image) =>
+    image?.image_alt ??
+    image?.imageAlt ??
+    image?.alt ??
+    '';
+
 const extractCategories = (response) => {
-    if (Array.isArray(response)) return response;
-    if (Array.isArray(response?.categories)) {
+    if (Array.isArray(response)) {
+        return response;
+    }
+
+    if (
+        Array.isArray(response?.categories)
+    ) {
         return response.categories;
     }
+
     if (Array.isArray(response?.data)) {
         return response.data;
     }
-    if (Array.isArray(response?.data?.categories)) {
+
+    if (
+        Array.isArray(
+            response?.data?.categories
+        )
+    ) {
         return response.data.categories;
     }
 
@@ -124,35 +154,59 @@ const extractCategories = (response) => {
 };
 
 const extractImages = (response) => {
-    if (Array.isArray(response)) return response;
+    if (Array.isArray(response)) {
+        return response;
+    }
+
     if (Array.isArray(response?.images)) {
         return response.images;
     }
+
     if (Array.isArray(response?.data)) {
         return response.data;
     }
-    if (Array.isArray(response?.data?.images)) {
+
+    if (
+        Array.isArray(response?.data?.images)
+    ) {
         return response.data.images;
     }
 
     return [];
 };
 
-const extractPresignedUploads = (response) => {
-    if (Array.isArray(response)) return response;
-    if (Array.isArray(response?.uploads)) {
+const extractPresignedUploads = (
+    response
+) => {
+    if (Array.isArray(response)) {
+        return response;
+    }
+
+    if (
+        Array.isArray(response?.uploads)
+    ) {
         return response.uploads;
     }
+
     if (Array.isArray(response?.files)) {
         return response.files;
     }
+
     if (Array.isArray(response?.data)) {
         return response.data;
     }
-    if (Array.isArray(response?.data?.uploads)) {
+
+    if (
+        Array.isArray(
+            response?.data?.uploads
+        )
+    ) {
         return response.data.uploads;
     }
-    if (Array.isArray(response?.data?.files)) {
+
+    if (
+        Array.isArray(response?.data?.files)
+    ) {
         return response.data.files;
     }
 
@@ -160,30 +214,53 @@ const extractPresignedUploads = (response) => {
 };
 
 const getPresignedUploadUrl = (item) =>
-    item?.uploadUrl ?? '';
+    item?.uploadUrl ??
+    item?.upload_url ??
+    item?.presignedUrl ??
+    item?.presigned_url ??
+    '';
 
 const getPresignedPublicUrl = (item) =>
-    item?.secure_url ?? '';
+    item?.secure_url ??
+    item?.publicUrl ??
+    item?.public_url ??
+    item?.url ??
+    '';
 
 const formatFileSize = (bytes) => {
-    if (!bytes) return '0 B';
+    if (!bytes) {
+        return '0 B';
+    }
 
-    const units = ['B', 'KB', 'MB', 'GB'];
+    const units = [
+        'B',
+        'KB',
+        'MB',
+        'GB',
+    ];
+
     const unitIndex = Math.min(
-        Math.floor(Math.log(bytes) / Math.log(1024)),
+        Math.floor(
+            Math.log(bytes) /
+                Math.log(1024)
+        ),
         units.length - 1
     );
-    const value = bytes / 1024 ** unitIndex;
 
-    return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${
-        units[unitIndex]
-    }`;
+    const value =
+        bytes / 1024 ** unitIndex;
+
+    return `${value.toFixed(
+        unitIndex === 0 ? 0 : 1
+    )} ${units[unitIndex]}`;
 };
 
 const revokeFilePreviews = (files) => {
     files.forEach((item) => {
         if (item.preview) {
-            URL.revokeObjectURL(item.preview);
+            URL.revokeObjectURL(
+                item.preview
+            );
         }
     });
 };
@@ -193,20 +270,24 @@ function MediaPreview({
     name,
     file,
     controls = false,
+    height = 130,
 }) {
-    const video = isVideoFile(file) || isVideoUrl(url);
+    const video =
+        isVideoFile(file) ||
+        isVideoUrl(url);
 
     if (!url) {
         return (
             <Box
                 sx={{
                     width: '100%',
-                    height: 100,
+                    height,
                     px: 1,
                     display: 'flex',
                     textAlign: 'center',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent:
+                        'center',
                     bgcolor: 'action.hover',
                 }}
             >
@@ -231,7 +312,7 @@ function MediaPreview({
                 preload="metadata"
                 sx={{
                     width: '100%',
-                    height: 100,
+                    height,
                     display: 'block',
                     objectFit: 'cover',
                     bgcolor: 'common.black',
@@ -244,11 +325,11 @@ function MediaPreview({
         <Box
             component="img"
             src={url}
-            alt={name}
+            alt={name || ''}
             loading="lazy"
             sx={{
                 width: '100%',
-                height: 100,
+                height,
                 display: 'block',
                 objectFit: 'cover',
             }}
@@ -264,48 +345,107 @@ MediaPreview.propTypes = {
         PropTypes.oneOf([null]),
     ]),
     controls: PropTypes.bool,
+    height: PropTypes.oneOfType([
+        PropTypes.number,
+        PropTypes.string,
+    ]),
 };
 
 export default function InspirationGallery() {
     const fileInputRef = useRef(null);
     const selectedFilesRef = useRef([]);
 
-    const [categories, setCategories] = useState([]);
+    const [categories, setCategories] =
+        useState([]);
+
     const [images, setImages] = useState([]);
-    const [selectedFiles, setSelectedFiles] = useState([]);
-    const [selectedCategoryId, setSelectedCategoryId] =
-        useState('');
 
-    const [loading, setLoading] = useState(true);
-    const [imagesLoading, setImagesLoading] = useState(false);
-    const [uploading, setUploading] = useState(false);
-    const [compressing, setCompressing] = useState(false);
-    const [dragActive, setDragActive] = useState(false);
+    const [
+        selectedFiles,
+        setSelectedFiles,
+    ] = useState([]);
 
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [compressionProgress, setCompressionProgress] =
-        useState(0);
+    const [
+        selectedCategoryId,
+        setSelectedCategoryId,
+    ] = useState('');
 
-    const [expandedCategory, setExpandedCategory] =
+    const [loading, setLoading] =
+        useState(true);
+
+    const [
+        imagesLoading,
+        setImagesLoading,
+    ] = useState(false);
+
+    const [uploading, setUploading] =
         useState(false);
 
-    const [categoryDialog, setCategoryDialog] = useState({
+    const [
+        compressing,
+        setCompressing,
+    ] = useState(false);
+
+    const [dragActive, setDragActive] =
+        useState(false);
+
+    const [
+        uploadProgress,
+        setUploadProgress,
+    ] = useState(0);
+
+    const [
+        compressionProgress,
+        setCompressionProgress,
+    ] = useState(0);
+
+    const [
+        expandedCategory,
+        setExpandedCategory,
+    ] = useState(false);
+
+    const [
+        categoryDialog,
+        setCategoryDialog,
+    ] = useState({
         open: false,
         mode: 'create',
         category: null,
     });
 
-    const [categoryName, setCategoryName] = useState('');
-    const [savingCategory, setSavingCategory] =
-        useState(false);
+    const [
+        categoryName,
+        setCategoryName,
+    ] = useState('');
 
-    const [deleteDialog, setDeleteDialog] = useState({
+    const [
+        savingCategory,
+        setSavingCategory,
+    ] = useState(false);
+
+    const [
+        altDialog,
+        setAltDialog,
+    ] = useState({
         open: false,
-        type: '',
-        item: null,
+        image: null,
     });
 
-    const [deleting, setDeleting] = useState(false);
+    const [altText, setAltText] =
+        useState('');
+
+    const [savingAlt, setSavingAlt] =
+        useState(false);
+
+    const [deleteDialog, setDeleteDialog] =
+        useState({
+            open: false,
+            type: '',
+            item: null,
+        });
+
+    const [deleting, setDeleting] =
+        useState(false);
 
     const [message, setMessage] = useState({
         open: false,
@@ -325,38 +465,86 @@ export default function InspirationGallery() {
         () =>
             categories.find(
                 (category) =>
-                    String(getCategoryId(category)) ===
-                    String(selectedCategoryId)
+                    String(
+                        getCategoryId(
+                            category
+                        )
+                    ) ===
+                    String(
+                        selectedCategoryId
+                    )
             ),
-        [categories, selectedCategoryId]
+        [
+            categories,
+            selectedCategoryId,
+        ]
     );
 
-    const imagesByCategory = useMemo(() => {
-        const groupedImages = {};
+    const imagesByCategory = useMemo(
+        () => {
+            const groupedImages = {};
 
-        categories.forEach((category) => {
-            groupedImages[
-                String(getCategoryId(category))
-            ] = [];
-        });
+            categories.forEach(
+                (category) => {
+                    const categoryId =
+                        getCategoryId(
+                            category
+                        );
 
-        images.forEach((image) => {
-            const categoryId = String(
-                getImageCategoryId(image)
+                    if (
+                        categoryId !==
+                            undefined &&
+                        categoryId !== null
+                    ) {
+                        groupedImages[
+                            String(categoryId)
+                        ] = [];
+                    }
+                }
             );
 
-            if (!groupedImages[categoryId]) {
-                groupedImages[categoryId] = [];
-            }
+            images.forEach((image) => {
+                const categoryId =
+                    getImageCategoryId(
+                        image
+                    );
 
-            groupedImages[categoryId].push(image);
-        });
+                if (
+                    categoryId ===
+                        undefined ||
+                    categoryId === null
+                ) {
+                    return;
+                }
 
-        return groupedImages;
-    }, [categories, images]);
+                const categoryKey =
+                    String(categoryId);
+
+                if (
+                    !groupedImages[
+                        categoryKey
+                    ]
+                ) {
+                    groupedImages[
+                        categoryKey
+                    ] = [];
+                }
+
+                groupedImages[
+                    categoryKey
+                ].push(image);
+            });
+
+            return groupedImages;
+        },
+        [categories, images]
+    );
 
     const showMessage = useCallback(
-        (text, severity = 'success') => {
+        (
+            text,
+            severity = 'success'
+        ) => {
             setMessage({
                 open: true,
                 severity,
@@ -366,74 +554,102 @@ export default function InspirationGallery() {
         []
     );
 
-    const loadCategories = useCallback(async () => {
-        const response = await getGalleryCategories();
-        const categoryList = extractCategories(response);
+    const loadCategories =
+        useCallback(async () => {
+            const response =
+                await getGalleryCategories();
 
-        setCategories(categoryList);
+            const categoryList =
+                extractCategories(response);
 
-        setSelectedCategoryId((currentCategoryId) => {
-            const exists = categoryList.some(
-                (category) =>
-                    String(getCategoryId(category)) ===
-                    String(currentCategoryId)
+            setCategories(categoryList);
+
+            setSelectedCategoryId(
+                (currentCategoryId) => {
+                    const exists =
+                        categoryList.some(
+                            (category) =>
+                                String(
+                                    getCategoryId(
+                                        category
+                                    )
+                                ) ===
+                                String(
+                                    currentCategoryId
+                                )
+                        );
+
+                    if (exists) {
+                        return currentCategoryId;
+                    }
+
+                    if (
+                        categoryList.length
+                    ) {
+                        return String(
+                            getCategoryId(
+                                categoryList[0]
+                            )
+                        );
+                    }
+
+                    return '';
+                }
             );
 
-            if (exists) {
-                return currentCategoryId;
-            }
+            return categoryList;
+        }, []);
 
-            if (categoryList.length) {
-                return String(
-                    getCategoryId(categoryList[0])
+    const loadImages =
+        useCallback(async () => {
+            setImagesLoading(true);
+
+            try {
+                const response =
+                    await getGalleryImages({
+                        limit: 500,
+                    });
+
+                setImages(
+                    extractImages(response)
                 );
+            } finally {
+                setImagesLoading(false);
             }
+        }, []);
 
-            return '';
-        });
+    const loadPage =
+        useCallback(async () => {
+            setLoading(true);
 
-        return categoryList;
-    }, []);
-
-    const loadImages = useCallback(async () => {
-        setImagesLoading(true);
-
-        try {
-            const response = await getGalleryImages({
-                limit: 500,
-            });
-
-            setImages(extractImages(response));
-        } finally {
-            setImagesLoading(false);
-        }
-    }, []);
-
-    const loadPage = useCallback(async () => {
-        setLoading(true);
-
-        try {
-            await Promise.all([
-                loadCategories(),
-                loadImages(),
-            ]);
-        } catch (error) {
-            showMessage(
-                error.message ||
-                    'Failed to load inspiration gallery',
-                'error'
-            );
-        } finally {
-            setLoading(false);
-        }
-    }, [loadCategories, loadImages, showMessage]);
+            try {
+                await Promise.all([
+                    loadCategories(),
+                    loadImages(),
+                ]);
+            } catch (error) {
+                showMessage(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to load inspiration gallery',
+                    'error'
+                );
+            } finally {
+                setLoading(false);
+            }
+        }, [
+            loadCategories,
+            loadImages,
+            showMessage,
+        ]);
 
     useEffect(() => {
         loadPage();
     }, [loadPage]);
 
     useEffect(() => {
-        selectedFilesRef.current = selectedFiles;
+        selectedFilesRef.current =
+            selectedFiles;
     }, [selectedFiles]);
 
     useEffect(
@@ -447,15 +663,22 @@ export default function InspirationGallery() {
 
     const validateFiles = useCallback(
         async (files) => {
-            const incomingFiles = Array.from(files || []);
+            const incomingFiles =
+                Array.from(files || []);
+
             const supportedFiles = [];
             const errors = [];
 
             incomingFiles.forEach((file) => {
-                if (!ALLOWED_TYPES.includes(file.type)) {
+                if (
+                    !ALLOWED_TYPES.includes(
+                        file.type
+                    )
+                ) {
                     errors.push(
                         `${file.name}: unsupported file type`
                     );
+
                     return;
                 }
 
@@ -474,11 +697,16 @@ export default function InspirationGallery() {
             }
 
             const videosToCompress =
-                supportedFiles.filter((file) =>
-                    shouldCompressVideo(file)
+                supportedFiles.filter(
+                    (file) =>
+                        shouldCompressVideo(
+                            file
+                        )
                 );
 
-            if (videosToCompress.length) {
+            if (
+                videosToCompress.length
+            ) {
                 setCompressing(true);
                 setCompressionProgress(0);
 
@@ -492,108 +720,133 @@ export default function InspirationGallery() {
             }
 
             try {
-                const progressByFile = new Map();
+                const progressByFile =
+                    new Map();
 
-                const preparedFiles = await Promise.all(
-                    supportedFiles.map(
-                        async (file, index) => {
-                            let finalFile = file;
+                const preparedFiles =
+                    await Promise.all(
+                        supportedFiles.map(
+                            async (
+                                file,
+                                index
+                            ) => {
+                                let finalFile =
+                                    file;
 
-                            if (
-                                shouldCompressVideo(file)
-                            ) {
-                                setActivity(
-                                    (current) => ({
-                                        ...current,
-                                        open: true,
-                                        title: `Compressing ${file.name}`,
-                                        description: `Original size: ${formatFileSize(
-                                            file.size
-                                        )}`,
-                                        severity: 'info',
-                                    })
-                                );
+                                if (
+                                    shouldCompressVideo(
+                                        file
+                                    )
+                                ) {
+                                    setActivity(
+                                        (
+                                            current
+                                        ) => ({
+                                            ...current,
+                                            open: true,
+                                            title: `Compressing ${file.name}`,
+                                            description: `Original size: ${formatFileSize(
+                                                file.size
+                                            )}`,
+                                            severity:
+                                                'info',
+                                        })
+                                    );
 
-                                finalFile =
-                                    await compressVideo(
-                                        file,
-                                        (fileProgress) => {
-                                            progressByFile.set(
-                                                index,
+                                    finalFile =
+                                        await compressVideo(
+                                            file,
+                                            (
                                                 fileProgress
-                                            );
+                                            ) => {
+                                                progressByFile.set(
+                                                    index,
+                                                    fileProgress
+                                                );
 
-                                            const total =
-                                                supportedFiles.reduce(
-                                                    (
-                                                        sum,
-                                                        currentFile,
-                                                        fileIndex
-                                                    ) => {
-                                                        if (
-                                                            !shouldCompressVideo(
-                                                                currentFile
-                                                            )
-                                                        ) {
+                                                const total =
+                                                    supportedFiles.reduce(
+                                                        (
+                                                            sum,
+                                                            currentFile,
+                                                            fileIndex
+                                                        ) => {
+                                                            if (
+                                                                !shouldCompressVideo(
+                                                                    currentFile
+                                                                )
+                                                            ) {
+                                                                return (
+                                                                    sum +
+                                                                    100
+                                                                );
+                                                            }
+
                                                             return (
                                                                 sum +
-                                                                100
+                                                                (progressByFile.get(
+                                                                    fileIndex
+                                                                ) ||
+                                                                    0)
                                                             );
-                                                        }
+                                                        },
+                                                        0
+                                                    );
 
-                                                        return (
-                                                            sum +
-                                                            (progressByFile.get(
-                                                                fileIndex
-                                                            ) ||
-                                                                0)
-                                                        );
-                                                    },
-                                                    0
+                                                const progress =
+                                                    Math.round(
+                                                        total /
+                                                            supportedFiles.length
+                                                    );
+
+                                                setCompressionProgress(
+                                                    progress
                                                 );
 
-                                            const progress =
-                                                Math.round(
-                                                    total /
-                                                        supportedFiles.length
+                                                setActivity(
+                                                    (
+                                                        current
+                                                    ) => ({
+                                                        ...current,
+                                                        progress,
+                                                    })
                                                 );
-
-                                            setCompressionProgress(
-                                                progress
-                                            );
-
-                                            setActivity(
-                                                (
-                                                    current
-                                                ) => ({
-                                                    ...current,
-                                                    progress,
-                                                })
-                                            );
-                                        }
+                                            }
+                                        );
+                                } else {
+                                    progressByFile.set(
+                                        index,
+                                        100
                                     );
-                            } else {
-                                progressByFile.set(
-                                    index,
-                                    100
-                                );
-                            }
+                                }
 
-                            return {
-                                id: `${finalFile.name}-${finalFile.size}-${finalFile.lastModified}-${Math.random()}`,
-                                file: finalFile,
-                                originalSize:
-                                    file.size,
-                                wasCompressed:
-                                    finalFile !== file,
-                                preview:
-                                    URL.createObjectURL(
+                                const video =
+                                    isVideoFile(
                                         finalFile
-                                    ),
-                            };
-                        }
-                    )
-                );
+                                    );
+
+                                return {
+                                    id: `${finalFile.name}-${finalFile.size}-${finalFile.lastModified}-${Math.random()}`,
+                                    file: finalFile,
+                                    originalSize:
+                                        file.size,
+                                    wasCompressed:
+                                        finalFile !==
+                                        file,
+                                    preview:
+                                        URL.createObjectURL(
+                                            finalFile
+                                        ),
+                                    imageAlt:
+                                        video
+                                            ? ''
+                                            : createDefaultAltText(
+                                                  finalFile.name
+                                              ),
+                                };
+                            }
+                        )
+                    );
 
                 setSelectedFiles(
                     (currentFiles) => [
@@ -604,11 +857,16 @@ export default function InspirationGallery() {
 
                 const compressedFiles =
                     preparedFiles.filter(
-                        (item) => item.wasCompressed
+                        (item) =>
+                            item.wasCompressed
                     );
 
-                if (compressedFiles.length) {
-                    setCompressionProgress(100);
+                if (
+                    compressedFiles.length
+                ) {
+                    setCompressionProgress(
+                        100
+                    );
 
                     setActivity({
                         open: true,
@@ -648,12 +906,15 @@ export default function InspirationGallery() {
         [showMessage]
     );
 
-    const handleFileInputChange = async (event) => {
-        const { files } = event.target;
-        event.target.value = '';
+    const handleFileInputChange =
+        async (event) => {
+            const { files } =
+                event.target;
 
-        await validateFiles(files);
-    };
+            event.target.value = '';
+
+            await validateFiles(files);
+        };
 
     const handleDragEnter = (event) => {
         event.preventDefault();
@@ -695,29 +956,66 @@ export default function InspirationGallery() {
         }
     };
 
-    const removeSelectedFile = (fileId) => {
-        setSelectedFiles((currentFiles) => {
-            const removedFile =
-                currentFiles.find(
-                    (item) => item.id === fileId
+    const updateSelectedFileAlt =
+        useCallback(
+            (fileId, imageAlt) => {
+                setSelectedFiles(
+                    (currentFiles) =>
+                        currentFiles.map(
+                            (item) =>
+                                item.id ===
+                                fileId
+                                    ? {
+                                          ...item,
+                                          imageAlt,
+                                      }
+                                    : item
+                        )
                 );
+            },
+            []
+        );
 
-            if (removedFile?.preview) {
-                URL.revokeObjectURL(
-                    removedFile.preview
+    const removeSelectedFile = (
+        fileId
+    ) => {
+        setSelectedFiles(
+            (currentFiles) => {
+                const removedFile =
+                    currentFiles.find(
+                        (item) =>
+                            item.id ===
+                            fileId
+                    );
+
+                if (
+                    removedFile?.preview
+                ) {
+                    URL.revokeObjectURL(
+                        removedFile.preview
+                    );
+                }
+
+                return currentFiles.filter(
+                    (item) =>
+                        item.id !== fileId
                 );
             }
+        );
+    };
 
-            return currentFiles.filter(
-                (item) => item.id !== fileId
+    const clearSelectedFiles =
+        useCallback(() => {
+            setSelectedFiles(
+                (currentFiles) => {
+                    revokeFilePreviews(
+                        currentFiles
+                    );
+
+                    return [];
+                }
             );
-        });
-    };
-
-    const clearSelectedFiles = () => {
-        revokeFilePreviews(selectedFiles);
-        setSelectedFiles([]);
-    };
+        }, []);
 
     const handleUpload = async () => {
         if (!selectedCategoryId) {
@@ -725,6 +1023,7 @@ export default function InspirationGallery() {
                 'Please select a category first',
                 'error'
             );
+
             return;
         }
 
@@ -733,6 +1032,45 @@ export default function InspirationGallery() {
                 'Please select at least one media file',
                 'error'
             );
+
+            return;
+        }
+
+        const imagesWithoutAlt =
+            selectedFiles.filter(
+                (item) =>
+                    !isVideoFile(
+                        item.file
+                    ) &&
+                    !item.imageAlt?.trim()
+            );
+
+        if (imagesWithoutAlt.length) {
+            showMessage(
+                'Please add alt text for every selected image',
+                'error'
+            );
+
+            return;
+        }
+
+        const invalidAltText =
+            selectedFiles.find(
+                (item) =>
+                    !isVideoFile(
+                        item.file
+                    ) &&
+                    item.imageAlt?.trim()
+                        .length >
+                        MAX_ALT_LENGTH
+            );
+
+        if (invalidAltText) {
+            showMessage(
+                `Alt text cannot exceed ${MAX_ALT_LENGTH} characters`,
+                'error'
+            );
+
             return;
         }
 
@@ -748,19 +1086,25 @@ export default function InspirationGallery() {
         });
 
         try {
-            const filesPayload = selectedFiles.map(
-                ({ file }) => ({
-                    fileName: file.name,
-                    contentType: file.type,
-                })
-            );
+            const filesPayload =
+                selectedFiles.map(
+                    ({ file }) => ({
+                        fileName:
+                            file.name,
+                        contentType:
+                            file.type,
+                    })
+                );
 
             const presignResponse =
-                await createGalleryUploadUrls({
-                    categoryId:
-                        selectedCategoryId,
-                    files: filesPayload,
-                });
+                await createGalleryUploadUrls(
+                    {
+                        categoryId:
+                            selectedCategoryId,
+                        files:
+                            filesPayload,
+                    }
+                );
 
             const presignedUploads =
                 extractPresignedUploads(
@@ -813,7 +1157,9 @@ export default function InspirationGallery() {
                             }
 
                             setActivity(
-                                (current) => ({
+                                (
+                                    current
+                                ) => ({
                                     ...current,
                                     title: `Uploading ${selectedFile.file.name}`,
                                     description: `${completedUploads} of ${selectedFiles.length} completed`,
@@ -827,11 +1173,13 @@ export default function InspirationGallery() {
                                     contentType:
                                         presignedItem.contentType ||
                                         selectedFile
-                                            .file.type,
+                                            .file
+                                            .type,
                                 }
                             );
 
-                            completedUploads += 1;
+                            completedUploads +=
+                                1;
 
                             const progress =
                                 Math.round(
@@ -847,38 +1195,52 @@ export default function InspirationGallery() {
                             setActivity({
                                 open: true,
                                 title:
-                                    progress === 100
+                                    progress ===
+                                    100
                                         ? 'Finalizing upload'
                                         : 'Uploading media',
                                 description: `${completedUploads} of ${selectedFiles.length} completed`,
-                                severity: 'info',
+                                severity:
+                                    'info',
                                 progress,
                             });
+
+                            const video =
+                                isVideoFile(
+                                    selectedFile.file
+                                );
 
                             return {
                                 secure_url:
                                     publicUrl,
                                 image_alt:
-                                    selectedFile
-                                        .file.name,
+                                    video
+                                        ? null
+                                        : selectedFile.imageAlt.trim(),
                                 title:
                                     selectedFile
-                                        .file.name,
+                                        .file
+                                        .name,
                             };
                         }
                     )
                 );
 
             await saveGalleryImages({
-                categoryId: selectedCategoryId,
-                images: uploadedImages,
+                categoryId:
+                    selectedCategoryId,
+                images:
+                    uploadedImages,
             });
 
             clearSelectedFiles();
+
             await loadImages();
 
             setExpandedCategory(
-                String(selectedCategoryId)
+                String(
+                    selectedCategoryId
+                )
             );
 
             setActivity({
@@ -897,15 +1259,17 @@ export default function InspirationGallery() {
                 open: true,
                 title: 'Upload failed',
                 description:
-                    error.message ||
-                    'Failed to upload gallery media',
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to upload gallery media',
                 severity: 'error',
                 progress: 0,
             });
 
             showMessage(
-                error.message ||
-                    'Failed to upload gallery media',
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to upload gallery media',
                 'error'
             );
         } finally {
@@ -914,14 +1278,16 @@ export default function InspirationGallery() {
         }
     };
 
-    const openCreateCategoryDialog = () => {
-        setCategoryName('');
-        setCategoryDialog({
-            open: true,
-            mode: 'create',
-            category: null,
-        });
-    };
+    const openCreateCategoryDialog =
+        () => {
+            setCategoryName('');
+
+            setCategoryDialog({
+                open: true,
+                mode: 'create',
+                category: null,
+            });
+        };
 
     const openEditCategoryDialog = (
         category
@@ -938,7 +1304,9 @@ export default function InspirationGallery() {
     };
 
     const closeCategoryDialog = () => {
-        if (savingCategory) return;
+        if (savingCategory) {
+            return;
+        }
 
         setCategoryDialog({
             open: false,
@@ -949,77 +1317,212 @@ export default function InspirationGallery() {
         setCategoryName('');
     };
 
-    const handleSaveCategory = async () => {
-        const trimmedName =
-            categoryName.trim();
+    const handleSaveCategory =
+        async () => {
+            const trimmedName =
+                categoryName.trim();
 
-        if (!trimmedName) {
-            showMessage(
-                'Category name is required',
-                'error'
-            );
-            return;
-        }
-
-        setSavingCategory(true);
-
-        try {
-            if (
-                categoryDialog.mode === 'edit'
-            ) {
-                await updateGalleryCategory(
-                    getCategoryId(
-                        categoryDialog.category
-                    ),
-                    {
-                        name: trimmedName,
-                    }
-                );
-
+            if (!trimmedName) {
                 showMessage(
-                    'Category updated successfully'
+                    'Category name is required',
+                    'error'
                 );
-            } else {
-                const response =
-                    await createGalleryCategory({
-                        name: trimmedName,
-                    });
 
-                const createdCategory =
-                    response?.category ??
-                    response?.data?.category ??
-                    response?.data ??
-                    response;
+                return;
+            }
 
+            setSavingCategory(true);
+
+            try {
                 if (
-                    getCategoryId(
-                        createdCategory
-                    )
+                    categoryDialog.mode ===
+                    'edit'
                 ) {
-                    setSelectedCategoryId(
-                        String(
-                            getCategoryId(
-                                createdCategory
-                            )
+                    await updateGalleryCategory(
+                        getCategoryId(
+                            categoryDialog.category
+                        ),
+                        {
+                            name: trimmedName,
+                        }
+                    );
+
+                    showMessage(
+                        'Category updated successfully'
+                    );
+                } else {
+                    const response =
+                        await createGalleryCategory(
+                            {
+                                name: trimmedName,
+                            }
+                        );
+
+                    const createdCategory =
+                        response?.category ??
+                        response?.data
+                            ?.category ??
+                        response?.data ??
+                        response;
+
+                    if (
+                        getCategoryId(
+                            createdCategory
                         )
+                    ) {
+                        setSelectedCategoryId(
+                            String(
+                                getCategoryId(
+                                    createdCategory
+                                )
+                            )
+                        );
+                    }
+
+                    showMessage(
+                        'Category created successfully'
                     );
                 }
 
-                showMessage(
-                    'Category created successfully'
-                );
-            }
+                setCategoryDialog({
+                    open: false,
+                    mode: 'create',
+                    category: null,
+                });
 
-            closeCategoryDialog();
-            await loadCategories();
+                setCategoryName('');
+
+                await loadCategories();
+            } catch (error) {
+                showMessage(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to save category',
+                    'error'
+                );
+            } finally {
+                setSavingCategory(false);
+            }
+        };
+
+    const openAltDialog = (image) => {
+        setAltText(getImageAlt(image));
+
+        setAltDialog({
+            open: true,
+            image,
+        });
+    };
+
+    const closeAltDialog = () => {
+        if (savingAlt) {
+            return;
+        }
+
+        setAltDialog({
+            open: false,
+            image: null,
+        });
+
+        setAltText('');
+    };
+
+    const handleSaveAlt = async () => {
+        const trimmedAlt =
+            altText.trim();
+
+        if (!trimmedAlt) {
+            showMessage(
+                'Image alt text is required',
+                'error'
+            );
+
+            return;
+        }
+
+        if (
+            trimmedAlt.length >
+            MAX_ALT_LENGTH
+        ) {
+            showMessage(
+                `Image alt text cannot exceed ${MAX_ALT_LENGTH} characters`,
+                'error'
+            );
+
+            return;
+        }
+
+        const imageId = getImageId(
+            altDialog.image
+        );
+
+        if (!imageId) {
+            showMessage(
+                'Unable to identify this media item',
+                'error'
+            );
+
+            return;
+        }
+
+        setSavingAlt(true);
+
+        try {
+            const response =
+                await updateGalleryImageAlt(
+                    imageId,
+                    trimmedAlt
+                );
+
+            const updatedImage =
+                response?.image ??
+                response?.data?.image ??
+                response?.data ??
+                response;
+
+            setImages((currentImages) =>
+                currentImages.map((image) => {
+                    if (
+                        String(
+                            getImageId(image)
+                        ) !== String(imageId)
+                    ) {
+                        return image;
+                    }
+
+                    return {
+                        ...image,
+                        ...(updatedImage &&
+                        typeof updatedImage ===
+                            'object'
+                            ? updatedImage
+                            : {}),
+                        image_alt:
+                            updatedImage?.image_alt ??
+                            trimmedAlt,
+                    };
+                })
+            );
+
+            setAltDialog({
+                open: false,
+                image: null,
+            });
+
+            setAltText('');
+
+            showMessage(
+                'Alt text updated successfully'
+            );
         } catch (error) {
             showMessage(
-                error.message ||
-                    'Failed to save category',
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to update alt text',
                 'error'
             );
         } finally {
-            setSavingCategory(false);
+            setSavingAlt(false);
         }
     };
 
@@ -1035,7 +1538,9 @@ export default function InspirationGallery() {
     };
 
     const closeDeleteDialog = () => {
-        if (deleting) return;
+        if (deleting) {
+            return;
+        }
 
         setDeleteDialog({
             open: false,
@@ -1044,82 +1549,97 @@ export default function InspirationGallery() {
         });
     };
 
-    const handleConfirmDelete = async () => {
-        setDeleting(true);
+    const handleConfirmDelete =
+        async () => {
+            setDeleting(true);
 
-        try {
-            if (
-                deleteDialog.type ===
-                'category'
-            ) {
-                const categoryId =
-                    getCategoryId(
-                        deleteDialog.item
+            try {
+                if (
+                    deleteDialog.type ===
+                    'category'
+                ) {
+                    const categoryId =
+                        getCategoryId(
+                            deleteDialog.item
+                        );
+
+                    await deleteGalleryCategory(
+                        categoryId
                     );
 
-                await deleteGalleryCategory(
-                    categoryId
-                );
+                    if (
+                        String(
+                            selectedCategoryId
+                        ) ===
+                        String(categoryId)
+                    ) {
+                        clearSelectedFiles();
+                        setSelectedCategoryId(
+                            ''
+                        );
+                    }
 
-                if (
-                    String(
-                        selectedCategoryId
-                    ) === String(categoryId)
-                ) {
-                    clearSelectedFiles();
-                    setSelectedCategoryId('');
+                    await Promise.all([
+                        loadCategories(),
+                        loadImages(),
+                    ]);
+
+                    showMessage(
+                        'Category deleted successfully'
+                    );
                 }
 
-                await Promise.all([
-                    loadCategories(),
-                    loadImages(),
-                ]);
+                if (
+                    deleteDialog.type ===
+                    'image'
+                ) {
+                    const imageId =
+                        getImageId(
+                            deleteDialog.item
+                        );
 
-                showMessage(
-                    'Category deleted successfully'
-                );
-            }
+                    await deleteGalleryImage(
+                        imageId
+                    );
 
-            if (
-                deleteDialog.type === 'image'
-            ) {
-                const imageId = getImageId(
-                    deleteDialog.item
-                );
-
-                await deleteGalleryImage(
-                    imageId
-                );
-
-                setImages(
-                    (currentImages) =>
-                        currentImages.filter(
-                            (image) =>
-                                String(
-                                    getImageId(
-                                        image
+                    setImages(
+                        (
+                            currentImages
+                        ) =>
+                            currentImages.filter(
+                                (image) =>
+                                    String(
+                                        getImageId(
+                                            image
+                                        )
+                                    ) !==
+                                    String(
+                                        imageId
                                     )
-                                ) !==
-                                String(imageId)
-                        )
-                );
+                            )
+                    );
 
+                    showMessage(
+                        'Media deleted successfully'
+                    );
+                }
+
+                setDeleteDialog({
+                    open: false,
+                    type: '',
+                    item: null,
+                });
+            } catch (error) {
                 showMessage(
-                    'Media deleted successfully'
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to delete item',
+                    'error'
                 );
+            } finally {
+                setDeleting(false);
             }
-
-            closeDeleteDialog();
-        } catch (error) {
-            showMessage(
-                error.message ||
-                    'Failed to delete item',
-                'error'
-            );
-        } finally {
-            setDeleting(false);
-        }
-    };
+        };
 
     if (loading) {
         return (
@@ -1128,7 +1648,8 @@ export default function InspirationGallery() {
                     minHeight: 400,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    justifyContent:
+                        'center',
                 }}
             >
                 <CircularProgress />
@@ -1136,14 +1657,17 @@ export default function InspirationGallery() {
         );
     }
 
-    let categoryButtonText = 'Create';
+    let categoryButtonText =
+        'Create';
 
     if (savingCategory) {
-        categoryButtonText = 'Saving...';
+        categoryButtonText =
+            'Saving...';
     } else if (
         categoryDialog.mode === 'edit'
     ) {
-        categoryButtonText = 'Update';
+        categoryButtonText =
+            'Update';
     }
 
     let uploadButtonText = `Upload ${selectedFiles.length} Media`;
@@ -1186,8 +1710,9 @@ export default function InspirationGallery() {
                         variant="body2"
                         color="text.secondary"
                     >
-                        Manage gallery categories,
-                        images and videos.
+                        Manage gallery
+                        categories, images and
+                        videos.
                     </Typography>
                 </Box>
 
@@ -1374,6 +1899,7 @@ export default function InspirationGallery() {
                             !compressing &&
                             selectedCategoryId
                         ) {
+                            event.preventDefault();
                             fileInputRef.current?.click();
                         }
                     }}
@@ -1536,139 +2062,242 @@ export default function InspirationGallery() {
 
                         <Box
                             sx={{
-                                display: 'flex',
-                                flexWrap: 'wrap',
+                                display: 'grid',
+                                gridTemplateColumns:
+                                    'repeat(auto-fill, minmax(240px, 1fr))',
                                 alignItems:
                                     'flex-start',
-                                gap: 1,
+                                gap: 1.5,
                             }}
                         >
                             {selectedFiles.map(
-                                (item) => (
-                                    <Paper
-                                        key={
-                                            item.id
-                                        }
-                                        variant="outlined"
-                                        sx={{
-                                            width: 108,
-                                            flexShrink: 0,
-                                            position:
-                                                'relative',
-                                            overflow:
-                                                'hidden',
-                                            borderRadius: 1.5,
-                                        }}
-                                    >
-                                        <MediaPreview
-                                            url={
-                                                item.preview
-                                            }
-                                            name={
-                                                item
-                                                    .file
-                                                    .name
-                                            }
-                                            file={
-                                                item.file
-                                            }
-                                        />
+                                (item) => {
+                                    const video =
+                                        isVideoFile(
+                                            item.file
+                                        );
 
-                                        <Tooltip title="Remove media">
-                                            <IconButton
-                                                size="small"
-                                                disabled={
-                                                    uploading ||
-                                                    compressing
-                                                }
-                                                onClick={() =>
-                                                    removeSelectedFile(
-                                                        item.id
-                                                    )
-                                                }
-                                                sx={{
-                                                    position:
-                                                        'absolute',
-                                                    top: 5,
-                                                    right: 5,
-                                                    width: 27,
-                                                    height: 27,
-                                                    bgcolor:
-                                                        'rgba(255,255,255,0.92)',
-                                                }}
-                                            >
-                                                ×
-                                            </IconButton>
-                                        </Tooltip>
+                                    const altLength =
+                                        item
+                                            .imageAlt
+                                            ?.length ||
+                                        0;
 
-                                        <Box
+                                    return (
+                                        <Paper
+                                            key={
+                                                item.id
+                                            }
+                                            variant="outlined"
                                             sx={{
-                                                p: 0.75,
+                                                minWidth:
+                                                    0,
+                                                position:
+                                                    'relative',
+                                                overflow:
+                                                    'hidden',
+                                                borderRadius: 1.5,
                                             }}
                                         >
-                                            <Typography
-                                                variant="caption"
-                                                title={
+                                            <MediaPreview
+                                                url={
+                                                    item.preview
+                                                }
+                                                name={
+                                                    item.imageAlt ||
                                                     item
                                                         .file
                                                         .name
                                                 }
+                                                file={
+                                                    item.file
+                                                }
+                                                height={
+                                                    150
+                                                }
+                                            />
+
+                                            <Tooltip title="Remove media">
+                                                <IconButton
+                                                    size="small"
+                                                    disabled={
+                                                        uploading ||
+                                                        compressing
+                                                    }
+                                                    onClick={() =>
+                                                        removeSelectedFile(
+                                                            item.id
+                                                        )
+                                                    }
+                                                    sx={{
+                                                        position:
+                                                            'absolute',
+                                                        top: 5,
+                                                        right: 5,
+                                                        width: 27,
+                                                        height: 27,
+                                                        bgcolor:
+                                                            'rgba(255,255,255,0.92)',
+                                                        '&:hover':
+                                                            {
+                                                                bgcolor:
+                                                                    'background.paper',
+                                                            },
+                                                    }}
+                                                >
+                                                    ×
+                                                </IconButton>
+                                            </Tooltip>
+
+                                            <Box
                                                 sx={{
-                                                    display:
-                                                        'block',
-                                                    overflow:
-                                                        'hidden',
-                                                    textOverflow:
-                                                        'ellipsis',
-                                                    whiteSpace:
-                                                        'nowrap',
+                                                    p: 1.25,
                                                 }}
                                             >
-                                                {
-                                                    item
-                                                        .file
-                                                        .name
-                                                }
-                                            </Typography>
-
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                display="block"
-                                            >
-                                                {isVideoFile(
-                                                    item.file
-                                                )
-                                                    ? 'Video'
-                                                    : 'Image'}
-                                                {' • '}
-                                                {formatFileSize(
-                                                    item
-                                                        .file
-                                                        .size
-                                                )}
-                                            </Typography>
-
-                                            {item.wasCompressed && (
                                                 <Typography
                                                     variant="caption"
-                                                    color="success.main"
-                                                    display="block"
+                                                    title={
+                                                        item
+                                                            .file
+                                                            .name
+                                                    }
+                                                    sx={{
+                                                        display:
+                                                            'block',
+                                                        overflow:
+                                                            'hidden',
+                                                        textOverflow:
+                                                            'ellipsis',
+                                                        whiteSpace:
+                                                            'nowrap',
+                                                        fontWeight: 600,
+                                                    }}
                                                 >
-                                                    {formatFileSize(
-                                                        item.originalSize
-                                                    )}
-                                                    {' → '}
+                                                    {
+                                                        item
+                                                            .file
+                                                            .name
+                                                    }
+                                                </Typography>
+
+                                                <Typography
+                                                    variant="caption"
+                                                    color="text.secondary"
+                                                    display="block"
+                                                    sx={{
+                                                        mb: video
+                                                            ? 0
+                                                            : 1.25,
+                                                    }}
+                                                >
+                                                    {video
+                                                        ? 'Video'
+                                                        : 'Image'}
+                                                    {
+                                                        ' • '
+                                                    }
                                                     {formatFileSize(
                                                         item
                                                             .file
                                                             .size
                                                     )}
                                                 </Typography>
-                                            )}
-                                        </Box>
-                                    </Paper>
-                                )
+
+                                                {!video && (
+                                                    <TextField
+                                                        fullWidth
+                                                        required
+                                                        multiline
+                                                        minRows={
+                                                            2
+                                                        }
+                                                        maxRows={
+                                                            4
+                                                        }
+                                                        size="small"
+                                                        label="Image alt text"
+                                                        value={
+                                                            item.imageAlt ||
+                                                            ''
+                                                        }
+                                                        error={
+                                                            !item.imageAlt?.trim() ||
+                                                            altLength >
+                                                                MAX_ALT_LENGTH
+                                                        }
+                                                        disabled={
+                                                            uploading ||
+                                                            compressing
+                                                        }
+                                                        onClick={(
+                                                            event
+                                                        ) =>
+                                                            event.stopPropagation()
+                                                        }
+                                                        onChange={(
+                                                            event
+                                                        ) =>
+                                                            updateSelectedFileAlt(
+                                                                item.id,
+                                                                event
+                                                                    .target
+                                                                    .value
+                                                            )
+                                                        }
+                                                        inputProps={{
+                                                            maxLength:
+                                                                MAX_ALT_LENGTH,
+                                                        }}
+                                                        helperText={
+                                                            !item.imageAlt?.trim()
+                                                                ? 'Alt text is required'
+                                                                : `${altLength}/${MAX_ALT_LENGTH} characters`
+                                                        }
+                                                    />
+                                                )}
+
+                                                {video && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        display="block"
+                                                        sx={{
+                                                            mt: 1,
+                                                        }}
+                                                    >
+                                                        Alt text
+                                                        is not
+                                                        required
+                                                        for video.
+                                                    </Typography>
+                                                )}
+
+                                                {item.wasCompressed && (
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="success.main"
+                                                        display="block"
+                                                        sx={{
+                                                            mt: 0.75,
+                                                        }}
+                                                    >
+                                                        {formatFileSize(
+                                                            item.originalSize
+                                                        )}
+                                                        {
+                                                            ' → '
+                                                        }
+                                                        {formatFileSize(
+                                                            item
+                                                                .file
+                                                                .size
+                                                        )}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Paper>
+                                    );
+                                }
                             )}
                         </Box>
 
@@ -1915,12 +2544,12 @@ export default function InspirationGallery() {
                                         <Box
                                             sx={{
                                                 display:
-                                                    'flex',
-                                                flexWrap:
-                                                    'wrap',
+                                                    'grid',
+                                                gridTemplateColumns:
+                                                    'repeat(auto-fill, minmax(200px, 1fr))',
                                                 alignItems:
                                                     'flex-start',
-                                                gap: 1,
+                                                gap: 1.5,
                                             }}
                                         >
                                             {categoryImages.map(
@@ -1932,6 +2561,16 @@ export default function InspirationGallery() {
                                                             image
                                                         );
 
+                                                    const imageAlt =
+                                                        getImageAlt(
+                                                            image
+                                                        );
+
+                                                    const video =
+                                                        isVideoUrl(
+                                                            imageUrl
+                                                        );
+
                                                     return (
                                                         <Paper
                                                             key={getImageId(
@@ -1939,8 +2578,7 @@ export default function InspirationGallery() {
                                                             )}
                                                             variant="outlined"
                                                             sx={{
-                                                                width: 108,
-                                                                flexShrink: 0,
+                                                                minWidth: 0,
                                                                 position:
                                                                     'relative',
                                                                 overflow:
@@ -1952,12 +2590,18 @@ export default function InspirationGallery() {
                                                                 url={
                                                                     imageUrl
                                                                 }
-                                                                name={getImageName(
-                                                                    image
-                                                                )}
-                                                                controls={isVideoUrl(
-                                                                    imageUrl
-                                                                )}
+                                                                name={
+                                                                    imageAlt ||
+                                                                    getImageName(
+                                                                        image
+                                                                    )
+                                                                }
+                                                                controls={
+                                                                    video
+                                                                }
+                                                                height={
+                                                                    145
+                                                                }
                                                             />
 
                                                             <Tooltip title="Delete media">
@@ -1979,6 +2623,11 @@ export default function InspirationGallery() {
                                                                         height: 27,
                                                                         bgcolor:
                                                                             'rgba(255,255,255,0.92)',
+                                                                        '&:hover':
+                                                                            {
+                                                                                bgcolor:
+                                                                                    'background.paper',
+                                                                            },
                                                                     }}
                                                                 >
                                                                     ×
@@ -1987,7 +2636,7 @@ export default function InspirationGallery() {
 
                                                             <Box
                                                                 sx={{
-                                                                    p: 0.75,
+                                                                    p: 1,
                                                                 }}
                                                             >
                                                                 <Typography
@@ -2011,6 +2660,70 @@ export default function InspirationGallery() {
                                                                         image
                                                                     )}
                                                                 </Typography>
+
+                                                                {!video && (
+                                                                    <>
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color={
+                                                                                imageAlt
+                                                                                    ? 'text.secondary'
+                                                                                    : 'error.main'
+                                                                            }
+                                                                            title={
+                                                                                imageAlt
+                                                                            }
+                                                                            sx={{
+                                                                                display:
+                                                                                    '-webkit-box',
+                                                                                mt: 0.5,
+                                                                                minHeight: 34,
+                                                                                overflow:
+                                                                                    'hidden',
+                                                                                WebkitBoxOrient:
+                                                                                    'vertical',
+                                                                                WebkitLineClamp: 2,
+                                                                            }}
+                                                                        >
+                                                                            {imageAlt
+                                                                                ? `Alt: ${imageAlt}`
+                                                                                : 'Alt text not added'}
+                                                                        </Typography>
+
+                                                                        <Button
+                                                                            fullWidth
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            sx={{
+                                                                                mt: 1,
+                                                                            }}
+                                                                            onClick={() =>
+                                                                                openAltDialog(
+                                                                                    image
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            {imageAlt
+                                                                                ? 'Edit Alt Text'
+                                                                                : 'Add Alt Text'}
+                                                                        </Button>
+                                                                    </>
+                                                                )}
+
+                                                                {video && (
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        color="text.secondary"
+                                                                        sx={{
+                                                                            display:
+                                                                                'block',
+                                                                            mt: 0.5,
+                                                                        }}
+                                                                    >
+                                                                        Video
+                                                                        media
+                                                                    </Typography>
+                                                                )}
                                                             </Box>
                                                         </Paper>
                                                     );
@@ -2048,11 +2761,11 @@ export default function InspirationGallery() {
                                                     setSelectedCategoryId(
                                                         categoryId
                                                     );
+
                                                     fileInputRef.current?.click();
                                                 }}
                                             >
-                                                Upload
-                                                Media
+                                                Upload Media
                                             </Button>
                                         </Box>
                                     )}
@@ -2093,8 +2806,10 @@ export default function InspirationGallery() {
                         onKeyDown={(event) => {
                             if (
                                 event.key ===
-                                'Enter'
+                                    'Enter' &&
+                                !savingCategory
                             ) {
+                                event.preventDefault();
                                 handleSaveCategory();
                             }
                         }}
@@ -2128,6 +2843,134 @@ export default function InspirationGallery() {
                         {
                             categoryButtonText
                         }
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={altDialog.open}
+                onClose={closeAltDialog}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>
+                    {getImageAlt(
+                        altDialog.image
+                    )
+                        ? 'Edit Image Alt Text'
+                        : 'Add Image Alt Text'}
+                </DialogTitle>
+
+                <DialogContent>
+                    {altDialog.image && (
+                        <Box
+                            sx={{
+                                mt: 1,
+                                mb: 2,
+                                overflow:
+                                    'hidden',
+                                borderRadius: 1.5,
+                                border:
+                                    '1px solid',
+                                borderColor:
+                                    'divider',
+                            }}
+                        >
+                            <MediaPreview
+                                url={getImageUrl(
+                                    altDialog.image
+                                )}
+                                name={
+                                    altText ||
+                                    getImageName(
+                                        altDialog.image
+                                    )
+                                }
+                                controls={isVideoUrl(
+                                    getImageUrl(
+                                        altDialog.image
+                                    )
+                                )}
+                                height={260}
+                            />
+                        </Box>
+                    )}
+
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        required
+                        multiline
+                        minRows={3}
+                        maxRows={6}
+                        label="Image alt text"
+                        placeholder="Describe what is visible in the image"
+                        value={altText}
+                        error={
+                            altText.length >
+                            MAX_ALT_LENGTH
+                        }
+                        disabled={savingAlt}
+                        onChange={(event) =>
+                            setAltText(
+                                event.target
+                                    .value
+                            )
+                        }
+                        onKeyDown={(event) => {
+                            if (
+                                event.key ===
+                                    'Enter' &&
+                                (event.ctrlKey ||
+                                    event.metaKey)
+                            ) {
+                                event.preventDefault();
+                                handleSaveAlt();
+                            }
+                        }}
+                        inputProps={{
+                            maxLength:
+                                MAX_ALT_LENGTH,
+                        }}
+                        helperText={`${altText.length}/${MAX_ALT_LENGTH} characters`}
+                    />
+                </DialogContent>
+
+                <DialogActions>
+                    <Button
+                        color="inherit"
+                        disabled={savingAlt}
+                        onClick={
+                            closeAltDialog
+                        }
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        disabled={
+                            savingAlt ||
+                            !altText.trim() ||
+                            altText.trim()
+                                .length >
+                                MAX_ALT_LENGTH
+                        }
+                        onClick={
+                            handleSaveAlt
+                        }
+                        startIcon={
+                            savingAlt ? (
+                                <CircularProgress
+                                    size={16}
+                                    color="inherit"
+                                />
+                            ) : null
+                        }
+                    >
+                        {savingAlt
+                            ? 'Saving...'
+                            : 'Save Alt Text'}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -2185,7 +3028,6 @@ export default function InspirationGallery() {
                 </DialogActions>
             </Dialog>
 
-
             <Snackbar
                 open={message.open}
                 autoHideDuration={4000}
@@ -2203,9 +3045,7 @@ export default function InspirationGallery() {
                 }}
             >
                 <Alert
-                    severity={
-                        message.severity
-                    }
+                    severity={message.severity}
                     variant="filled"
                     onClose={() =>
                         setMessage(

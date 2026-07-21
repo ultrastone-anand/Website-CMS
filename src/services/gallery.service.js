@@ -197,3 +197,24 @@ export const deleteGalleryImage = async (imageId) => {
     'Failed to delete gallery image'
   );
 };
+
+export const updateGalleryImageAlt = async (
+  imageId,
+  imageAlt
+) => {
+  const response = await fetch(
+    `${API_URL}/inspiration-gallery/images/${imageId}/alt`,
+    {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        image_alt: imageAlt,
+      }),
+    }
+  );
+
+  return handleResponse(
+    response,
+    'Failed to update image alt text'
+  );
+};
