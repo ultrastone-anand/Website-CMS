@@ -48,23 +48,60 @@ const missingGroupConfig = {
   basic: {
     label: 'Basic',
     color: 'default',
+    icon: 'solar:document-text-bold',
   },
 
   content: {
     label: 'Content',
     color: 'info',
+    icon: 'solar:text-square-bold',
   },
 
   specifications: {
     label: 'Specifications',
     color: 'warning',
+    icon: 'solar:settings-bold',
   },
 
   media: {
     label: 'Media',
     color: 'error',
+    icon: 'solar:gallery-bold',
   },
 };
+
+const missingFilterOptions = [
+  {
+    value: 'all',
+    label: 'All',
+    color: 'default',
+    icon: 'solar:list-bold',
+  },
+  {
+    value: 'basic',
+    label: 'Basic',
+    color: 'default',
+    icon: 'solar:document-text-bold',
+  },
+  {
+    value: 'content',
+    label: 'Content',
+    color: 'info',
+    icon: 'solar:text-square-bold',
+  },
+  {
+    value: 'specifications',
+    label: 'Specifications',
+    color: 'warning',
+    icon: 'solar:settings-bold',
+  },
+  {
+    value: 'media',
+    label: 'Media',
+    color: 'error',
+    icon: 'solar:gallery-bold',
+  },
+];
 
 // ----------------------------------------------------------------------
 
@@ -163,6 +200,25 @@ const formatDateTime = (
   }
 
   return parsedDate.toLocaleString();
+};
+
+const productHasMissingGroup = (
+  product,
+  groupName
+) => {
+  if (groupName === 'all') {
+    return true;
+  }
+
+  const groupFields =
+    product.missingGroups?.[
+      groupName
+    ];
+
+  return (
+    Array.isArray(groupFields) &&
+    groupFields.length > 0
+  );
 };
 
 // ----------------------------------------------------------------------
@@ -305,7 +361,11 @@ const getExcelRow = (
         ]) =>
           `${formatFieldName(
             groupName
-          )}: ${fields.length}`
+          )}: ${
+            Array.isArray(fields)
+              ? fields.length
+              : 0
+          }`
       )
       .join(', ');
 
@@ -456,11 +516,70 @@ export default function AppAttentionRequiredProducts({
     setRowsPerPage,
   ] = useState(10);
 
+  const [
+    selectedMissingGroup,
+    setSelectedMissingGroup,
+  ] = useState('all');
+
+  const filterCounts =
+    useMemo(() => {
+      const counts = {
+        all:
+          products?.length ||
+          0,
+
+        basic: 0,
+        content: 0,
+        specifications: 0,
+        media: 0,
+      };
+
+      (
+        products || []
+      ).forEach((product) => {
+        Object.keys(
+          missingGroupConfig
+        ).forEach(
+          (groupName) => {
+            if (
+              productHasMissingGroup(
+                product,
+                groupName
+              )
+            ) {
+              counts[
+                groupName
+              ] += 1;
+            }
+          }
+        );
+      });
+
+      return counts;
+    }, [products]);
+
+  const filteredProducts =
+    useMemo(
+      () =>
+        (
+          products || []
+        ).filter((product) =>
+          productHasMissingGroup(
+            product,
+            selectedMissingGroup
+          )
+        ),
+      [
+        products,
+        selectedMissingGroup,
+      ]
+    );
+
   const sortedProducts =
     useMemo(
       () =>
         [
-          ...(products || []),
+          ...filteredProducts,
         ].sort((a, b) => {
           const missingDifference =
             (b.missingCount ||
@@ -495,7 +614,7 @@ export default function AppAttentionRequiredProducts({
               0)
           );
         }),
-      [products]
+      [filteredProducts]
     );
 
   const visibleProducts =
@@ -514,6 +633,14 @@ export default function AppAttentionRequiredProducts({
       rowsPerPage,
       sortedProducts,
     ]);
+
+  const selectedFilter =
+    missingFilterOptions.find(
+      (option) =>
+        option.value ===
+        selectedMissingGroup
+    ) ||
+    missingFilterOptions[0];
 
   const handleChangePage = (
     event,
@@ -535,14 +662,84 @@ export default function AppAttentionRequiredProducts({
     setPage(0);
   };
 
+  const handleMissingGroupFilter = (
+    groupName
+  ) => {
+    setSelectedMissingGroup(
+      groupName
+    );
+
+    setPage(0);
+  };
+
   const handleExportExcel =
     () => {
       try {
+        if (
+          sortedProducts.length ===
+          0
+        ) {
+          return;
+        }
+
         const workbook =
           XLSX.utils.book_new();
 
         const usedSheetNames =
           new Set();
+
+        // ==========================
+        // FILTER INFORMATION SHEET
+        // ==========================
+
+        const filterInformationRows =
+          [
+            {
+              Field:
+                'Selected Missing Section',
+
+              Value:
+                selectedFilter.label,
+            },
+            {
+              Field:
+                'Exported Products',
+
+              Value:
+                sortedProducts.length,
+            },
+            {
+              Field:
+                'Export Date',
+
+              Value:
+                formatDateTime(
+                  new Date()
+                ),
+            },
+          ];
+
+        const filterWorksheet =
+          XLSX.utils.json_to_sheet(
+            filterInformationRows
+          );
+
+        filterWorksheet[
+          '!cols'
+        ] = [
+          { wch: 30 },
+          { wch: 40 },
+        ];
+
+        XLSX.utils.book_append_sheet(
+          workbook,
+          filterWorksheet,
+          'Export Information'
+        );
+
+        usedSheetNames.add(
+          'export information'
+        );
 
         // ==========================
         // SUMMARY SHEET
@@ -897,9 +1094,15 @@ export default function AppAttentionRequiredProducts({
             .toISOString()
             .slice(0, 10);
 
+        const filterFileName =
+          selectedMissingGroup ===
+          'all'
+            ? 'all'
+            : selectedMissingGroup;
+
         XLSX.writeFile(
           workbook,
-          `attention-required-products-${date}.xlsx`
+          `attention-required-${filterFileName}-${date}.xlsx`
         );
       } catch (error) {
         console.error(
@@ -953,15 +1156,6 @@ export default function AppAttentionRequiredProducts({
       {/* HEADER */}
 
       <Stack
-        direction={{
-          xs: 'column',
-          md: 'row',
-        }}
-        alignItems={{
-          xs: 'flex-start',
-          md: 'center',
-        }}
-        justifyContent="space-between"
         spacing={2}
         sx={{
           px: 3,
@@ -972,610 +1166,913 @@ export default function AppAttentionRequiredProducts({
               `1px solid ${theme.palette.divider}`,
         }}
       >
+        <Stack
+          direction={{
+            xs: 'column',
+            md: 'row',
+          }}
+          alignItems={{
+            xs: 'flex-start',
+            md: 'center',
+          }}
+          justifyContent="space-between"
+          spacing={2}
+        >
+          <Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+            >
+              <Typography variant="h6">
+                Attention Required Products
+              </Typography>
+
+              <Chip
+                size="small"
+                color="warning"
+                label={
+                  selectedMissingGroup ===
+                  'all'
+                    ? totalCount ??
+                      products.length
+                    : sortedProducts.length
+                }
+              />
+            </Stack>
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              sx={{
+                mt: 0.5,
+              }}
+            >
+              Products with missing
+              information,
+              specifications, media,
+              content, or pending
+              remarks.
+            </Typography>
+          </Box>
+
+          <Stack
+            direction={{
+              xs: 'column',
+              sm: 'row',
+            }}
+            spacing={1}
+            alignItems={{
+              xs: 'stretch',
+              sm: 'center',
+            }}
+            sx={{
+              width: {
+                xs: '100%',
+                md: 'auto',
+              },
+            }}
+          >
+            <Chip
+              size="small"
+              variant="outlined"
+              icon={
+                <Iconify icon="solar:danger-triangle-bold" />
+              }
+              label="Highest priority first"
+            />
+
+            <Button
+              variant="contained"
+              color="success"
+              disabled={
+                sortedProducts.length ===
+                0
+              }
+              startIcon={
+                <Iconify icon="vscode-icons:file-type-excel" />
+              }
+              onClick={
+                handleExportExcel
+              }
+            >
+              Export Excel
+            </Button>
+          </Stack>
+        </Stack>
+
+        {/* MISSING SECTION FILTERS */}
+
         <Box>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{
+              display: 'block',
+              mb: 1,
+              fontWeight: 600,
+            }}
+          >
+            Filter by missing section
+          </Typography>
+
           <Stack
             direction="row"
             spacing={1}
-            alignItems="center"
+            flexWrap="wrap"
+            useFlexGap
           >
-            <Typography variant="h6">
-              Attention Required Products
-            </Typography>
+            {missingFilterOptions.map(
+              (option) => {
+                const isSelected =
+                  selectedMissingGroup ===
+                  option.value;
 
-            <Chip
-              size="small"
-              color="warning"
-              label={
-                totalCount ??
-                products.length
+                const count =
+                  filterCounts[
+                    option.value
+                  ] || 0;
+
+                return (
+                  <Chip
+                    key={
+                      option.value
+                    }
+                    clickable
+                    icon={
+                      <Iconify
+                        icon={
+                          option.icon
+                        }
+                        width={18}
+                      />
+                    }
+                    label={`${option.label} (${count})`}
+                    color={
+                      isSelected
+                        ? option.color
+                        : 'default'
+                    }
+                    variant={
+                      isSelected
+                        ? 'filled'
+                        : 'outlined'
+                    }
+                    onClick={() =>
+                      handleMissingGroupFilter(
+                        option.value
+                      )
+                    }
+                    sx={{
+                      fontWeight:
+                        isSelected
+                          ? 700
+                          : 500,
+
+                      ...(isSelected &&
+                      option.value ===
+                        'all'
+                        ? {
+                            bgcolor:
+                              'text.primary',
+
+                            color:
+                              'background.paper',
+
+                            '& .MuiChip-icon':
+                              {
+                                color:
+                                  'inherit',
+                              },
+                          }
+                        : {}),
+                    }}
+                  />
+                );
               }
-            />
+            )}
           </Stack>
-
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{
-              mt: 0.5,
-            }}
-          >
-            Products with missing
-            information,
-            specifications, media,
-            or pending remarks.
-          </Typography>
         </Box>
+      </Stack>
 
+      {/* ACTIVE FILTER INFORMATION */}
+
+      {selectedMissingGroup !==
+        'all' && (
         <Stack
           direction={{
             xs: 'column',
             sm: 'row',
           }}
-          spacing={1}
           alignItems={{
-            xs: 'stretch',
+            xs: 'flex-start',
             sm: 'center',
           }}
+          justifyContent="space-between"
+          spacing={1}
           sx={{
-            width: {
-              xs: '100%',
-              md: 'auto',
-            },
+            px: 3,
+            py: 1.5,
+            bgcolor:
+              'background.neutral',
+
+            borderBottom:
+              (theme) =>
+                `1px solid ${theme.palette.divider}`,
           }}
         >
-          <Chip
-            size="small"
-            variant="outlined"
-            icon={
-              <Iconify icon="solar:danger-triangle-bold" />
-            }
-            label="Highest priority first"
-          />
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+          >
+            <Iconify
+              icon={
+                selectedFilter.icon
+              }
+              width={20}
+              sx={{
+                color: `${selectedFilter.color}.main`,
+              }}
+            />
+
+            <Typography
+              variant="body2"
+              color="text.secondary"
+            >
+              Showing products with
+              missing{' '}
+              <Box
+                component="span"
+                sx={{
+                  fontWeight: 700,
+                  color:
+                    'text.primary',
+                }}
+              >
+                {selectedFilter.label}
+              </Box>{' '}
+              fields.
+            </Typography>
+
+            <Chip
+              size="small"
+              color={
+                selectedFilter.color
+              }
+              variant="soft"
+              label={`${sortedProducts.length} products`}
+            />
+          </Stack>
 
           <Button
-            variant="contained"
-            color="success"
+            size="small"
+            color="inherit"
             startIcon={
-              <Iconify icon="vscode-icons:file-type-excel" />
+              <Iconify icon="solar:close-circle-outline" />
             }
-            onClick={
-              handleExportExcel
+            onClick={() =>
+              handleMissingGroupFilter(
+                'all'
+              )
             }
           >
-            Export Excel
+            Clear filter
           </Button>
         </Stack>
-      </Stack>
+      )}
 
       {/* TABLE */}
 
-      <TableContainer>
-        <Table
-          sx={{
-            minWidth: 1350,
-          }}
-        >
-          <TableHead>
-            <TableRow>
-              <TableCell>
-                Product
-              </TableCell>
+      {sortedProducts.length >
+      0 ? (
+        <>
+          <TableContainer>
+            <Table
+              sx={{
+                minWidth: 1350,
+              }}
+            >
+              <TableHead>
+                <TableRow>
+                  <TableCell>
+                    Product
+                  </TableCell>
 
-              <TableCell>
-                Category
-              </TableCell>
+                  <TableCell>
+                    Category
+                  </TableCell>
 
-              <TableCell>
-                Priority
-              </TableCell>
+                  <TableCell>
+                    Priority
+                  </TableCell>
 
-              <TableCell
-                sx={{
-                  minWidth: 180,
-                }}
-              >
-                Completion
-              </TableCell>
-
-              <TableCell align="center">
-                Missing
-              </TableCell>
-
-              <TableCell>
-                Missing Details
-              </TableCell>
-
-              <TableCell
-                sx={{
-                  minWidth: 280,
-                }}
-              >
-                Latest Remark
-              </TableCell>
-
-              <TableCell align="center">
-                Status
-              </TableCell>
-            </TableRow>
-          </TableHead>
-
-          <TableBody>
-            {visibleProducts.map(
-              (product) => {
-                const priority =
-                  priorityConfig[
-                    product.priority
-                  ] ||
-                  priorityConfig.low;
-
-                const completion =
-                  Number(
-                    product
-                      .completionPercentage
-                  ) || 0;
-
-                const missingGroups =
-                  product.missingGroups ||
-                  {};
-
-                const missingLabels =
-                  getMissingLabels(
-                    product
-                  );
-
-                const missingBadgeColors =
-                  getMissingBadgeColors(
-                    product.missingCount ||
-                      0
-                  );
-
-                const remarks =
-                  getRemarks(
-                    product
-                  );
-
-                const latestRemark =
-                  product.latestRemark ||
-                  remarks[0] ||
-                  null;
-
-                const remarksCount =
-                  Number(
-                    product.remarksCount
-                  ) ||
-                  remarks.length;
-
-                return (
-                  <TableRow
-                    key={product.id}
-                    hover
+                  <TableCell
                     sx={{
-                      '&:last-of-type td':
-                        {
-                          borderBottom:
-                            'none',
-                        },
+                      minWidth: 180,
                     }}
                   >
-                    {/* PRODUCT */}
+                    Completion
+                  </TableCell>
 
-                    <TableCell>
-                      <Stack spacing={0.5}>
-                        <Typography
-                          variant="subtitle2"
-                          fontWeight={700}
-                        >
-                          {product.name}
-                        </Typography>
+                  <TableCell align="center">
+                    Missing
+                  </TableCell>
 
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                        >
-                          {product.slug}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
+                  <TableCell>
+                    Missing Details
+                  </TableCell>
 
-                    {/* CATEGORY */}
+                  <TableCell
+                    sx={{
+                      minWidth: 280,
+                    }}
+                  >
+                    Latest Remark
+                  </TableCell>
 
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        variant="outlined"
-                        label={
-                          product.categoryName ||
-                          'Uncategorized'
+                  <TableCell align="center">
+                    Status
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+
+              <TableBody>
+                {visibleProducts.map(
+                  (product) => {
+                    const priority =
+                      priorityConfig[
+                        product.priority
+                      ] ||
+                      priorityConfig.low;
+
+                    const completion =
+                      Number(
+                        product
+                          .completionPercentage
+                      ) || 0;
+
+                    const missingGroups =
+                      product.missingGroups ||
+                      {};
+
+                    const missingLabels =
+                      getMissingLabels(
+                        product
+                      );
+
+                    const missingBadgeColors =
+                      getMissingBadgeColors(
+                        product.missingCount ||
+                          0
+                      );
+
+                    const remarks =
+                      getRemarks(
+                        product
+                      );
+
+                    const latestRemark =
+                      product.latestRemark ||
+                      remarks[0] ||
+                      null;
+
+                    const remarksCount =
+                      Number(
+                        product.remarksCount
+                      ) ||
+                      remarks.length;
+
+                    return (
+                      <TableRow
+                        key={
+                          product.id
                         }
-                      />
-                    </TableCell>
-
-                    {/* PRIORITY */}
-
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        color={
-                          priority.color
-                        }
-                        label={
-                          priority.label
-                        }
-                        icon={
-                          product.priority ===
-                          'high' ? (
-                            <Iconify icon="solar:danger-triangle-bold" />
-                          ) : undefined
-                        }
-                      />
-                    </TableCell>
-
-                    {/* COMPLETION */}
-
-                    <TableCell>
-                      <Stack spacing={0.75}>
-                        <Stack
-                          direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                        >
-                          <Typography
-                            variant="body2"
-                            fontWeight={600}
-                          >
-                            {completion}%
-                          </Typography>
-
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                          >
-                            {product.completedCount ||
-                              0}
-                            /
-                            {product.totalRequiredFields ||
-                              0}
-                          </Typography>
-                        </Stack>
-
-                        <LinearProgress
-                          variant="determinate"
-                          value={
-                            completion
-                          }
-                          color={getCompletionColor(
-                            completion
-                          )}
-                          sx={{
-                            height: 7,
-                            borderRadius: 1,
-                          }}
-                        />
-                      </Stack>
-                    </TableCell>
-
-                    {/* MISSING COUNT */}
-
-                    <TableCell align="center">
-                      <Box
+                        hover
                         sx={{
-                          width: 38,
-                          height: 38,
-                          mx: 'auto',
-
-                          display:
-                            'flex',
-
-                          alignItems:
-                            'center',
-
-                          justifyContent:
-                            'center',
-
-                          borderRadius:
-                            '50%',
-
-                          bgcolor:
-                            missingBadgeColors.background,
-
-                          color:
-                            missingBadgeColors.text,
-
-                          fontWeight: 700,
+                          '&:last-of-type td':
+                            {
+                              borderBottom:
+                                'none',
+                            },
                         }}
                       >
-                        {product.missingCount ||
-                          0}
-                      </Box>
-                    </TableCell>
+                        {/* PRODUCT */}
 
-                    {/* MISSING DETAILS */}
-
-                    <TableCell
-                      sx={{
-                        maxWidth: 430,
-                      }}
-                    >
-                      <Stack spacing={1}>
-                        {Object.keys(
-                          missingGroups
-                        ).length > 0 && (
-                          <Stack
-                            direction="row"
-                            spacing={0.75}
-                            flexWrap="wrap"
-                            useFlexGap
-                          >
-                            {Object.entries(
-                              missingGroups
-                            ).map(
-                              ([
-                                groupName,
-                                fields,
-                              ]) => {
-                                const config =
-                                  missingGroupConfig[
-                                    groupName
-                                  ] ||
-                                  missingGroupConfig.basic;
-
-                                return (
-                                  <Chip
-                                    key={
-                                      groupName
-                                    }
-                                    size="small"
-                                    variant="soft"
-                                    color={
-                                      config.color
-                                    }
-                                    label={`${config.label}: ${fields.length}`}
-                                  />
-                                );
-                              }
-                            )}
-                          </Stack>
-                        )}
-
-                        <Tooltip
-                          placement="top-start"
-                          title={
-                            missingLabels.join(
-                              ', '
-                            ) ||
-                            'No missing fields'
-                          }
-                        >
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            sx={{
-                              overflow:
-                                'hidden',
-
-                              display:
-                                '-webkit-box',
-
-                              WebkitBoxOrient:
-                                'vertical',
-
-                              WebkitLineClamp: 2,
-                            }}
-                          >
-                            {missingLabels.join(
-                              ', '
-                            )}
-                          </Typography>
-                        </Tooltip>
-                      </Stack>
-                    </TableCell>
-
-                    {/* REMARKS */}
-
-                    <TableCell>
-                      {latestRemark ? (
-                        <Tooltip
-                          placement="top-start"
-                          title={
-                            <Box
-                              sx={{
-                                whiteSpace:
-                                  'pre-line',
-                                maxWidth:
-                                  450,
-                              }}
-                            >
-                              {getAllRemarksText(
-                                product
-                              )}
-                            </Box>
-                          }
-                        >
-                          <Stack spacing={0.75}>
+                        <TableCell>
+                          <Stack spacing={0.5}>
                             <Typography
-                              variant="body2"
-                              sx={{
-                                overflow:
-                                  'hidden',
-
-                                display:
-                                  '-webkit-box',
-
-                                WebkitBoxOrient:
-                                  'vertical',
-
-                                WebkitLineClamp:
-                                  2,
-                              }}
+                              variant="subtitle2"
+                              fontWeight={700}
                             >
-                              {latestRemark.remark}
+                              {product.name}
                             </Typography>
 
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {product.slug}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+
+                        {/* CATEGORY */}
+
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            variant="outlined"
+                            label={
+                              product.categoryName ||
+                              'Uncategorized'
+                            }
+                          />
+                        </TableCell>
+
+                        {/* PRIORITY */}
+
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            color={
+                              priority.color
+                            }
+                            label={
+                              priority.label
+                            }
+                            icon={
+                              product.priority ===
+                              'high' ? (
+                                <Iconify icon="solar:danger-triangle-bold" />
+                              ) : undefined
+                            }
+                          />
+                        </TableCell>
+
+                        {/* COMPLETION */}
+
+                        <TableCell>
+                          <Stack spacing={0.75}>
                             <Stack
                               direction="row"
-                              spacing={0.75}
-                              flexWrap="wrap"
                               alignItems="center"
-                              useFlexGap
+                              justifyContent="space-between"
                             >
+                              <Typography
+                                variant="body2"
+                                fontWeight={600}
+                              >
+                                {completion}%
+                              </Typography>
+
                               <Typography
                                 variant="caption"
                                 color="text.secondary"
                               >
-                                {latestRemark
-                                  .user
-                                  ?.name ||
-                                  latestRemark
-                                    .user
-                                    ?.email ||
-                                  'Unknown User'}
+                                {product.completedCount ||
+                                  0}
+                                /
+                                {product.totalRequiredFields ||
+                                  0}
                               </Typography>
-
-                              {remarksCount >
-                                1 && (
-                                <Chip
-                                  size="small"
-                                  variant="outlined"
-                                  label={`${remarksCount} remarks`}
-                                />
-                              )}
-
-                              {latestRemark.isEdited && (
-                                <Chip
-                                  size="small"
-                                  color="info"
-                                  variant="soft"
-                                  label="Edited"
-                                />
-                              )}
                             </Stack>
 
-                            {latestRemark.createdAt && (
+                            <LinearProgress
+                              variant="determinate"
+                              value={
+                                completion
+                              }
+                              color={getCompletionColor(
+                                completion
+                              )}
+                              sx={{
+                                height: 7,
+                                borderRadius: 1,
+                              }}
+                            />
+                          </Stack>
+                        </TableCell>
+
+                        {/* MISSING COUNT */}
+
+                        <TableCell align="center">
+                          <Box
+                            sx={{
+                              width: 38,
+                              height: 38,
+                              mx: 'auto',
+
+                              display:
+                                'flex',
+
+                              alignItems:
+                                'center',
+
+                              justifyContent:
+                                'center',
+
+                              borderRadius:
+                                '50%',
+
+                              bgcolor:
+                                missingBadgeColors.background,
+
+                              color:
+                                missingBadgeColors.text,
+
+                              fontWeight:
+                                700,
+                            }}
+                          >
+                            {product.missingCount ||
+                              0}
+                          </Box>
+                        </TableCell>
+
+                        {/* MISSING DETAILS */}
+
+                        <TableCell
+                          sx={{
+                            maxWidth: 430,
+                          }}
+                        >
+                          <Stack spacing={1}>
+                            {Object.keys(
+                              missingGroups
+                            ).length >
+                              0 && (
+                              <Stack
+                                direction="row"
+                                spacing={0.75}
+                                flexWrap="wrap"
+                                useFlexGap
+                              >
+                                {Object.entries(
+                                  missingGroups
+                                ).map(
+                                  ([
+                                    groupName,
+                                    fields,
+                                  ]) => {
+                                    const config =
+                                      missingGroupConfig[
+                                        groupName
+                                      ] ||
+                                      missingGroupConfig.basic;
+
+                                    const isActiveGroup =
+                                      selectedMissingGroup ===
+                                      groupName;
+
+                                    return (
+                                      <Chip
+                                        key={
+                                          groupName
+                                        }
+                                        size="small"
+                                        variant={
+                                          isActiveGroup
+                                            ? 'filled'
+                                            : 'soft'
+                                        }
+                                        color={
+                                          config.color
+                                        }
+                                        label={`${config.label}: ${
+                                          Array.isArray(
+                                            fields
+                                          )
+                                            ? fields.length
+                                            : 0
+                                        }`}
+                                        sx={{
+                                          fontWeight:
+                                            isActiveGroup
+                                              ? 700
+                                              : 500,
+                                        }}
+                                      />
+                                    );
+                                  }
+                                )}
+                              </Stack>
+                            )}
+
+                            <Tooltip
+                              placement="top-start"
+                              title={
+                                missingLabels.join(
+                                  ', '
+                                ) ||
+                                'No missing fields'
+                              }
+                            >
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                sx={{
+                                  overflow:
+                                    'hidden',
+
+                                  display:
+                                    '-webkit-box',
+
+                                  WebkitBoxOrient:
+                                    'vertical',
+
+                                  WebkitLineClamp: 2,
+                                }}
+                              >
+                                {missingLabels.join(
+                                  ', '
+                                )}
+                              </Typography>
+                            </Tooltip>
+                          </Stack>
+                        </TableCell>
+
+                        {/* REMARKS */}
+
+                        <TableCell>
+                          {latestRemark ? (
+                            <Tooltip
+                              placement="top-start"
+                              title={
+                                <Box
+                                  sx={{
+                                    whiteSpace:
+                                      'pre-line',
+                                    maxWidth:
+                                      450,
+                                  }}
+                                >
+                                  {getAllRemarksText(
+                                    product
+                                  )}
+                                </Box>
+                              }
+                            >
+                              <Stack spacing={0.75}>
+                                <Typography
+                                  variant="body2"
+                                  sx={{
+                                    overflow:
+                                      'hidden',
+
+                                    display:
+                                      '-webkit-box',
+
+                                    WebkitBoxOrient:
+                                      'vertical',
+
+                                    WebkitLineClamp:
+                                      2,
+                                  }}
+                                >
+                                  {
+                                    latestRemark.remark
+                                  }
+                                </Typography>
+
+                                <Stack
+                                  direction="row"
+                                  spacing={0.75}
+                                  flexWrap="wrap"
+                                  alignItems="center"
+                                  useFlexGap
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                  >
+                                    {latestRemark
+                                      .user
+                                      ?.name ||
+                                      latestRemark
+                                        .user
+                                        ?.email ||
+                                      'Unknown User'}
+                                  </Typography>
+
+                                  {remarksCount >
+                                    1 && (
+                                    <Chip
+                                      size="small"
+                                      variant="outlined"
+                                      label={`${remarksCount} remarks`}
+                                    />
+                                  )}
+
+                                  {latestRemark.isEdited && (
+                                    <Chip
+                                      size="small"
+                                      color="info"
+                                      variant="soft"
+                                      label="Edited"
+                                    />
+                                  )}
+                                </Stack>
+
+                                {latestRemark.createdAt && (
+                                  <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                  >
+                                    {formatDateTime(
+                                      latestRemark.createdAt
+                                    )}
+                                  </Typography>
+                                )}
+                              </Stack>
+                            </Tooltip>
+                          ) : (
+                            <Stack
+                              direction="row"
+                              spacing={0.75}
+                              alignItems="center"
+                            >
+                              <Iconify
+                                icon="solar:chat-round-line-outline"
+                                width={18}
+                                sx={{
+                                  color:
+                                    'text.disabled',
+                                }}
+                              />
+
+                              <Typography
+                                variant="body2"
+                                color="text.disabled"
+                              >
+                                No remarks
+                              </Typography>
+                            </Stack>
+                          )}
+                        </TableCell>
+
+                        {/* STATUS */}
+
+                        <TableCell align="center">
+                          <Stack
+                            spacing={0.75}
+                            alignItems="center"
+                          >
+                            <Chip
+                              size="small"
+                              color={
+                                product.isPublished
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              variant={
+                                product.isPublished
+                                  ? 'soft'
+                                  : 'outlined'
+                              }
+                              icon={
+                                <Iconify
+                                  icon={
+                                    product.isPublished
+                                      ? 'mdi:web-check'
+                                      : 'mdi:web-off'
+                                  }
+                                />
+                              }
+                              label={
+                                product.isPublished
+                                  ? 'Published'
+                                  : 'Unpublished'
+                              }
+                            />
+
+                            {product.updatedAt && (
                               <Typography
                                 variant="caption"
                                 color="text.disabled"
+                                noWrap
                               >
-                                {formatDateTime(
-                                  latestRemark.createdAt
+                                Updated{' '}
+                                {formatDate(
+                                  product.updatedAt
                                 )}
                               </Typography>
                             )}
                           </Stack>
-                        </Tooltip>
-                      ) : (
-                        <Stack
-                          direction="row"
-                          spacing={0.75}
-                          alignItems="center"
-                        >
-                          <Iconify
-                            icon="solar:chat-round-line-outline"
-                            width={18}
-                            sx={{
-                              color:
-                                'text.disabled',
-                            }}
-                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
 
-                          <Typography
-                            variant="body2"
-                            color="text.disabled"
-                          >
-                            No remarks
-                          </Typography>
-                        </Stack>
-                      )}
-                    </TableCell>
+          {/* PAGINATION */}
 
-                    {/* STATUS */}
+          <TablePagination
+            component="div"
+            count={
+              sortedProducts.length
+            }
+            page={page}
+            onPageChange={
+              handleChangePage
+            }
+            rowsPerPage={
+              rowsPerPage
+            }
+            onRowsPerPageChange={
+              handleChangeRowsPerPage
+            }
+            rowsPerPageOptions={[
+              10,
+              25,
+              50,
+              100,
+            ]}
+            labelRowsPerPage="Products per page:"
+            showFirstButton
+            showLastButton
+            sx={{
+              borderTop:
+                (theme) =>
+                  `1px solid ${theme.palette.divider}`,
+            }}
+          />
+        </>
+      ) : (
+        <Stack
+          spacing={1.5}
+          alignItems="center"
+          justifyContent="center"
+          sx={{
+            minHeight: 300,
+            px: 3,
+            py: 6,
+            textAlign: 'center',
+          }}
+        >
+          <Box
+            sx={{
+              width: 64,
+              height: 64,
+              borderRadius: '50%',
 
-                    <TableCell align="center">
-                      <Stack
-                        spacing={0.75}
-                        alignItems="center"
-                      >
-                        <Chip
-                          size="small"
-                          color={
-                            product.isPublished
-                              ? 'success'
-                              : 'default'
-                          }
-                          variant={
-                            product.isPublished
-                              ? 'soft'
-                              : 'outlined'
-                          }
-                          icon={
-                            <Iconify
-                              icon={
-                                product.isPublished
-                                  ? 'mdi:web-check'
-                                  : 'mdi:web-off'
-                              }
-                            />
-                          }
-                          label={
-                            product.isPublished
-                              ? 'Published'
-                              : 'Unpublished'
-                          }
-                        />
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent:
+                'center',
 
-                        {product.updatedAt && (
-                          <Typography
-                            variant="caption"
-                            color="text.disabled"
-                            noWrap
-                          >
-                            Updated{' '}
-                            {formatDate(
-                              product.updatedAt
-                            )}
-                          </Typography>
-                        )}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                );
+              bgcolor:
+                'background.neutral',
+            }}
+          >
+            <Iconify
+              icon={
+                selectedFilter.icon
               }
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+              width={32}
+              sx={{
+                color:
+                  'text.secondary',
+              }}
+            />
+          </Box>
 
-      {/* PAGINATION */}
+          <Typography variant="h6">
+            No products found
+          </Typography>
 
-      <TablePagination
-        component="div"
-        count={
-          sortedProducts.length
-        }
-        page={page}
-        onPageChange={
-          handleChangePage
-        }
-        rowsPerPage={
-          rowsPerPage
-        }
-        onRowsPerPageChange={
-          handleChangeRowsPerPage
-        }
-        rowsPerPageOptions={[
-          10,
-          25,
-          50,
-          100,
-        ]}
-        labelRowsPerPage="Products per page:"
-        showFirstButton
-        showLastButton
-        sx={{
-          borderTop:
-            (theme) =>
-              `1px solid ${theme.palette.divider}`,
-        }}
-      />
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{
+              maxWidth: 420,
+            }}
+          >
+            No products currently have
+            missing{' '}
+            {selectedFilter.label.toLowerCase()}{' '}
+            information.
+          </Typography>
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            startIcon={
+              <Iconify icon="solar:list-bold" />
+            }
+            onClick={() =>
+              handleMissingGroupFilter(
+                'all'
+              )
+            }
+          >
+            Show all products
+          </Button>
+        </Stack>
+      )}
     </Card>
   );
 }
@@ -1633,7 +2130,11 @@ AppAttentionRequiredProducts.propTypes = {
           ),
 
         missingGroups:
-          PropTypes.object,
+          PropTypes.objectOf(
+            PropTypes.arrayOf(
+              PropTypes.string
+            )
+          ),
 
         isPublished:
           PropTypes.bool,
