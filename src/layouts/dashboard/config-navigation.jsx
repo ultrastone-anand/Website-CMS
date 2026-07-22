@@ -107,18 +107,10 @@ export const getNavConfig = () => {
       title: 'Our Process',
       path: '/dashboard/process',
     },
-    // {
-    //   title: 'MEU',
-    //   path: '/dashboard/meu',
-    // },
-    // {
-    //   title: 'Merchandise Display',
-    //   path: '/dashboard/merchandise',
-    // },
-    // {
-    //   title: 'Videos',
-    //   path: '/dashboard/videos',
-    // },
+    {
+      title: 'Merchandise Display',
+      path: '/dashboard/merchandise',
+    },
   ],
 },
       ]

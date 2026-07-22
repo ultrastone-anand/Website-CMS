@@ -11,6 +11,37 @@ const getHeaders = () => {
   };
 };
 
+const getUploadHeaders = () => {
+  const token = sessionStorage.getItem("token");
+
+  return {
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
+const parseResponse = async (
+  response,
+  fallbackMessage
+) => {
+  let data;
+
+  try {
+    data = await response.json();
+  } catch (error) {
+    data = null;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || fallbackMessage
+    );
+  }
+
+  return data;
+};
+
 // ================================
 // CMS PAGES
 // ================================
@@ -24,16 +55,10 @@ export const getPageBySlug = async (slug) => {
     }
   );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to fetch page"
-    );
-  }
-
-  return data;
+  return parseResponse(
+    response,
+    "Failed to fetch page"
+  );
 };
 
 export const createPage = async (payload) => {
@@ -46,16 +71,10 @@ export const createPage = async (payload) => {
     }
   );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to create page"
-    );
-  }
-
-  return data;
+  return parseResponse(
+    response,
+    "Failed to create page"
+  );
 };
 
 export const updatePage = async (
@@ -71,16 +90,10 @@ export const updatePage = async (
     }
   );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to update page"
-    );
-  }
-
-  return data;
+  return parseResponse(
+    response,
+    "Failed to update page"
+  );
 };
 
 export const deletePage = async (id) => {
@@ -92,45 +105,61 @@ export const deletePage = async (id) => {
     }
   );
 
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to delete page"
-    );
-  }
-
-  return data;
+  return parseResponse(
+    response,
+    "Failed to delete page"
+  );
 };
 
-export const uploadPageImage = async (file) => {
-  const token = sessionStorage.getItem("token");
+// ================================
+// UPLOAD PAGE IMAGE TO R2
+// ================================
 
+export const uploadPageImage = async (file) => {
   const formData = new FormData();
+
   formData.append("image", file);
 
   const response = await fetch(
     `${API_URL}/pages/upload-image`,
     {
       method: "POST",
-      headers: {
-        ...(token && {
-          Authorization: `Bearer ${token}`,
-        }),
-      },
+      headers: getUploadHeaders(),
       body: formData,
     }
   );
 
-  const data = await response.json();
+  return parseResponse(
+    response,
+    "Failed to upload page image"
+  );
+};
 
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        "Failed to upload page image"
-    );
-  }
+// ================================
+// UPLOAD PAGE PDF TO BACKEND
+// ================================
 
-  return data;
+export const uploadPagePdf = async (file) => {
+  const formData = new FormData();
+
+  /*
+   * Must match:
+   * upload.single("pdf")
+   * in the backend route.
+   */
+  formData.append("pdf", file);
+
+  const response = await fetch(
+    `${API_URL}/pages/upload-pdf`,
+    {
+      method: "POST",
+      headers: getUploadHeaders(),
+      body: formData,
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to upload page PDF"
+  );
 };
