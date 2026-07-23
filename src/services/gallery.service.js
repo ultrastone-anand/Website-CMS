@@ -92,14 +92,19 @@ export const deleteGalleryCategory = async (categoryId) => {
 
 export const getGalleryImages = async ({
   categoryId,
+  page = 1,
   limit = 50,
 } = {}) => {
   const query = new URLSearchParams({
+    page: String(page),
     limit: String(limit),
   });
 
   if (categoryId) {
-    query.set('categoryId', String(categoryId));
+    query.set(
+      'categoryId',
+      String(categoryId)
+    );
   }
 
   const response = await fetch(

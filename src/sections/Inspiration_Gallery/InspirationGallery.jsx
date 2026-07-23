@@ -58,6 +58,7 @@ const ALLOWED_TYPES = [
 ];
 
 const MAX_ALT_LENGTH = 250;
+const IMAGES_PER_PAGE = 50;
 
 const isVideoFile = (file) =>
     file?.type?.startsWith('video/');
@@ -138,16 +139,16 @@ const extractCategories = (response) => {
         return response.categories;
     }
 
-    if (Array.isArray(response?.data)) {
-        return response.data;
-    }
-
     if (
         Array.isArray(
             response?.data?.categories
         )
     ) {
         return response.data.categories;
+    }
+
+    if (Array.isArray(response?.data)) {
+        return response.data;
     }
 
     return [];
@@ -158,7 +159,17 @@ const extractImages = (response) => {
         return response;
     }
 
-    if (Array.isArray(response?.images)) {
+    if (
+        Array.isArray(
+            response?.data?.images
+        )
+    ) {
+        return response.data.images;
+    }
+
+    if (
+        Array.isArray(response?.images)
+    ) {
         return response.images;
     }
 
@@ -166,13 +177,76 @@ const extractImages = (response) => {
         return response.data;
     }
 
-    if (
-        Array.isArray(response?.data?.images)
-    ) {
-        return response.data.images;
-    }
-
     return [];
+};
+
+const extractImagePagination = (
+    response
+) => {
+    const pagination =
+        response?.data?.pagination ??
+        response?.pagination ??
+        {};
+
+    return {
+        page:
+            Number(
+                pagination.page
+            ) || 1,
+
+        limit:
+            Number(
+                pagination.limit
+            ) || IMAGES_PER_PAGE,
+
+        total:
+            Number(
+                pagination.total
+            ) || 0,
+
+        totalPages:
+            Number(
+                pagination.totalPages ??
+                    pagination.total_pages
+            ) || 0,
+
+        hasMore: Boolean(
+            pagination.hasMore ??
+                pagination.has_more
+        ),
+    };
+};
+
+const mergeUniqueImages = (
+    currentImages,
+    incomingImages
+) => {
+    const imageMap = new Map();
+
+    [
+        ...currentImages,
+        ...incomingImages,
+    ].forEach((image) => {
+        const imageId =
+            getImageId(image);
+
+        const imageKey =
+            imageId !== undefined &&
+            imageId !== null
+                ? String(imageId)
+                : getImageUrl(image);
+
+        if (imageKey) {
+            imageMap.set(
+                imageKey,
+                image
+            );
+        }
+    });
+
+    return Array.from(
+        imageMap.values()
+    );
 };
 
 const extractPresignedUploads = (
@@ -192,10 +266,6 @@ const extractPresignedUploads = (
         return response.files;
     }
 
-    if (Array.isArray(response?.data)) {
-        return response.data;
-    }
-
     if (
         Array.isArray(
             response?.data?.uploads
@@ -208,6 +278,10 @@ const extractPresignedUploads = (
         Array.isArray(response?.data?.files)
     ) {
         return response.data.files;
+    }
+
+    if (Array.isArray(response?.data)) {
+        return response.data;
     }
 
     return [];
@@ -358,7 +432,22 @@ export default function InspirationGallery() {
     const [categories, setCategories] =
         useState([]);
 
-    const [images, setImages] = useState([]);
+    const [images, setImages] =
+        useState([]);
+
+    const [imagesPage, setImagesPage] =
+        useState(1);
+
+    const [totalImages, setTotalImages] =
+        useState(0);
+
+    const [
+        hasMoreImages,
+        setHasMoreImages,
+    ] = useState(false);
+
+    const [loadingMore, setLoadingMore] =
+        useState(false);
 
     const [
         selectedFiles,
@@ -437,21 +526,24 @@ export default function InspirationGallery() {
     const [savingAlt, setSavingAlt] =
         useState(false);
 
-    const [deleteDialog, setDeleteDialog] =
-        useState({
-            open: false,
-            type: '',
-            item: null,
-        });
+    const [
+        deleteDialog,
+        setDeleteDialog,
+    ] = useState({
+        open: false,
+        type: '',
+        item: null,
+    });
 
     const [deleting, setDeleting] =
         useState(false);
 
-    const [message, setMessage] = useState({
-        open: false,
-        severity: 'success',
-        text: '',
-    });
+    const [message, setMessage] =
+        useState({
+            open: false,
+            severity: 'success',
+            text: '',
+        });
 
     const [, setActivity] = useState({
         open: false,
@@ -600,23 +692,70 @@ export default function InspirationGallery() {
             return categoryList;
         }, []);
 
-    const loadImages =
-        useCallback(async () => {
-            setImagesLoading(true);
+    const loadImages = useCallback(
+        async ({
+            page = 1,
+            reset = false,
+        } = {}) => {
+            if (reset) {
+                setImagesLoading(true);
+            } else {
+                setLoadingMore(true);
+            }
 
             try {
                 const response =
                     await getGalleryImages({
-                        limit: 500,
+                        page,
+                        limit:
+                            IMAGES_PER_PAGE,
                     });
 
+                const incomingImages =
+                    extractImages(response);
+
+                const pagination =
+                    extractImagePagination(
+                        response
+                    );
+
                 setImages(
-                    extractImages(response)
+                    (currentImages) => {
+                        if (reset) {
+                            return incomingImages;
+                        }
+
+                        return mergeUniqueImages(
+                            currentImages,
+                            incomingImages
+                        );
+                    }
                 );
+
+                setImagesPage(
+                    pagination.page
+                );
+
+                setTotalImages(
+                    pagination.total
+                );
+
+                setHasMoreImages(
+                    pagination.hasMore
+                );
+
+                return {
+                    images:
+                        incomingImages,
+                    pagination,
+                };
             } finally {
                 setImagesLoading(false);
+                setLoadingMore(false);
             }
-        }, []);
+        },
+        []
+    );
 
     const loadPage =
         useCallback(async () => {
@@ -625,7 +764,11 @@ export default function InspirationGallery() {
             try {
                 await Promise.all([
                     loadCategories(),
-                    loadImages(),
+
+                    loadImages({
+                        page: 1,
+                        reset: true,
+                    }),
                 ]);
             } catch (error) {
                 showMessage(
@@ -639,6 +782,38 @@ export default function InspirationGallery() {
             }
         }, [
             loadCategories,
+            loadImages,
+            showMessage,
+        ]);
+
+    const handleLoadMoreImages =
+        useCallback(async () => {
+            if (
+                loadingMore ||
+                imagesLoading ||
+                !hasMoreImages
+            ) {
+                return;
+            }
+
+            try {
+                await loadImages({
+                    page: imagesPage + 1,
+                    reset: false,
+                });
+            } catch (error) {
+                showMessage(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to load more gallery media',
+                    'error'
+                );
+            }
+        }, [
+            loadingMore,
+            imagesLoading,
+            hasMoreImages,
+            imagesPage,
             loadImages,
             showMessage,
         ]);
@@ -1235,7 +1410,10 @@ export default function InspirationGallery() {
 
             clearSelectedFiles();
 
-            await loadImages();
+            await loadImages({
+                page: 1,
+                reset: true,
+            });
 
             setExpandedCategory(
                 String(
@@ -1452,9 +1630,10 @@ export default function InspirationGallery() {
             return;
         }
 
-        const imageId = getImageId(
-            altDialog.image
-        );
+        const imageId =
+            getImageId(
+                altDialog.image
+            );
 
         if (!imageId) {
             showMessage(
@@ -1480,28 +1659,36 @@ export default function InspirationGallery() {
                 response?.data ??
                 response;
 
-            setImages((currentImages) =>
-                currentImages.map((image) => {
-                    if (
-                        String(
-                            getImageId(image)
-                        ) !== String(imageId)
-                    ) {
-                        return image;
-                    }
+            setImages(
+                (currentImages) =>
+                    currentImages.map(
+                        (image) => {
+                            if (
+                                String(
+                                    getImageId(
+                                        image
+                                    )
+                                ) !==
+                                String(
+                                    imageId
+                                )
+                            ) {
+                                return image;
+                            }
 
-                    return {
-                        ...image,
-                        ...(updatedImage &&
-                        typeof updatedImage ===
-                            'object'
-                            ? updatedImage
-                            : {}),
-                        image_alt:
-                            updatedImage?.image_alt ??
-                            trimmedAlt,
-                    };
-                })
+                            return {
+                                ...image,
+                                ...(updatedImage &&
+                                typeof updatedImage ===
+                                    'object'
+                                    ? updatedImage
+                                    : {}),
+                                image_alt:
+                                    updatedImage?.image_alt ??
+                                    trimmedAlt,
+                            };
+                        }
+                    )
             );
 
             setAltDialog({
@@ -1581,7 +1768,11 @@ export default function InspirationGallery() {
 
                     await Promise.all([
                         loadCategories(),
-                        loadImages(),
+
+                        loadImages({
+                            page: 1,
+                            reset: true,
+                        }),
                     ]);
 
                     showMessage(
@@ -1616,6 +1807,15 @@ export default function InspirationGallery() {
                                     String(
                                         imageId
                                     )
+                            )
+                    );
+
+                    setTotalImages(
+                        (currentTotal) =>
+                            Math.max(
+                                currentTotal -
+                                    1,
+                                0
                             )
                     );
 
@@ -2392,9 +2592,12 @@ export default function InspirationGallery() {
                             variant="body2"
                             color="text.secondary"
                         >
-                            View and manage
-                            images and videos
-                            grouped by category.
+                            Showing {images.length}
+                            {totalImages > 0
+                                ? ` of ${totalImages}`
+                                : ''}{' '}
+                            media items grouped
+                            by category.
                         </Typography>
                     </Box>
 
@@ -2493,7 +2696,7 @@ export default function InspirationGallery() {
                                                 {
                                                     categoryImages.length
                                                 }{' '}
-                                                media
+                                                loaded
                                             </Typography>
                                         </Box>
 
@@ -2747,8 +2950,9 @@ export default function InspirationGallery() {
                                                 variant="body2"
                                                 color="text.secondary"
                                             >
-                                                No media has
-                                                been added to
+                                                No media is
+                                                currently
+                                                loaded for
                                                 this category.
                                             </Typography>
 
@@ -2774,6 +2978,67 @@ export default function InspirationGallery() {
                         );
                     }
                 )}
+
+                {hasMoreImages && (
+                    <Stack
+                        alignItems="center"
+                        spacing={1}
+                        sx={{ mt: 3 }}
+                    >
+                        <Button
+                            size="large"
+                            variant="outlined"
+                            disabled={
+                                loadingMore ||
+                                imagesLoading
+                            }
+                            onClick={
+                                handleLoadMoreImages
+                            }
+                            startIcon={
+                                loadingMore ? (
+                                    <CircularProgress
+                                        size={18}
+                                        color="inherit"
+                                    />
+                                ) : null
+                            }
+                        >
+                            {loadingMore
+                                ? 'Loading More...'
+                                : 'Load More Media'}
+                        </Button>
+
+                        {totalImages > 0 && (
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                            >
+                                {images.length} of{' '}
+                                {totalImages} loaded
+                            </Typography>
+                        )}
+                    </Stack>
+                )}
+
+                {!hasMoreImages &&
+                    images.length > 0 &&
+                    totalImages > 0 && (
+                        <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            align="center"
+                            sx={{
+                                display:
+                                    'block',
+                                mt: 3,
+                            }}
+                        >
+                            All {totalImages}{' '}
+                            media items are
+                            loaded.
+                        </Typography>
+                    )}
             </Box>
 
             <Dialog
@@ -3019,6 +3284,14 @@ export default function InspirationGallery() {
                         disabled={deleting}
                         onClick={
                             handleConfirmDelete
+                        }
+                        startIcon={
+                            deleting ? (
+                                <CircularProgress
+                                    size={16}
+                                    color="inherit"
+                                />
+                            ) : null
                         }
                     >
                         {deleting
