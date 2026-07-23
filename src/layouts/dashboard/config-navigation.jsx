@@ -111,6 +111,10 @@ export const getNavConfig = () => {
       title: 'Merchandise Display',
       path: '/dashboard/merchandise',
     },
+    {
+      title: 'Privacy Policy',
+      path: '/dashboard/privacypolicy',
+    },
   ],
 },
       ]
