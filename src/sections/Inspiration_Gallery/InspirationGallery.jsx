@@ -33,6 +33,10 @@ import {
     compressVideo,
     shouldCompressVideo,
 } from 'src/utils/compressVideo';
+import {
+    getOriginalSafeUrl,
+    getOptimizedImageUrl,
+} from 'src/utils/mediahelper';
 
 import {
     getGalleryImages,
@@ -207,12 +211,12 @@ const extractImagePagination = (
         totalPages:
             Number(
                 pagination.totalPages ??
-                    pagination.total_pages
+                pagination.total_pages
             ) || 0,
 
         hasMore: Boolean(
             pagination.hasMore ??
-                pagination.has_more
+            pagination.has_more
         ),
     };
 };
@@ -232,7 +236,7 @@ const mergeUniqueImages = (
 
         const imageKey =
             imageId !== undefined &&
-            imageId !== null
+                imageId !== null
                 ? String(imageId)
                 : getImageUrl(image);
 
@@ -316,7 +320,7 @@ const formatFileSize = (bytes) => {
     const unitIndex = Math.min(
         Math.floor(
             Math.log(bytes) /
-                Math.log(1024)
+            Math.log(1024)
         ),
         units.length - 1
     );
@@ -345,10 +349,40 @@ function MediaPreview({
     file,
     controls = false,
     height = 130,
+    imageWidth = 500,
+    imageQuality = 75,
 }) {
     const video =
         isVideoFile(file) ||
         isVideoUrl(url);
+
+    const mediaUrl = useMemo(() => {
+        if (!url) {
+            return '';
+        }
+
+        if (
+            url.startsWith('blob:') ||
+            url.startsWith('data:')
+        ) {
+            return url;
+        }
+
+        if (video) {
+            return getOriginalSafeUrl(url);
+        }
+
+        return getOptimizedImageUrl(
+            url,
+            imageWidth,
+            imageQuality
+        );
+    }, [
+        url,
+        video,
+        imageWidth,
+        imageQuality,
+    ]);
 
     if (!url) {
         return (
@@ -379,7 +413,7 @@ function MediaPreview({
         return (
             <Box
                 component="video"
-                src={url}
+                src={mediaUrl}
                 controls={controls}
                 muted={!controls}
                 playsInline
@@ -398,14 +432,29 @@ function MediaPreview({
     return (
         <Box
             component="img"
-            src={url}
+            src={mediaUrl}
             alt={name || ''}
             loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            onError={(event) => {
+                const fallbackUrl =
+                    getOriginalSafeUrl(url);
+
+                if (
+                    event.currentTarget.src !==
+                    fallbackUrl
+                ) {
+                    event.currentTarget.src =
+                        fallbackUrl;
+                }
+            }}
             sx={{
                 width: '100%',
                 height,
                 display: 'block',
                 objectFit: 'cover',
+                bgcolor: 'action.hover',
             }}
         />
     );
@@ -423,6 +472,8 @@ MediaPreview.propTypes = {
         PropTypes.number,
         PropTypes.string,
     ]),
+    imageWidth: PropTypes.number,
+    imageQuality: PropTypes.number,
 };
 
 export default function InspirationGallery() {
@@ -585,7 +636,7 @@ export default function InspirationGallery() {
 
                     if (
                         categoryId !==
-                            undefined &&
+                        undefined &&
                         categoryId !== null
                     ) {
                         groupedImages[
@@ -603,7 +654,7 @@ export default function InspirationGallery() {
 
                 if (
                     categoryId ===
-                        undefined ||
+                    undefined ||
                     categoryId === null
                 ) {
                     return;
@@ -614,7 +665,7 @@ export default function InspirationGallery() {
 
                 if (
                     !groupedImages[
-                        categoryKey
+                    categoryKey
                     ]
                 ) {
                     groupedImages[
@@ -971,7 +1022,7 @@ export default function InspirationGallery() {
                                                 const progress =
                                                     Math.round(
                                                         total /
-                                                            supportedFiles.length
+                                                        supportedFiles.length
                                                     );
 
                                                 setCompressionProgress(
@@ -1016,8 +1067,8 @@ export default function InspirationGallery() {
                                         video
                                             ? ''
                                             : createDefaultAltText(
-                                                  finalFile.name
-                                              ),
+                                                finalFile.name
+                                            ),
                                 };
                             }
                         )
@@ -1139,11 +1190,11 @@ export default function InspirationGallery() {
                         currentFiles.map(
                             (item) =>
                                 item.id ===
-                                fileId
+                                    fileId
                                     ? {
-                                          ...item,
-                                          imageAlt,
-                                      }
+                                        ...item,
+                                        imageAlt,
+                                    }
                                     : item
                         )
                 );
@@ -1237,7 +1288,7 @@ export default function InspirationGallery() {
                     ) &&
                     item.imageAlt?.trim()
                         .length >
-                        MAX_ALT_LENGTH
+                    MAX_ALT_LENGTH
             );
 
         if (invalidAltText) {
@@ -1306,7 +1357,7 @@ export default function InspirationGallery() {
                         ) => {
                             const presignedItem =
                                 presignedUploads[
-                                    index
+                                index
                                 ];
 
                             const uploadUrl =
@@ -1360,7 +1411,7 @@ export default function InspirationGallery() {
                                 Math.round(
                                     (completedUploads /
                                         selectedFiles.length) *
-                                        100
+                                    100
                                 );
 
                             setUploadProgress(
@@ -1371,7 +1422,7 @@ export default function InspirationGallery() {
                                 open: true,
                                 title:
                                     progress ===
-                                    100
+                                        100
                                         ? 'Finalizing upload'
                                         : 'Uploading media',
                                 description: `${completedUploads} of ${selectedFiles.length} completed`,
@@ -1679,7 +1730,7 @@ export default function InspirationGallery() {
                             return {
                                 ...image,
                                 ...(updatedImage &&
-                                typeof updatedImage ===
+                                    typeof updatedImage ===
                                     'object'
                                     ? updatedImage
                                     : {}),
@@ -1814,7 +1865,7 @@ export default function InspirationGallery() {
                         (currentTotal) =>
                             Math.max(
                                 currentTotal -
-                                    1,
+                                1,
                                 0
                             )
                     );
@@ -2053,8 +2104,8 @@ export default function InspirationGallery() {
                             <strong>
                                 {selectedCategory
                                     ? getCategoryName(
-                                          selectedCategory
-                                      )
+                                        selectedCategory
+                                    )
                                     : 'No category selected'}
                             </strong>
                         </Typography>
@@ -2062,19 +2113,19 @@ export default function InspirationGallery() {
 
                     {selectedFiles.length >
                         0 && (
-                        <Button
-                            color="inherit"
-                            disabled={
-                                uploading ||
-                                compressing
-                            }
-                            onClick={
-                                clearSelectedFiles
-                            }
-                        >
-                            Clear All
-                        </Button>
-                    )}
+                            <Button
+                                color="inherit"
+                                disabled={
+                                    uploading ||
+                                    compressing
+                                }
+                                onClick={
+                                    clearSelectedFiles
+                                }
+                            >
+                                Clear All
+                            </Button>
+                        )}
                 </Stack>
 
                 <Box
@@ -2094,7 +2145,7 @@ export default function InspirationGallery() {
                             (event.key ===
                                 'Enter' ||
                                 event.key ===
-                                    ' ') &&
+                                ' ') &&
                             !uploading &&
                             !compressing &&
                             selectedCategoryId
@@ -2131,8 +2182,8 @@ export default function InspirationGallery() {
                         textAlign: 'center',
                         cursor:
                             uploading ||
-                            compressing ||
-                            !selectedCategoryId
+                                compressing ||
+                                !selectedCategoryId
                                 ? 'not-allowed'
                                 : 'pointer',
                         opacity:
@@ -2250,242 +2301,151 @@ export default function InspirationGallery() {
 
                 {selectedFiles.length >
                     0 && (
-                    <Box sx={{ mt: 2.5 }}>
-                        <Typography
-                            variant="subtitle2"
-                            fontWeight={700}
-                            sx={{ mb: 1.5 }}
-                        >
-                            Selected media (
-                            {selectedFiles.length})
-                        </Typography>
+                        <Box sx={{ mt: 2.5 }}>
+                            <Typography
+                                variant="subtitle2"
+                                fontWeight={700}
+                                sx={{ mb: 1.5 }}
+                            >
+                                Selected media (
+                                {selectedFiles.length})
+                            </Typography>
 
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                gridTemplateColumns:
-                                    'repeat(auto-fill, minmax(240px, 1fr))',
-                                alignItems:
-                                    'flex-start',
-                                gap: 1.5,
-                            }}
-                        >
-                            {selectedFiles.map(
-                                (item) => {
-                                    const video =
-                                        isVideoFile(
-                                            item.file
-                                        );
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns:
+                                        'repeat(auto-fill, minmax(240px, 1fr))',
+                                    alignItems:
+                                        'flex-start',
+                                    gap: 1.5,
+                                }}
+                            >
+                                {selectedFiles.map(
+                                    (item) => {
+                                        const video =
+                                            isVideoFile(
+                                                item.file
+                                            );
 
-                                    const altLength =
-                                        item
-                                            .imageAlt
-                                            ?.length ||
-                                        0;
+                                        const altLength =
+                                            item
+                                                .imageAlt
+                                                ?.length ||
+                                            0;
 
-                                    return (
-                                        <Paper
-                                            key={
-                                                item.id
-                                            }
-                                            variant="outlined"
-                                            sx={{
-                                                minWidth:
-                                                    0,
-                                                position:
-                                                    'relative',
-                                                overflow:
-                                                    'hidden',
-                                                borderRadius: 1.5,
-                                            }}
-                                        >
-                                            <MediaPreview
-                                                url={
-                                                    item.preview
+                                        return (
+                                            <Paper
+                                                key={
+                                                    item.id
                                                 }
-                                                name={
-                                                    item.imageAlt ||
-                                                    item
-                                                        .file
-                                                        .name
-                                                }
-                                                file={
-                                                    item.file
-                                                }
-                                                height={
-                                                    150
-                                                }
-                                            />
-
-                                            <Tooltip title="Remove media">
-                                                <IconButton
-                                                    size="small"
-                                                    disabled={
-                                                        uploading ||
-                                                        compressing
-                                                    }
-                                                    onClick={() =>
-                                                        removeSelectedFile(
-                                                            item.id
-                                                        )
-                                                    }
-                                                    sx={{
-                                                        position:
-                                                            'absolute',
-                                                        top: 5,
-                                                        right: 5,
-                                                        width: 27,
-                                                        height: 27,
-                                                        bgcolor:
-                                                            'rgba(255,255,255,0.92)',
-                                                        '&:hover':
-                                                            {
-                                                                bgcolor:
-                                                                    'background.paper',
-                                                            },
-                                                    }}
-                                                >
-                                                    ×
-                                                </IconButton>
-                                            </Tooltip>
-
-                                            <Box
+                                                variant="outlined"
                                                 sx={{
-                                                    p: 1.25,
+                                                    minWidth:
+                                                        0,
+                                                    position:
+                                                        'relative',
+                                                    overflow:
+                                                        'hidden',
+                                                    borderRadius: 1.5,
                                                 }}
                                             >
-                                                <Typography
-                                                    variant="caption"
-                                                    title={
+                                                <MediaPreview
+                                                    url={
+                                                        item.preview
+                                                    }
+                                                    name={
+                                                        item.imageAlt ||
                                                         item
                                                             .file
                                                             .name
                                                     }
-                                                    sx={{
-                                                        display:
-                                                            'block',
-                                                        overflow:
-                                                            'hidden',
-                                                        textOverflow:
-                                                            'ellipsis',
-                                                        whiteSpace:
-                                                            'nowrap',
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    {
-                                                        item
-                                                            .file
-                                                            .name
+                                                    file={
+                                                        item.file
                                                     }
-                                                </Typography>
-
-                                                <Typography
-                                                    variant="caption"
-                                                    color="text.secondary"
-                                                    display="block"
-                                                    sx={{
-                                                        mb: video
-                                                            ? 0
-                                                            : 1.25,
-                                                    }}
-                                                >
-                                                    {video
-                                                        ? 'Video'
-                                                        : 'Image'}
-                                                    {
-                                                        ' • '
+                                                    height={
+                                                        150
                                                     }
-                                                    {formatFileSize(
-                                                        item
-                                                            .file
-                                                            .size
-                                                    )}
-                                                </Typography>
+                                                />
 
-                                                {!video && (
-                                                    <TextField
-                                                        fullWidth
-                                                        required
-                                                        multiline
-                                                        minRows={
-                                                            2
-                                                        }
-                                                        maxRows={
-                                                            4
-                                                        }
+                                                <Tooltip title="Remove media">
+                                                    <IconButton
                                                         size="small"
-                                                        label="Image alt text"
-                                                        value={
-                                                            item.imageAlt ||
-                                                            ''
-                                                        }
-                                                        error={
-                                                            !item.imageAlt?.trim() ||
-                                                            altLength >
-                                                                MAX_ALT_LENGTH
-                                                        }
                                                         disabled={
                                                             uploading ||
                                                             compressing
                                                         }
-                                                        onClick={(
-                                                            event
-                                                        ) =>
-                                                            event.stopPropagation()
-                                                        }
-                                                        onChange={(
-                                                            event
-                                                        ) =>
-                                                            updateSelectedFileAlt(
-                                                                item.id,
-                                                                event
-                                                                    .target
-                                                                    .value
+                                                        onClick={() =>
+                                                            removeSelectedFile(
+                                                                item.id
                                                             )
                                                         }
-                                                        inputProps={{
-                                                            maxLength:
-                                                                MAX_ALT_LENGTH,
+                                                        sx={{
+                                                            position:
+                                                                'absolute',
+                                                            top: 5,
+                                                            right: 5,
+                                                            width: 27,
+                                                            height: 27,
+                                                            bgcolor:
+                                                                'rgba(255,255,255,0.92)',
+                                                            '&:hover':
+                                                            {
+                                                                bgcolor:
+                                                                    'background.paper',
+                                                            },
                                                         }}
-                                                        helperText={
-                                                            !item.imageAlt?.trim()
-                                                                ? 'Alt text is required'
-                                                                : `${altLength}/${MAX_ALT_LENGTH} characters`
-                                                        }
-                                                    />
-                                                )}
+                                                    >
+                                                        ×
+                                                    </IconButton>
+                                                </Tooltip>
 
-                                                {video && (
+                                                <Box
+                                                    sx={{
+                                                        p: 1.25,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="caption"
+                                                        title={
+                                                            item
+                                                                .file
+                                                                .name
+                                                        }
+                                                        sx={{
+                                                            display:
+                                                                'block',
+                                                            overflow:
+                                                                'hidden',
+                                                            textOverflow:
+                                                                'ellipsis',
+                                                            whiteSpace:
+                                                                'nowrap',
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        {
+                                                            item
+                                                                .file
+                                                                .name
+                                                        }
+                                                    </Typography>
+
                                                     <Typography
                                                         variant="caption"
                                                         color="text.secondary"
                                                         display="block"
                                                         sx={{
-                                                            mt: 1,
+                                                            mb: video
+                                                                ? 0
+                                                                : 1.25,
                                                         }}
                                                     >
-                                                        Alt text
-                                                        is not
-                                                        required
-                                                        for video.
-                                                    </Typography>
-                                                )}
-
-                                                {item.wasCompressed && (
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="success.main"
-                                                        display="block"
-                                                        sx={{
-                                                            mt: 0.75,
-                                                        }}
-                                                    >
-                                                        {formatFileSize(
-                                                            item.originalSize
-                                                        )}
+                                                        {video
+                                                            ? 'Video'
+                                                            : 'Image'}
                                                         {
-                                                            ' → '
+                                                            ' • '
                                                         }
                                                         {formatFileSize(
                                                             item
@@ -2493,84 +2453,175 @@ export default function InspirationGallery() {
                                                                 .size
                                                         )}
                                                     </Typography>
-                                                )}
-                                            </Box>
-                                        </Paper>
-                                    );
-                                }
-                            )}
-                        </Box>
 
-                        {uploading && (
-                            <Box sx={{ mt: 2 }}>
-                                <Stack
-                                    direction="row"
-                                    justifyContent="space-between"
-                                    sx={{
-                                        mb: 0.75,
-                                    }}
-                                >
-                                    <Typography variant="body2">
-                                        Uploading
-                                        media...
-                                    </Typography>
+                                                    {!video && (
+                                                        <TextField
+                                                            fullWidth
+                                                            required
+                                                            multiline
+                                                            minRows={
+                                                                2
+                                                            }
+                                                            maxRows={
+                                                                4
+                                                            }
+                                                            size="small"
+                                                            label="Image alt text"
+                                                            value={
+                                                                item.imageAlt ||
+                                                                ''
+                                                            }
+                                                            error={
+                                                                !item.imageAlt?.trim() ||
+                                                                altLength >
+                                                                MAX_ALT_LENGTH
+                                                            }
+                                                            disabled={
+                                                                uploading ||
+                                                                compressing
+                                                            }
+                                                            onClick={(
+                                                                event
+                                                            ) =>
+                                                                event.stopPropagation()
+                                                            }
+                                                            onChange={(
+                                                                event
+                                                            ) =>
+                                                                updateSelectedFileAlt(
+                                                                    item.id,
+                                                                    event
+                                                                        .target
+                                                                        .value
+                                                                )
+                                                            }
+                                                            inputProps={{
+                                                                maxLength:
+                                                                    MAX_ALT_LENGTH,
+                                                            }}
+                                                            helperText={
+                                                                !item.imageAlt?.trim()
+                                                                    ? 'Alt text is required'
+                                                                    : `${altLength}/${MAX_ALT_LENGTH} characters`
+                                                            }
+                                                        />
+                                                    )}
 
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={
-                                            700
-                                        }
+                                                    {video && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            display="block"
+                                                            sx={{
+                                                                mt: 1,
+                                                            }}
+                                                        >
+                                                            Alt text
+                                                            is not
+                                                            required
+                                                            for video.
+                                                        </Typography>
+                                                    )}
+
+                                                    {item.wasCompressed && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="success.main"
+                                                            display="block"
+                                                            sx={{
+                                                                mt: 0.75,
+                                                            }}
+                                                        >
+                                                            {formatFileSize(
+                                                                item.originalSize
+                                                            )}
+                                                            {
+                                                                ' → '
+                                                            }
+                                                            {formatFileSize(
+                                                                item
+                                                                    .file
+                                                                    .size
+                                                            )}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                            </Paper>
+                                        );
+                                    }
+                                )}
+                            </Box>
+
+                            {uploading && (
+                                <Box sx={{ mt: 2 }}>
+                                    <Stack
+                                        direction="row"
+                                        justifyContent="space-between"
+                                        sx={{
+                                            mb: 0.75,
+                                        }}
                                     >
-                                        {
+                                        <Typography variant="body2">
+                                            Uploading
+                                            media...
+                                        </Typography>
+
+                                        <Typography
+                                            variant="body2"
+                                            fontWeight={
+                                                700
+                                            }
+                                        >
+                                            {
+                                                uploadProgress
+                                            }
+                                            %
+                                        </Typography>
+                                    </Stack>
+
+                                    <LinearProgress
+                                        variant="determinate"
+                                        value={
                                             uploadProgress
                                         }
-                                        %
-                                    </Typography>
-                                </Stack>
+                                    />
+                                </Box>
+                            )}
 
-                                <LinearProgress
-                                    variant="determinate"
-                                    value={
-                                        uploadProgress
-                                    }
-                                />
-                            </Box>
-                        )}
-
-                        <Stack
-                            direction="row"
-                            justifyContent="flex-end"
-                            sx={{ mt: 2 }}
-                        >
-                            <Button
-                                variant="contained"
-                                disabled={
-                                    uploading ||
-                                    compressing ||
-                                    !selectedFiles.length ||
-                                    !selectedCategoryId
-                                }
-                                onClick={
-                                    handleUpload
-                                }
-                                startIcon={
-                                    uploading ? (
-                                        <CircularProgress
-                                            size={
-                                                16
-                                            }
-                                            color="inherit"
-                                        />
-                                    ) : null
-                                }
+                            <Stack
+                                direction="row"
+                                justifyContent="flex-end"
+                                sx={{ mt: 2 }}
                             >
-                                {
-                                    uploadButtonText
-                                }
-                            </Button>
-                        </Stack>
-                    </Box>
-                )}
+                                <Button
+                                    variant="contained"
+                                    disabled={
+                                        uploading ||
+                                        compressing ||
+                                        !selectedFiles.length ||
+                                        !selectedCategoryId
+                                    }
+                                    onClick={
+                                        handleUpload
+                                    }
+                                    startIcon={
+                                        uploading ? (
+                                            <CircularProgress
+                                                size={
+                                                    16
+                                                }
+                                                color="inherit"
+                                            />
+                                        ) : null
+                                    }
+                                >
+                                    {
+                                        uploadButtonText
+                                    }
+                                </Button>
+                            </Stack>
+                        </Box>
+                    )}
             </Paper>
 
             <Box>
@@ -2619,7 +2670,7 @@ export default function InspirationGallery() {
 
                         const categoryImages =
                             imagesByCategory[
-                                categoryId
+                            categoryId
                             ] || [];
 
                         return (
@@ -2827,10 +2878,10 @@ export default function InspirationGallery() {
                                                                         bgcolor:
                                                                             'rgba(255,255,255,0.92)',
                                                                         '&:hover':
-                                                                            {
-                                                                                bgcolor:
-                                                                                    'background.paper',
-                                                                            },
+                                                                        {
+                                                                            bgcolor:
+                                                                                'background.paper',
+                                                                        },
                                                                     }}
                                                                 >
                                                                     ×
@@ -3051,7 +3102,7 @@ export default function InspirationGallery() {
             >
                 <DialogTitle>
                     {categoryDialog.mode ===
-                    'edit'
+                        'edit'
                         ? 'Edit Category'
                         : 'Add Category'}
                 </DialogTitle>
@@ -3071,7 +3122,7 @@ export default function InspirationGallery() {
                         onKeyDown={(event) => {
                             if (
                                 event.key ===
-                                    'Enter' &&
+                                'Enter' &&
                                 !savingCategory
                             ) {
                                 event.preventDefault();
@@ -3185,7 +3236,7 @@ export default function InspirationGallery() {
                         onKeyDown={(event) => {
                             if (
                                 event.key ===
-                                    'Enter' &&
+                                'Enter' &&
                                 (event.ctrlKey ||
                                     event.metaKey)
                             ) {
@@ -3219,7 +3270,7 @@ export default function InspirationGallery() {
                             !altText.trim() ||
                             altText.trim()
                                 .length >
-                                MAX_ALT_LENGTH
+                            MAX_ALT_LENGTH
                         }
                         onClick={
                             handleSaveAlt
@@ -3249,7 +3300,7 @@ export default function InspirationGallery() {
                 <DialogTitle>
                     Delete{' '}
                     {deleteDialog.type ===
-                    'category'
+                        'category'
                         ? 'Category'
                         : 'Media'}
                 </DialogTitle>
@@ -3257,13 +3308,13 @@ export default function InspirationGallery() {
                 <DialogContent>
                     <Alert severity="warning">
                         {deleteDialog.type ===
-                        'category'
+                            'category'
                             ? `Are you sure you want to delete "${getCategoryName(
-                                  deleteDialog.item
-                              )}"? Its media may also be deleted.`
+                                deleteDialog.item
+                            )}"? Its media may also be deleted.`
                             : `Are you sure you want to delete "${getImageName(
-                                  deleteDialog.item
-                              )}"?`}
+                                deleteDialog.item
+                            )}"?`}
                     </Alert>
                 </DialogContent>
 
