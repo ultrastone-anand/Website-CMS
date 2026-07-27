@@ -342,28 +342,28 @@ export default function BasicInfoTab({
                         {/* Existing Uploaded PDF */}
 
                         {!(silicaData.datasheet instanceof File) &&
-                            silicaData.datasheet && (
+  silicaData.datasheet && (
+    <Stack spacing={1}>
+      <Typography variant="body2">
+        Current PDF:
+      </Typography>
 
-                                <Stack spacing={1}>
-
-                                    <Typography variant="body2">
-                                        Current PDF:
-                                    </Typography>
-
-                                    <a
-                                        href={`${import.meta.env.VITE_API_URL.replace(
-                                            "/api",
-                                            ""
-                                        )}${silicaData.datasheet}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        View Current Datasheet
-                                    </a>
-
-                                </Stack>
-
-                            )}
+      <a
+        href={
+          /^https?:\/\//i.test(silicaData.datasheet)
+            ? silicaData.datasheet
+            : `${import.meta.env.VITE_API_URL.replace(
+                "/api",
+                ""
+              )}${silicaData.datasheet}`
+        }
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        View Current Datasheet
+      </a>
+    </Stack>
+)}
 
                         {/* Newly Selected PDF */}
 
