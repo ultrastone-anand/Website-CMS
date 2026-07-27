@@ -36,36 +36,36 @@ export const getNavConfig = () => {
       icon: icon('ic_gallery'),
     },
     {
-      title: 'Bulk Description',
-      path: '/dashboard/bulkdesc',
-      icon: icon('ic_desc'),
-    },   
-   {
-      title: 'Career',
-      path: '/dashboard/career',
-      icon: icon('ic_job'),
+      title: 'Blogs',
+      path: '/dashboard/blog',
+      icon: icon('ic_blogs'),
     },
- 
- 
+
+
     // Hide for role_id = 6
     ...(roleId !== 6
       ? [
-          {
-            title: 'Blogs',
-            path: '/dashboard/blog',
-            icon: icon('ic_blogs'),
-          },
-          {
-            title: 'Socials',
-            path: '/dashboard/socials',
-            icon: icon('ic_socials'),
-          },
-          {
-            title: 'Showrooms',
-            path: '/dashboard/company',
-            icon: icon('ic_company'),
-          },
-        ]
+        {
+          title: 'Bulk Description',
+          path: '/dashboard/bulkdesc',
+          icon: icon('ic_desc'),
+        },
+        {
+          title: 'Career',
+          path: '/dashboard/career',
+          icon: icon('ic_job'),
+        },
+        {
+          title: 'Socials',
+          path: '/dashboard/socials',
+          icon: icon('ic_socials'),
+        },
+        {
+          title: 'Showrooms',
+          path: '/dashboard/company',
+          icon: icon('ic_company'),
+        },
+      ]
       : []),
 
 
@@ -95,28 +95,28 @@ export const getNavConfig = () => {
           icon: icon('ic_lead'),
         },
         {
-  title: 'Pages',
-  path: '/dashboard/pages',
-  icon: icon('ic_about'),
-  children: [
-    {
-      title: 'About Us',
-      path: '/dashboard/aboutus',
-    },
-    {
-      title: 'Our Process',
-      path: '/dashboard/process',
-    },
-    {
-      title: 'Merchandise Display',
-      path: '/dashboard/merchandise',
-    },
-    {
-      title: 'Privacy Policy',
-      path: '/dashboard/privacypolicy',
-    },
-  ],
-},
+          title: 'Pages',
+          path: '/dashboard/pages',
+          icon: icon('ic_about'),
+          children: [
+            {
+              title: 'About Us',
+              path: '/dashboard/aboutus',
+            },
+            {
+              title: 'Our Process',
+              path: '/dashboard/process',
+            },
+            {
+              title: 'Merchandise Display',
+              path: '/dashboard/merchandise',
+            },
+            {
+              title: 'Privacy Policy',
+              path: '/dashboard/privacypolicy',
+            },
+          ],
+        },
       ]
       : []),
 
