@@ -8,7 +8,11 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import {Tooltip,TextField,IconButton} from '@mui/material';
+import {
+    Tooltip,
+    TextField,
+    IconButton,
+} from '@mui/material';
 
 import Iconify from 'src/components/iconify';
 
@@ -57,73 +61,244 @@ export default function MediaTab({
     canEditMedia,
     handleDeleteMedia,
 }) {
+    const [isDragging, setIsDragging] = useState(false);
 
-const [uploadRows, setUploadRows] = useState([
-    { id: Date.now(), field: '' },
-]);
-
-const handleAddUploadRow = () => {
-    setUploadRows((prev) => [
-        ...prev,
-        { id: Date.now() + Math.random(), field: '' },
+    const [uploadRows, setUploadRows] = useState([
+        {
+            id: Date.now(),
+            field: '',
+            initialFile: null,
+        },
     ]);
-};
 
-const handleRemoveUploadRow = (id) => {
-    setUploadRows((prev) =>
-        prev.length === 1 ? prev : prev.filter((row) => row.id !== id)
-    );
-};
+    const handleAddUploadRow = () => {
+        setUploadRows((prev) => [
+            ...prev,
+            {
+                id: Date.now() + Math.random(),
+                field: '',
+                initialFile: null,
+            },
+        ]);
+    };
 
-const handleChangeUploadType = (id, field) => {
-    setUploadRows((prev) =>
-        prev.map((row) =>
-            row.id === id ? { ...row, field } : row
-        )
-    );
-};
+    const handleRemoveUploadRow = (id) => {
+        setUploadRows((prev) =>
+            prev.length === 1
+                ? prev
+                : prev.filter((row) => row.id !== id)
+        );
+    };
+
+    const handleChangeUploadType = (id, field) => {
+        setUploadRows((prev) =>
+            prev.map((row) =>
+                row.id === id
+                    ? {
+                          ...row,
+                          field,
+                      }
+                    : row
+            )
+        );
+    };
+
+    const createRowsFromFiles = (files) => {
+        const validFiles = Array.from(files).filter(
+            (file) =>
+                file.type.startsWith('image/') ||
+                file.type.startsWith('video/')
+        );
+
+        if (!validFiles.length) {
+            return;
+        }
+
+        const droppedRows = validFiles.map((file, index) => ({
+            id: `${Date.now()}-${index}-${Math.random()}`,
+            field: '',
+            initialFile: file,
+        }));
+
+        setUploadRows((prev) => {
+            /*
+             * Replace the original completely empty row when files
+             * are dropped for the first time.
+             */
+            const hasOnlyEmptyInitialRow =
+                prev.length === 1 &&
+                !prev[0].field &&
+                !prev[0].initialFile;
+
+            if (hasOnlyEmptyInitialRow) {
+                return droppedRows;
+            }
+
+            return [...prev, ...droppedRows];
+        });
+    };
+
+    const handleDrop = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setIsDragging(false);
+
+        createRowsFromFiles(event.dataTransfer.files);
+    };
+
+    const handleDragOver = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        event.dataTransfer.dropEffect = 'copy';
+
+        setIsDragging(true);
+    };
+
+    const handleDragEnter = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        setIsDragging(true);
+    };
+
+    const handleDragLeave = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        /*
+         * Prevent drag leave from firing when moving between
+         * children inside the drop area.
+         */
+        if (event.currentTarget.contains(event.relatedTarget)) {
+            return;
+        }
+
+        setIsDragging(false);
+    };
+
     return (
         <Stack spacing={3}>
-
             {canEditMedia() && (
                 <>
+                    <SectionLabel>
+                        Upload New Media
+                    </SectionLabel>
 
-<SectionLabel>
-    Upload New Media
-</SectionLabel>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'text.secondary',
+                            mt: -2,
+                        }}
+                    >
+                        Drag multiple media files below or browse
+                        files individually, then select a product
+                        media category for each file.
+                    </Typography>
 
-<Typography variant="body2" sx={{ color: 'text.secondary', mt: -2 }}>
-    Upload media file first, then select its product media category.
-</Typography>
+                    <Box
+                        onDrop={handleDrop}
+                        onDragOver={handleDragOver}
+                        onDragEnter={handleDragEnter}
+                        onDragLeave={handleDragLeave}
+                        sx={{
+                            p: 2,
+                            border: '2px dashed',
+                            borderColor: isDragging
+                                ? 'primary.main'
+                                : 'divider',
+                            borderRadius: 2,
+                            bgcolor: isDragging
+                                ? 'action.hover'
+                                : 'background.paper',
+                            transition:
+                                'border-color 0.2s ease, background-color 0.2s ease',
+                        }}
+                    >
+                        {/* Drag-and-drop area */}
+                        <Box
+                            sx={{
+                                mb: 2,
+                                py: 2.5,
+                                px: 2,
+                                borderRadius: 1.5,
+                                bgcolor: isDragging
+                                    ? 'primary.lighter'
+                                    : 'background.neutral',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                textAlign: 'center',
+                                gap: 1.5,
+                                pointerEvents: 'none',
+                            }}
+                        >
+                            <Iconify
+                                icon="solar:upload-minimalistic-bold-duotone"
+                                width={30}
+                                sx={{
+                                    color: isDragging
+                                        ? 'primary.main'
+                                        : 'text.secondary',
+                                }}
+                            />
 
-<Box
-    sx={{
-        p: 2,
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 2,
-        bgcolor: 'background.paper',
-    }}
->
+                            <Box>
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        color: isDragging
+                                            ? 'primary.main'
+                                            : 'text.primary',
+                                    }}
+                                >
+                                    {isDragging
+                                        ? 'Drop media files here'
+                                        : 'Drag and drop multiple files here'}
+                                </Typography>
 
-{uploadRows.map((row , index) => (
-    <MediaUploadField
-        key={row.id}
-        index={index}
-        rowId={row.id}
-        fieldKey={row.field}
-        mediaFields={MEDIA_FIELDS}
-        previews={mediaPreviews[row.field]}
-        onFilesSelected={handleFilesSelected}
-        onRemove={handleRemovePreview}
-        onAddRow={handleAddUploadRow}
-        onRemoveRow={handleRemoveUploadRow}
-        onChangeType={handleChangeUploadType}
-        canRemoveRow={uploadRows.length > 1}
-    />
-))}
-</Box>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: 'text.secondary',
+                                    }}
+                                >
+                                    One upload row will be created
+                                    for every image or video
+                                </Typography>
+                            </Box>
+                        </Box>
 
+                        {uploadRows.map((row, index) => (
+                            <MediaUploadField
+                                key={row.id}
+                                index={index}
+                                rowId={row.id}
+                                fieldKey={row.field}
+                                initialFile={row.initialFile}
+                                mediaFields={MEDIA_FIELDS}
+                                previews={
+                                    mediaPreviews[row.field]
+                                }
+                                onFilesSelected={
+                                    handleFilesSelected
+                                }
+                                onRemove={handleRemovePreview}
+                                onAddRow={handleAddUploadRow}
+                                onRemoveRow={
+                                    handleRemoveUploadRow
+                                }
+                                onChangeType={
+                                    handleChangeUploadType
+                                }
+                                canRemoveRow={
+                                    uploadRows.length > 1
+                                }
+                            />
+                        ))}
+                    </Box>
                 </>
             )}
 
@@ -132,7 +307,8 @@ const handleChangeUploadType = (id, field) => {
                     You have view-only access to product media.
                 </Alert>
             )}
-                        {formData.media?.length > 0 && (
+
+            {formData.media?.length > 0 && (
                 <>
                     <Divider />
 
@@ -166,36 +342,54 @@ const handleChangeUploadType = (id, field) => {
                                     }}
                                 >
                                     <Tooltip title="Remove Media">
-    <IconButton
-        disabled={!canEditMedia()}
-        onClick={() => handleDeleteMedia(item.id)}
-        sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 10,
-            width: 32,
-            height: 32,
-            bgcolor: 'rgba(244,67,54,0.9)',
-            color: '#fff',
-            backdropFilter: 'blur(4px)',
-            transition: 'all .2s ease',
+                                        <IconButton
+                                            disabled={
+                                                !canEditMedia()
+                                            }
+                                            onClick={() =>
+                                                handleDeleteMedia(
+                                                    item.id
+                                                )
+                                            }
+                                            sx={{
+                                                position:
+                                                    'absolute',
+                                                top: 8,
+                                                right: 8,
+                                                zIndex: 10,
+                                                width: 32,
+                                                height: 32,
+                                                bgcolor:
+                                                    'rgba(244,67,54,0.9)',
+                                                color: '#fff',
+                                                backdropFilter:
+                                                    'blur(4px)',
+                                                transition:
+                                                    'all .2s ease',
 
-            '&:hover': {
-                bgcolor: 'error.main',
-                transform: 'scale(1.08)',
-            },
-        }}
-    >
-        <Iconify icon="mdi:close" width={18} />
-    </IconButton>
-</Tooltip>
+                                                '&:hover': {
+                                                    bgcolor:
+                                                        'error.main',
+                                                    transform:
+                                                        'scale(1.08)',
+                                                },
+                                            }}
+                                        >
+                                            <Iconify
+                                                icon="mdi:close"
+                                                width={18}
+                                            />
+                                        </IconButton>
+                                    </Tooltip>
+
                                     {[
                                         'SLAB_IMAGE',
                                         'CLOSEUP_IMAGE',
                                         'APPLICATION_IMAGE',
                                         'BOOKMATCH_SLIPMATCH',
-                                    ].includes(item.media_type) ? (
+                                    ].includes(
+                                        item.media_type
+                                    ) ? (
                                         <Box
                                             component="img"
                                             src={item.media_url}
@@ -217,7 +411,9 @@ const handleChangeUploadType = (id, field) => {
                                             }}
                                         >
                                             <source
-                                                src={item.media_url}
+                                                src={
+                                                    item.media_url
+                                                }
                                                 type="video/mp4"
                                             />
 
@@ -231,10 +427,11 @@ const handleChangeUploadType = (id, field) => {
                                     )}
 
                                     <Box sx={{ p: 1 }}>
-
                                         <Chip
                                             size="small"
-                                            label={item.media_type}
+                                            label={
+                                                item.media_type
+                                            }
                                             sx={{
                                                 fontSize: 10,
                                                 height: 18,
@@ -247,41 +444,39 @@ const handleChangeUploadType = (id, field) => {
                                             size="small"
                                             label="Alt Text"
                                             value={
-                                                item.alt_text || ""
+                                                item.alt_text || ''
                                             }
                                             disabled={
                                                 !canEditMedia()
                                             }
-                                            onChange={(e) =>
+                                            onChange={(event) =>
                                                 handleAltTextChange(
                                                     item.id,
-                                                    e.target.value
+                                                    event.target
+                                                        .value
                                                 )
                                             }
                                         />
-
                                     </Box>
-
                                 </Box>
                             </Grid>
                         ))}
                     </Grid>
-
                 </>
             )}
-                        {!formData.media?.length &&
+
+            {!formData.media?.length &&
                 mediaPreviews.closeup_images.length === 0 &&
                 mediaPreviews.slab_images.length === 0 &&
                 mediaPreviews.application_images.length === 0 &&
                 mediaPreviews.bookmatch_slipmatch.length === 0 &&
                 mediaPreviews.featured_videos.length === 0 && (
-
                     <Box
                         sx={{
-                            textAlign: "center",
+                            textAlign: 'center',
                             py: 6,
-                            color: "text.disabled",
-                            bgcolor: "action.hover",
+                            color: 'text.disabled',
+                            bgcolor: 'action.hover',
                             borderRadius: 2,
                         }}
                     >
@@ -289,9 +484,7 @@ const handleChangeUploadType = (id, field) => {
                             No existing media attached
                         </Typography>
                     </Box>
-
                 )}
-
         </Stack>
     );
 }
@@ -311,6 +504,5 @@ MediaTab.propTypes = {
     handleRemovePreview: PropTypes.func.isRequired,
     handleAltTextChange: PropTypes.func.isRequired,
     handleDeleteMedia: PropTypes.func.isRequired,
-
     canEditMedia: PropTypes.func.isRequired,
 };

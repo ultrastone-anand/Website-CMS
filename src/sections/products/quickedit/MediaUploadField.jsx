@@ -1,5 +1,10 @@
 import PropTypes from 'prop-types';
-import { useRef, useState, useEffect } from 'react';
+import {
+    useRef,
+    useState,
+    useEffect,
+    useCallback,
+} from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -24,6 +29,7 @@ export default function MediaUploadField({
     rowId,
     fieldKey,
     index,
+    initialFile,
     mediaFields,
     onFilesSelected,
     onAddRow,
@@ -33,16 +39,26 @@ export default function MediaUploadField({
 }) {
     const inputRef = useRef(null);
 
+    /*
+     * Prevent the same dropped file from being processed more
+     * than once in React Strict Mode.
+     */
+    const processedInitialFileRef = useRef(null);
+
     const [file, setFile] = useState(null);
     const [isSent, setIsSent] = useState(false);
     const [previewUrl, setPreviewUrl] = useState('');
     const [openPreview, setOpenPreview] = useState(false);
 
     const [toastOpen, setToastOpen] = useState(false);
-    const [isCompressing, setIsCompressing] = useState(false);
-    const [compressionProgress, setCompressionProgress] = useState(0);
-    const [compressionMessage, setCompressionMessage] = useState('');
-    const [compressionError, setCompressionError] = useState('');
+    const [isCompressing, setIsCompressing] =
+        useState(false);
+    const [compressionProgress, setCompressionProgress] =
+        useState(0);
+    const [compressionMessage, setCompressionMessage] =
+        useState('');
+    const [compressionError, setCompressionError] =
+        useState('');
 
     const selectedMedia = mediaFields.find(
         (item) => item.field === fieldKey
@@ -59,7 +75,7 @@ export default function MediaUploadField({
         [previewUrl]
     );
 
-    const updatePreview = (selectedFile) => {
+    const updatePreview = useCallback((selectedFile) => {
         setPreviewUrl((currentUrl) => {
             if (currentUrl) {
                 URL.revokeObjectURL(currentUrl);
@@ -67,14 +83,129 @@ export default function MediaUploadField({
 
             return URL.createObjectURL(selectedFile);
         });
-    };
+    }, []);
+
+    const processSelectedFile = useCallback(
+        async (selectedFile) => {
+            if (!selectedFile) {
+                return;
+            }
+
+            setCompressionError('');
+            setCompressionMessage('');
+            setCompressionProgress(0);
+            setIsSent(false);
+
+            let finalFile = selectedFile;
+
+            try {
+                if (shouldCompressVideo(selectedFile)) {
+                    setIsCompressing(true);
+                    setToastOpen(true);
+
+                    setCompressionMessage(
+                        `Preparing ${formatFileSize(
+                            selectedFile.size
+                        )} video for compression.`
+                    );
+
+                    finalFile = await compressVideo(
+                        selectedFile,
+                        setCompressionProgress
+                    );
+
+                    if (finalFile === selectedFile) {
+                        setCompressionMessage(
+                            `Compression did not reduce the video. Original file retained at ${formatFileSize(
+                                selectedFile.size
+                            )}.`
+                        );
+                    } else {
+                        setCompressionMessage(
+                            `Compressed from ${formatFileSize(
+                                selectedFile.size
+                            )} to ${formatFileSize(
+                                finalFile.size
+                            )}.`
+                        );
+                    }
+                } else if (
+                    selectedFile.type.startsWith('video/')
+                ) {
+                    setCompressionMessage(
+                        `Video ready at ${formatFileSize(
+                            selectedFile.size
+                        )}. Compression was not required.`
+                    );
+
+                    setToastOpen(true);
+                }
+
+                setFile(finalFile);
+                updatePreview(finalFile);
+
+                /*
+                 * Preserve the existing behavior:
+                 * immediately add the file when a category was
+                 * already selected.
+                 */
+                if (fieldKey) {
+                    onFilesSelected(fieldKey, [finalFile]);
+                    setIsSent(true);
+                }
+            } catch (error) {
+                console.error(
+                    'Video compression failed:',
+                    error
+                );
+
+                setFile(null);
+                setPreviewUrl('');
+                setIsSent(false);
+
+                setCompressionError(
+                    error instanceof Error
+                        ? error.message
+                        : 'Video compression failed.'
+                );
+
+                setToastOpen(true);
+            } finally {
+                setIsCompressing(false);
+            }
+        },
+        [fieldKey, onFilesSelected, updatePreview]
+    );
+
+    /*
+     * Process a file supplied by drag and drop.
+     */
+    useEffect(() => {
+        if (!initialFile) {
+            return;
+        }
+
+        if (
+            processedInitialFileRef.current === initialFile
+        ) {
+            return;
+        }
+
+        processedInitialFileRef.current = initialFile;
+
+        processSelectedFile(initialFile);
+    }, [initialFile, processSelectedFile]);
 
     const sendIfReady = (
         selectedFile,
         selectedField,
         alreadySent = isSent
     ) => {
-        if (!selectedFile || !selectedField || alreadySent) {
+        if (
+            !selectedFile ||
+            !selectedField ||
+            alreadySent
+        ) {
             return;
         }
 
@@ -91,76 +222,7 @@ export default function MediaUploadField({
             return;
         }
 
-        setCompressionError('');
-        setCompressionMessage('');
-        setCompressionProgress(0);
-        setIsSent(false);
-
-        let finalFile = selectedFile;
-
-        try {
-            if (shouldCompressVideo(selectedFile)) {
-                setIsCompressing(true);
-                setToastOpen(true);
-
-                setCompressionMessage(
-                    `Preparing ${formatFileSize(
-                        selectedFile.size
-                    )} video for compression.`
-                );
-
-                finalFile = await compressVideo(
-                    selectedFile,
-                    setCompressionProgress
-                );
-
-                if (finalFile === selectedFile) {
-                    setCompressionMessage(
-                        `Compression did not reduce the video. Original file retained at ${formatFileSize(
-                            selectedFile.size
-                        )}.`
-                    );
-                } else {
-                    setCompressionMessage(
-                        `Compressed from ${formatFileSize(
-                            selectedFile.size
-                        )} to ${formatFileSize(finalFile.size)}.`
-                    );
-                }
-            } else if (selectedFile.type.startsWith('video/')) {
-                setCompressionMessage(
-                    `Video ready at ${formatFileSize(
-                        selectedFile.size
-                    )}. Compression was not required.`
-                );
-
-                setToastOpen(true);
-            }
-
-            setFile(finalFile);
-            updatePreview(finalFile);
-
-            if (fieldKey) {
-                onFilesSelected(fieldKey, [finalFile]);
-                setIsSent(true);
-            }
-        } catch (error) {
-            console.error('Video compression failed:', error);
-
-            setFile(null);
-            setPreviewUrl('');
-            setIsSent(false);
-
-            setCompressionError(
-                error instanceof Error
-                    ? error.message
-                    : 'Video compression failed.'
-            );
-
-            setToastOpen(true);
-        } finally {
-            setIsCompressing(false);
-        }
+        await processSelectedFile(selectedFile);
     };
 
     const handleCategoryChange = (event) => {
@@ -171,7 +233,10 @@ export default function MediaUploadField({
     };
 
     const handleToastClose = (event, reason) => {
-        if (reason === 'clickaway' || isCompressing) {
+        if (
+            reason === 'clickaway' ||
+            isCompressing
+        ) {
             return;
         }
 
@@ -312,14 +377,20 @@ export default function MediaUploadField({
                                 px: 1.5,
                             }}
                         >
-                            {isCompressing ? 'Working' : 'Browse'}
+                            {isCompressing
+                                ? 'Working'
+                                : 'Browse'}
                         </Button>
 
                         <Typography
                             variant="body2"
                             noWrap
+                            title={displayedFileName}
                             onClick={() => {
-                                if (file && !isCompressing) {
+                                if (
+                                    file &&
+                                    !isCompressing
+                                ) {
                                     setOpenPreview(true);
                                 }
                             }}
@@ -328,7 +399,8 @@ export default function MediaUploadField({
                                     ? 'primary.main'
                                     : 'text.secondary',
                                 cursor:
-                                    file && !isCompressing
+                                    file &&
+                                    !isCompressing
                                         ? 'pointer'
                                         : 'default',
                                 textDecoration: file
@@ -365,7 +437,8 @@ export default function MediaUploadField({
                             display: 'flex',
                             alignItems: 'center',
                             fontWeight: 700,
-                            bgcolor: 'background.neutral',
+                            bgcolor:
+                                'background.neutral',
                         }}
                     >
                         Auto: {detectedFormat}
@@ -378,13 +451,18 @@ export default function MediaUploadField({
                         fullWidth
                         size="small"
                         value={fieldKey}
-                        disabled={isSent || isCompressing}
+                        disabled={
+                            isSent ||
+                            isCompressing
+                        }
                         onChange={handleCategoryChange}
-                        displayEmpty
                         sx={{
                             '& .MuiInputBase-root': {
                                 height: 46,
                             },
+                        }}
+                        SelectProps={{
+                            displayEmpty: true,
                         }}
                     >
                         <MenuItem value="">
@@ -396,7 +474,8 @@ export default function MediaUploadField({
                                 key={item.field}
                                 value={item.field}
                             >
-                                {item.icon} {item.label}
+                                {item.icon}{' '}
+                                {item.label}
                             </MenuItem>
                         ))}
                     </TextField>
@@ -407,7 +486,8 @@ export default function MediaUploadField({
                         sx={{
                             display: 'flex',
                             gap: 1,
-                            justifyContent: 'flex-end',
+                            justifyContent:
+                                'flex-end',
                         }}
                     >
                         <IconButton
@@ -420,9 +500,12 @@ export default function MediaUploadField({
                                 borderRadius: 1.25,
                                 bgcolor: 'primary.main',
                                 color: '#fff',
+
                                 '&:hover': {
-                                    bgcolor: 'primary.dark',
+                                    bgcolor:
+                                        'primary.dark',
                                 },
+
                                 '&.Mui-disabled': {
                                     bgcolor:
                                         'action.disabledBackground',
@@ -434,9 +517,12 @@ export default function MediaUploadField({
 
                         <IconButton
                             disabled={
-                                !canRemoveRow || isCompressing
+                                !canRemoveRow ||
+                                isCompressing
                             }
-                            onClick={() => onRemoveRow(rowId)}
+                            onClick={() =>
+                                onRemoveRow(rowId)
+                            }
                             sx={{
                                 width: 46,
                                 height: 46,
@@ -458,7 +544,9 @@ export default function MediaUploadField({
 
             <Dialog
                 open={openPreview}
-                onClose={() => setOpenPreview(false)}
+                onClose={() =>
+                    setOpenPreview(false)
+                }
                 maxWidth="md"
                 fullWidth
             >
@@ -478,7 +566,10 @@ export default function MediaUploadField({
                         <Box
                             component="img"
                             src={previewUrl}
-                            alt={file?.name || 'Selected media'}
+                            alt={
+                                file?.name ||
+                                'Selected media'
+                            }
                             sx={{
                                 width: '100%',
                                 maxHeight: 500,
@@ -496,7 +587,9 @@ export default function MediaUploadField({
                     vertical: 'top',
                     horizontal: 'right',
                 }}
-                autoHideDuration={isCompressing ? null : 5000}
+                autoHideDuration={
+                    isCompressing ? null : 5000
+                }
                 onClose={handleToastClose}
                 sx={{
                     mt: 7,
@@ -510,7 +603,8 @@ export default function MediaUploadField({
                     onClose={
                         isCompressing
                             ? undefined
-                            : () => setToastOpen(false)
+                            : () =>
+                                  setToastOpen(false)
                     }
                     icon={
                         isCompressing ? (
@@ -549,7 +643,9 @@ export default function MediaUploadField({
                     {isCompressing && (
                         <LinearProgress
                             variant="determinate"
-                            value={compressionProgress}
+                            value={
+                                compressionProgress
+                            }
                             color="inherit"
                             sx={{
                                 mt: 1,
@@ -557,9 +653,11 @@ export default function MediaUploadField({
                                 borderRadius: 2,
                                 bgcolor:
                                     'rgba(255, 255, 255, 0.25)',
-                                '& .MuiLinearProgress-bar': {
-                                    bgcolor: '#fff',
-                                },
+
+                                '& .MuiLinearProgress-bar':
+                                    {
+                                        bgcolor: '#fff',
+                                    },
                             }}
                         />
                     )}
@@ -574,12 +672,20 @@ MediaUploadField.propTypes = {
         PropTypes.string,
         PropTypes.number,
     ]).isRequired,
+
     fieldKey: PropTypes.string.isRequired,
     index: PropTypes.number.isRequired,
+
+    initialFile: PropTypes.instanceOf(File),
+
     mediaFields: PropTypes.array.isRequired,
     onFilesSelected: PropTypes.func.isRequired,
     onAddRow: PropTypes.func.isRequired,
     onRemoveRow: PropTypes.func.isRequired,
     onChangeType: PropTypes.func.isRequired,
     canRemoveRow: PropTypes.bool.isRequired,
+};
+
+MediaUploadField.defaultProps = {
+    initialFile: null,
 };
