@@ -24,6 +24,7 @@ export const BulkUploadPage = lazy(() => import('src/pages/bulkupload'));
 export const GalleryPage = lazy(() => import('src/pages/inspirationGallery'));
 export const AboutusPage = lazy(() => import('src/pages/staticpages/about_us'));
 export const ProcessPage = lazy(() => import('src/pages/staticpages/our_process'));
+export const SilicaFirstPage = lazy(() => import('src/pages/staticpages/silica_first'));
 export const PrivacyPolicyPage = lazy(() => import('src/pages/staticpages/privacy_policy'));
 export const MerchandisePage = lazy(() => import('src/pages/staticpages/merchandise_display'));
 
@@ -71,6 +72,7 @@ export default function Router() {
         { path: 'career', element: <CareerPage /> },
         { path: 'merchandise', element: <MerchandisePage /> },
         { path: 'privacypolicy', element: <PrivacyPolicyPage /> },
+        { path: 'silicafirst', element: <SilicaFirstPage /> },
       ],
     },
 

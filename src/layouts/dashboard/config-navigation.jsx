@@ -40,6 +40,33 @@ export const getNavConfig = () => {
       path: '/dashboard/blog',
       icon: icon('ic_blogs'),
     },
+            {
+          title: 'Pages',
+          path: '/dashboard/pages',
+          icon: icon('ic_about'),
+          children: [
+            {
+              title: 'About Us',
+              path: '/dashboard/aboutus',
+            },
+            {
+              title: 'Our Process',
+              path: '/dashboard/process',
+            },
+            {
+              title: 'Merchandise Display',
+              path: '/dashboard/merchandise',
+            },
+            {
+              title: 'Privacy Policy',
+              path: '/dashboard/privacypolicy',
+            },
+            {
+              title: 'Silica First',
+              path: '/dashboard/silicafirst',
+            },
+          ],
+        },
 
 
     // Hide for role_id = 6
@@ -65,6 +92,7 @@ export const getNavConfig = () => {
           path: '/dashboard/company',
           icon: icon('ic_company'),
         },
+        
       ]
       : []),
 
@@ -94,29 +122,7 @@ export const getNavConfig = () => {
           path: '/dashboard/lead',
           icon: icon('ic_lead'),
         },
-        {
-          title: 'Pages',
-          path: '/dashboard/pages',
-          icon: icon('ic_about'),
-          children: [
-            {
-              title: 'About Us',
-              path: '/dashboard/aboutus',
-            },
-            {
-              title: 'Our Process',
-              path: '/dashboard/process',
-            },
-            {
-              title: 'Merchandise Display',
-              path: '/dashboard/merchandise',
-            },
-            {
-              title: 'Privacy Policy',
-              path: '/dashboard/privacypolicy',
-            },
-          ],
-        },
+
       ]
       : []),
 
