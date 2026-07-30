@@ -18,7 +18,7 @@ export const canEditStoneDetails = () =>
     [1, 3, 4].includes(getRoleId());
 
 export const canEditMedia = () =>
-    [1, 3 ,6].includes(getRoleId());
+    [1, 3 ,6 , 7].includes(getRoleId());
 
 export const canEditSEO = () =>
     [1, 6].includes(getRoleId());
