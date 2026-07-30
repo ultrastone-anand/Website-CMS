@@ -17,6 +17,7 @@ import DialogContentText from '@mui/material/DialogContentText';
 
 import Iconify from 'src/components/iconify';
 
+import LotImagesTab from './lotImage/LotImagesTab';
 import { canView, canEditIdentity } from './role-access';
 
 
@@ -29,6 +30,7 @@ export default function ShopProductCard({
   onPublish,
 }) {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [openLotDialog, setOpenLotDialog] = useState(false);
 
   // const handleDeleteClick = () => {
   //   setOpenDeleteDialog(true);
@@ -42,6 +44,25 @@ export default function ShopProductCard({
     onDelete(product.id);
     setOpenDeleteDialog(false);
   };
+
+
+const handleOpenLotDialog = () => {
+  if (!product?.id) {
+    console.error(
+      'Product database ID is missing:',
+      product
+    );
+
+    return;
+  }
+
+  setOpenLotDialog(true);
+};
+
+const handleCloseLotDialog = () => {
+  setOpenLotDialog(false);
+};
+
 
   const handleDownloadQR = async () => {
     try {
@@ -269,6 +290,30 @@ export default function ShopProductCard({
           </IconButton>
         </Tooltip>
       )}
+
+{canEditIdentity() && (
+  <Tooltip title="Add Lot Photos">
+    <IconButton
+      onClick={handleOpenLotDialog}
+      sx={{
+        bgcolor: 'error.lighter',
+        color: 'error.main',
+
+        '&:hover': {
+          bgcolor: 'error.main',
+          color: 'common.white',
+        },
+      }}
+    >
+      <Iconify
+        icon="solar:gallery-add-bold-duotone"
+        width={20}
+      />
+    </IconButton>
+  </Tooltip>
+)}
+
+
     </>
   )}
 </Stack>
@@ -313,6 +358,59 @@ export default function ShopProductCard({
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Dialog
+  open={openLotDialog}
+  onClose={handleCloseLotDialog}
+  maxWidth="lg"
+  fullWidth
+  PaperProps={{
+    sx: {
+      height: '90vh',
+      maxHeight: '90vh',
+    },
+  }}
+>
+  <DialogTitle>
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+    >
+      <Box>
+        <Typography variant="h6">
+          Lot Images
+        </Typography>
+
+        <Typography
+          variant="body2"
+          color="text.secondary"
+        >
+          {product.name}
+        </Typography>
+      </Box>
+
+      <IconButton
+        onClick={handleCloseLotDialog}
+      >
+        <Iconify
+          icon="mdi:close"
+          width={22}
+        />
+      </IconButton>
+    </Stack>
+  </DialogTitle>
+
+  <DialogContent dividers>
+    {openLotDialog && (
+  <LotImagesTab
+    productId={product.id}
+    onClose={handleCloseLotDialog}
+  />
+)}
+  </DialogContent>
+
+</Dialog>
     </>
   );
 }
