@@ -83,9 +83,14 @@ const createCertification = () => ({
   shortName: "",
   title: "",
   description: "",
+  logo: "",
+  logoAlt: "",
 });
 
-const getErrorMessage = (error, fallback) =>
+const getErrorMessage = (
+  error,
+  fallback
+) =>
   error?.response?.data?.message ||
   error?.message ||
   fallback;
@@ -97,8 +102,12 @@ const getImageUrl = (response) =>
   response?.url ||
   "";
 
-const getPdfData = (response, file) => {
-  const data = response?.data || response;
+const getPdfData = (
+  response,
+  file
+) => {
+  const data =
+    response?.data || response;
 
   return {
     url:
@@ -106,6 +115,7 @@ const getPdfData = (response, file) => {
       data?.url ||
       data?.relativeUrl ||
       "",
+
     name:
       data?.fileName ||
       data?.originalName ||
@@ -254,9 +264,11 @@ const SectionCard = ({
 );
 
 SectionCard.propTypes = {
-  title: PropTypes.string.isRequired,
+  title:
+    PropTypes.string.isRequired,
   action: PropTypes.node,
-  children: PropTypes.node.isRequired,
+  children:
+    PropTypes.node.isRequired,
 };
 
 SectionCard.defaultProps = {
@@ -272,12 +284,15 @@ const UploadButton = ({
   onChange,
   icon,
 }) => {
-  let buttonLabel = uploadText;
+  let buttonLabel =
+    uploadText;
 
   if (uploading) {
-    buttonLabel = "Uploading...";
+    buttonLabel =
+      "Uploading...";
   } else if (hasFile) {
-    buttonLabel = replaceText;
+    buttonLabel =
+      replaceText;
   }
 
   return (
@@ -300,12 +315,18 @@ const UploadButton = ({
 };
 
 UploadButton.propTypes = {
-  accept: PropTypes.string.isRequired,
-  uploading: PropTypes.bool.isRequired,
-  hasFile: PropTypes.bool.isRequired,
-  uploadText: PropTypes.string.isRequired,
-  replaceText: PropTypes.string.isRequired,
-  onChange: PropTypes.func.isRequired,
+  accept:
+    PropTypes.string.isRequired,
+  uploading:
+    PropTypes.bool.isRequired,
+  hasFile:
+    PropTypes.bool.isRequired,
+  uploadText:
+    PropTypes.string.isRequired,
+  replaceText:
+    PropTypes.string.isRequired,
+  onChange:
+    PropTypes.func.isRequired,
   icon: PropTypes.node,
 };
 
@@ -369,12 +390,17 @@ const PdfControls = ({
 );
 
 PdfControls.propTypes = {
-  uploading: PropTypes.bool.isRequired,
+  uploading:
+    PropTypes.bool.isRequired,
   url: PropTypes.string,
-  onUpload: PropTypes.func.isRequired,
-  onRemove: PropTypes.func.isRequired,
-  uploadText: PropTypes.string,
-  replaceText: PropTypes.string,
+  onUpload:
+    PropTypes.func.isRequired,
+  onRemove:
+    PropTypes.func.isRequired,
+  uploadText:
+    PropTypes.string,
+  replaceText:
+    PropTypes.string,
 };
 
 PdfControls.defaultProps = {
@@ -382,19 +408,27 @@ PdfControls.defaultProps = {
   uploadText: "Upload PDF",
   replaceText: "Replace PDF",
 };
+
 const SilicaFirst = () => {
-  const [pageId, setPageId] =
-    useState(null);
+  const [
+    pageId,
+    setPageId,
+  ] = useState(null);
 
-  const [form, setForm] = useState(
-    getInitialForm
-  );
+  const [form, setForm] =
+    useState(
+      getInitialForm
+    );
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
   const [
     uploadingField,
@@ -412,433 +446,519 @@ const SilicaFirst = () => {
   ] = useState("");
 
   const fetchPage =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-        setErrorMessage("");
+    useCallback(
+      async () => {
+        try {
+          setLoading(true);
+          setErrorMessage("");
 
-        const response =
-          await getPageBySlug(
-            PAGE_SLUG
-          );
+          const response =
+            await getPageBySlug(
+              PAGE_SLUG
+            );
 
-        const page =
-          response?.data || response;
+          const page =
+            response?.data ||
+            response;
 
-        if (!page?.id) {
-          throw new Error(
-            "Silica First page was not found."
-          );
-        }
+          if (!page?.id) {
+            throw new Error(
+              "Silica First page was not found."
+            );
+          }
 
-        const content =
-          page.content || {};
+          const content =
+            page.content || {};
 
-        setPageId(page.id);
+          setPageId(page.id);
 
-        setForm({
-          pageHeader: {
-            heading:
-              content.pageHeader
-                ?.heading ||
-              "Silica Safety First",
+          setForm({
+            pageHeader: {
+              heading:
+                content.pageHeader
+                  ?.heading ||
+                "Silica Safety First",
 
-            breadcrumbLabel:
-              content.pageHeader
-                ?.breadcrumbLabel ||
-              "Silica Safety",
+              breadcrumbLabel:
+                content.pageHeader
+                  ?.breadcrumbLabel ||
+                "Silica Safety",
 
-            parentBreadcrumbLabel:
-              content.pageHeader
-                ?.parentBreadcrumbLabel ||
-              "Resource Center",
+              parentBreadcrumbLabel:
+                content.pageHeader
+                  ?.parentBreadcrumbLabel ||
+                "Resource Center",
 
-            parentBreadcrumbLink:
-              content.pageHeader
-                ?.parentBreadcrumbLink ||
-              "/resource-center",
-          },
+              parentBreadcrumbLink:
+                content.pageHeader
+                  ?.parentBreadcrumbLink ||
+                "/resource-center",
+            },
 
-          hero: {
-            image:
-              content.hero?.image ||
-              "",
+            hero: {
+              image:
+                content.hero?.image ||
+                "",
 
-            imageAlt:
-              content.hero
-                ?.imageAlt || "",
+              imageAlt:
+                content.hero
+                  ?.imageAlt || "",
 
-            title:
-              content.hero?.title ||
-              "",
+              title:
+                content.hero?.title ||
+                "",
 
-            description:
-              content.hero
-                ?.description || "",
+              description:
+                content.hero
+                  ?.description ||
+                "",
 
-            primaryButtonText:
-              content.hero
-                ?.primaryButtonText ||
-              "",
+              primaryButtonText:
+                content.hero
+                  ?.primaryButtonText ||
+                "",
 
-            primaryButtonLink:
-              content.hero
-                ?.primaryButtonLink ||
-              "",
+              primaryButtonLink:
+                content.hero
+                  ?.primaryButtonLink ||
+                "",
 
-            secondaryButtonText:
-              content.hero
-                ?.secondaryButtonText ||
-              "",
+              secondaryButtonText:
+                content.hero
+                  ?.secondaryButtonText ||
+                "",
 
-            secondaryButtonLink:
-              content.hero
-                ?.secondaryButtonLink ||
-              "",
-          },
+              secondaryButtonLink:
+                content.hero
+                  ?.secondaryButtonLink ||
+                "",
+            },
 
-          aboutSection: {
-            eyebrow:
-              content.aboutSection
-                ?.eyebrow || "",
-
-            paragraphs:
-              Array.isArray(
+            aboutSection: {
+              eyebrow:
                 content.aboutSection
-                  ?.paragraphs
-              )
-                ? content.aboutSection
-                    .paragraphs
-                : [],
-          },
+                  ?.eyebrow || "",
 
-          hazardAwareness: {
-            eyebrow:
-              content.hazardAwareness
-                ?.eyebrow || "",
+              paragraphs:
+                Array.isArray(
+                  content.aboutSection
+                    ?.paragraphs
+                )
+                  ? content
+                      .aboutSection
+                      .paragraphs
+                  : [],
+            },
 
-            title:
-              content.hazardAwareness
-                ?.title || "",
-
-            description:
-              content.hazardAwareness
-                ?.description || "",
-
-            questions:
-              normalizeArray(
+            hazardAwareness: {
+              eyebrow:
                 content.hazardAwareness
-                  ?.questions,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  question:
-                    item.question ||
-                    "",
-                  answer:
-                    item.answer || "",
-                })
-              ),
-          },
+                  ?.eyebrow || "",
 
-          resourcesSection: {
-            eyebrow:
-              content.resourcesSection
-                ?.eyebrow || "",
+              title:
+                content.hazardAwareness
+                  ?.title || "",
 
-            title:
-              content.resourcesSection
-                ?.title || "",
+              description:
+                content.hazardAwareness
+                  ?.description ||
+                "",
 
-            description:
-              content.resourcesSection
-                ?.description || "",
+              questions:
+                normalizeArray(
+                  content
+                    .hazardAwareness
+                    ?.questions,
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      item.id ||
+                      `${createId()}-${index}`,
 
-            items:
-              normalizeArray(
-                content.resourcesSection
-                  ?.items,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  organization:
-                    item.organization ||
-                    "",
-                  title:
-                    item.title || "",
-                  description:
-                    item.description ||
-                    "",
-                  buttonText:
-                    item.buttonText ||
-                    "Download PDF",
-                  url: item.url || "",
-                  pdfName:
-                    item.pdfName || "",
-                  type:
-                    item.type ||
-                    "download",
-                })
-              ),
-          },
+                    question:
+                      item.question ||
+                      "",
 
-          safetyDataSheetsSection: {
-            eyebrow:
-              content
-                .safetyDataSheetsSection
-                ?.eyebrow || "",
+                    answer:
+                      item.answer ||
+                      "",
+                  })
+                ),
+            },
 
-            title:
-              content
-                .safetyDataSheetsSection
-                ?.title || "",
-
-            description:
-              content
-                .safetyDataSheetsSection
-                ?.description || "",
-
-            searchPlaceholder:
-              content
-                .safetyDataSheetsSection
-                ?.searchPlaceholder ||
-              "",
-
-            initialVisibleCount:
-              Number(
+            resourcesSection: {
+              eyebrow:
                 content
-                  .safetyDataSheetsSection
-                  ?.initialVisibleCount
-              ) || 6,
+                  .resourcesSection
+                  ?.eyebrow || "",
 
-            items:
-              normalizeArray(
+              title:
                 content
-                  .safetyDataSheetsSection
-                  ?.items,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  name:
-                    item.name || "",
-                  category:
-                    item.category || "",
-                  description:
-                    item.description ||
-                    "",
-                  englishUrl:
-                    item.englishUrl ||
-                    "",
-                  englishPdfName:
-                    item.englishPdfName ||
-                    "",
-                  spanishUrl:
-                    item.spanishUrl ||
-                    "",
-                  spanishPdfName:
-                    item.spanishPdfName ||
-                    "",
-                })
-              ),
-          },
+                  .resourcesSection
+                  ?.title || "",
 
-          guidesSection: {
-            image:
-              content.guidesSection
-                ?.image || "",
+              description:
+                content
+                  .resourcesSection
+                  ?.description ||
+                "",
 
-            imageAlt:
-              content.guidesSection
-                ?.imageAlt || "",
+              items:
+                normalizeArray(
+                  content
+                    .resourcesSection
+                    ?.items,
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      item.id ||
+                      `${createId()}-${index}`,
 
-            eyebrow:
-              content.guidesSection
-                ?.eyebrow || "",
+                    organization:
+                      item.organization ||
+                      "",
 
-            title:
-              content.guidesSection
-                ?.title || "",
+                    title:
+                      item.title ||
+                      "",
 
-            description:
-              content.guidesSection
-                ?.description || "",
+                    description:
+                      item.description ||
+                      "",
 
-            primaryButtonText:
-              content.guidesSection
-                ?.primaryButtonText ||
-              "",
+                    buttonText:
+                      item.buttonText ||
+                      "Download PDF",
 
-            primaryPdfUrl:
-              content.guidesSection
-                ?.primaryPdfUrl || "",
+                    url:
+                      item.url ||
+                      "",
 
-            primaryPdfName:
-              content.guidesSection
-                ?.primaryPdfName ||
-              "",
+                    pdfName:
+                      item.pdfName ||
+                      "",
 
-            secondaryButtonText:
-              content.guidesSection
-                ?.secondaryButtonText ||
-              "",
+                    type:
+                      item.type ||
+                      "download",
+                  })
+                ),
+            },
 
-            secondaryPdfUrl:
-              content.guidesSection
-                ?.secondaryPdfUrl ||
-              "",
+            safetyDataSheetsSection:
+              {
+                eyebrow:
+                  content
+                    .safetyDataSheetsSection
+                    ?.eyebrow || "",
 
-            secondaryPdfName:
-              content.guidesSection
-                ?.secondaryPdfName ||
-              "",
+                title:
+                  content
+                    .safetyDataSheetsSection
+                    ?.title || "",
 
-            points:
-              normalizeArray(
-                content.guidesSection
-                  ?.points,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  text:
-                    typeof item ===
-                    "string"
-                      ? item
-                      : item.text ||
+                description:
+                  content
+                    .safetyDataSheetsSection
+                    ?.description ||
+                  "",
+
+                searchPlaceholder:
+                  content
+                    .safetyDataSheetsSection
+                    ?.searchPlaceholder ||
+                  "",
+
+                initialVisibleCount:
+                  Number(
+                    content
+                      .safetyDataSheetsSection
+                      ?.initialVisibleCount
+                  ) || 6,
+
+                items:
+                  normalizeArray(
+                    content
+                      .safetyDataSheetsSection
+                      ?.items,
+                    (
+                      item,
+                      index
+                    ) => ({
+                      id:
+                        item.id ||
+                        `${createId()}-${index}`,
+
+                      name:
+                        item.name ||
                         "",
-                })
-              ),
-          },
 
-          labelsSection: {
-            eyebrow:
-              content.labelsSection
-                ?.eyebrow || "",
+                      category:
+                        item.category ||
+                        "",
 
-            title:
-              content.labelsSection
-                ?.title || "",
+                      description:
+                        item.description ||
+                        "",
 
-            description:
-              content.labelsSection
-                ?.description || "",
+                      englishUrl:
+                        item.englishUrl ||
+                        "",
 
-            items:
-              normalizeArray(
+                      englishPdfName:
+                        item.englishPdfName ||
+                        "",
+
+                      spanishUrl:
+                        item.spanishUrl ||
+                        "",
+
+                      spanishPdfName:
+                        item.spanishPdfName ||
+                        "",
+                    })
+                  ),
+              },
+
+            guidesSection: {
+              image:
+                content.guidesSection
+                  ?.image || "",
+
+              imageAlt:
+                content.guidesSection
+                  ?.imageAlt || "",
+
+              eyebrow:
+                content.guidesSection
+                  ?.eyebrow || "",
+
+              title:
+                content.guidesSection
+                  ?.title || "",
+
+              description:
+                content.guidesSection
+                  ?.description ||
+                "",
+
+              primaryButtonText:
+                content.guidesSection
+                  ?.primaryButtonText ||
+                "",
+
+              primaryPdfUrl:
+                content.guidesSection
+                  ?.primaryPdfUrl ||
+                "",
+
+              primaryPdfName:
+                content.guidesSection
+                  ?.primaryPdfName ||
+                "",
+
+              secondaryButtonText:
+                content.guidesSection
+                  ?.secondaryButtonText ||
+                "",
+
+              secondaryPdfUrl:
+                content.guidesSection
+                  ?.secondaryPdfUrl ||
+                "",
+
+              secondaryPdfName:
+                content.guidesSection
+                  ?.secondaryPdfName ||
+                "",
+
+              points:
+                normalizeArray(
+                  content
+                    .guidesSection
+                    ?.points,
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      item.id ||
+                      `${createId()}-${index}`,
+
+                    text:
+                      typeof item ===
+                      "string"
+                        ? item
+                        : item.text ||
+                          "",
+                  })
+                ),
+            },
+
+            labelsSection: {
+              eyebrow:
                 content.labelsSection
-                  ?.items,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  name:
-                    item.name || "",
-                  url: item.url || "",
-                  pdfName:
-                    item.pdfName || "",
-                })
-              ),
-          },
+                  ?.eyebrow || "",
 
-          certificationsSection: {
-            eyebrow:
-              content
-                .certificationsSection
-                ?.eyebrow || "",
+              title:
+                content.labelsSection
+                  ?.title || "",
 
-            title:
-              content
-                .certificationsSection
-                ?.title || "",
+              description:
+                content.labelsSection
+                  ?.description ||
+                "",
 
-            description:
-              content
-                .certificationsSection
-                ?.description || "",
+              items:
+                normalizeArray(
+                  content
+                    .labelsSection
+                    ?.items,
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      item.id ||
+                      `${createId()}-${index}`,
 
-            footerText:
-              content
-                .certificationsSection
-                ?.footerText || "",
+                    name:
+                      item.name ||
+                      "",
 
-            items:
-              normalizeArray(
-                content
-                  .certificationsSection
-                  ?.items,
-                (item, index) => ({
-                  id:
-                    item.id ||
-                    `${createId()}-${index}`,
-                  shortName:
-                    item.shortName ||
-                    "",
-                  title:
-                    item.title || "",
-                  description:
-                    item.description ||
-                    "",
-                })
-              ),
-          },
+                    url:
+                      item.url ||
+                      "",
 
-          noticeSection: {
-            title:
-              content.noticeSection
-                ?.title || "",
+                    pdfName:
+                      item.pdfName ||
+                      "",
+                  })
+                ),
+            },
 
-            paragraphs:
-              Array.isArray(
+            certificationsSection:
+              {
+                eyebrow:
+                  content
+                    .certificationsSection
+                    ?.eyebrow || "",
+
+                title:
+                  content
+                    .certificationsSection
+                    ?.title || "",
+
+                description:
+                  content
+                    .certificationsSection
+                    ?.description ||
+                  "",
+
+                footerText:
+                  content
+                    .certificationsSection
+                    ?.footerText ||
+                  "",
+
+                items:
+                  normalizeArray(
+                    content
+                      .certificationsSection
+                      ?.items,
+                    (
+                      item,
+                      index
+                    ) => ({
+                      id:
+                        item.id ||
+                        `${createId()}-${index}`,
+
+                      shortName:
+                        item.shortName ||
+                        "",
+
+                      title:
+                        item.title ||
+                        "",
+
+                      description:
+                        item.description ||
+                        "",
+
+                      logo:
+                        item.logo ||
+                        "",
+
+                      logoAlt:
+                        item.logoAlt ||
+                        "",
+                    })
+                  ),
+              },
+
+            noticeSection: {
+              title:
                 content.noticeSection
-                  ?.paragraphs
-              )
-                ? content.noticeSection
-                    .paragraphs
-                : [],
-          },
+                  ?.title || "",
 
-          contactSection: {
-            eyebrow:
-              content.contactSection
-                ?.eyebrow || "",
+              paragraphs:
+                Array.isArray(
+                  content.noticeSection
+                    ?.paragraphs
+                )
+                  ? content
+                      .noticeSection
+                      .paragraphs
+                  : [],
+            },
 
-            title:
-              content.contactSection
-                ?.title || "",
+            contactSection: {
+              eyebrow:
+                content.contactSection
+                  ?.eyebrow || "",
 
-            description:
-              content.contactSection
-                ?.description || "",
+              title:
+                content.contactSection
+                  ?.title || "",
 
-            phone:
-              content.contactSection
-                ?.phone || "",
+              description:
+                content.contactSection
+                  ?.description ||
+                "",
 
-            phoneLink:
-              content.contactSection
-                ?.phoneLink || "",
+              phone:
+                content.contactSection
+                  ?.phone || "",
 
-            email:
-              content.contactSection
-                ?.email || "",
-          },
-        });
-      } catch (error) {
-        console.error(error);
+              phoneLink:
+                content.contactSection
+                  ?.phoneLink || "",
 
-        setErrorMessage(
-          getErrorMessage(
-            error,
-            "Failed to load Silica First page."
-          )
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+              email:
+                content.contactSection
+                  ?.email || "",
+            },
+          });
+        } catch (error) {
+          console.error(error);
+
+          setErrorMessage(
+            getErrorMessage(
+              error,
+              "Failed to load Silica First page."
+            )
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
   useEffect(() => {
     fetchPage();
@@ -872,13 +992,19 @@ const SilicaFirst = () => {
         ] || []),
       ];
 
-      updated[index] = value;
+      updated[index] =
+        value;
 
       return {
         ...previous,
+
         [section]: {
-          ...previous[section],
-          [field]: updated,
+          ...previous[
+            section
+          ],
+
+          [field]:
+            updated,
         },
       };
     });
@@ -890,12 +1016,15 @@ const SilicaFirst = () => {
   ) => {
     setForm((previous) => ({
       ...previous,
+
       [section]: {
         ...previous[section],
+
         [field]: [
-          ...(previous[section][
-            field
-          ] || []),
+          ...(previous[
+            section
+          ][field] || []),
+
           "",
         ],
       },
@@ -909,14 +1038,21 @@ const SilicaFirst = () => {
   ) => {
     setForm((previous) => ({
       ...previous,
+
       [section]: {
         ...previous[section],
-        [field]: previous[
-          section
-        ][field].filter(
-          (_, itemIndex) =>
-            itemIndex !== index
-        ),
+
+        [field]:
+          previous[
+            section
+          ][field].filter(
+            (
+              _,
+              itemIndex
+            ) =>
+              itemIndex !==
+              index
+          ),
       },
     }));
   };
@@ -929,7 +1065,9 @@ const SilicaFirst = () => {
   ) => {
     setForm((previous) => {
       const items = [
-        ...previous[section].items,
+        ...previous[
+          section
+        ].items,
       ];
 
       items[index] = {
@@ -939,8 +1077,11 @@ const SilicaFirst = () => {
 
       return {
         ...previous,
+
         [section]: {
-          ...previous[section],
+          ...previous[
+            section
+          ],
           items,
         },
       };
@@ -953,10 +1094,15 @@ const SilicaFirst = () => {
   ) => {
     setForm((previous) => ({
       ...previous,
+
       [section]: {
         ...previous[section],
+
         items: [
-          ...previous[section].items,
+          ...previous[
+            section
+          ].items,
+
           factory(),
         ],
       },
@@ -982,69 +1128,166 @@ const SilicaFirst = () => {
 
     setForm((previous) => ({
       ...previous,
+
       [section]: {
         ...previous[section],
-        items: previous[
-          section
-        ].items.filter(
-          (_, itemIndex) =>
-            itemIndex !== index
-        ),
+
+        items:
+          previous[
+            section
+          ].items.filter(
+            (
+              _,
+              itemIndex
+            ) =>
+              itemIndex !==
+              index
+          ),
       },
     }));
   };
 
-  const handleImageUpload = async (
-    event,
-    section,
-    field
-  ) => {
-    const file =
-      event.target.files?.[0];
+  const handleImageUpload =
+    async (
+      event,
+      section,
+      field
+    ) => {
+      const file =
+        event.target.files?.[0];
 
-    if (!file) return;
-
-    const uploadKey =
-      `${section}.${field}`;
-
-    try {
-      setUploadingField(
-        uploadKey
-      );
-      setErrorMessage("");
-      setSuccessMessage("");
-
-      const response =
-        await uploadPageImage(file);
-
-      const imageUrl =
-        getImageUrl(response);
-
-      if (!imageUrl) {
-        throw new Error(
-          "Image URL was not received."
-        );
+      if (!file) {
+        return;
       }
 
-      handleChange(
-        section,
-        field,
-        imageUrl
-      );
-    } catch (error) {
-      console.error(error);
+      const uploadKey =
+        `${section}.${field}`;
 
-      setErrorMessage(
-        getErrorMessage(
-          error,
-          "Image upload failed."
-        )
-      );
-    } finally {
-      setUploadingField("");
-      event.target.value = "";
-    }
-  };
+      try {
+        setUploadingField(
+          uploadKey
+        );
+
+        setErrorMessage(
+          ""
+        );
+
+        setSuccessMessage(
+          ""
+        );
+
+        const response =
+          await uploadPageImage(
+            file
+          );
+
+        const imageUrl =
+          getImageUrl(
+            response
+          );
+
+        if (!imageUrl) {
+          throw new Error(
+            "Image URL was not received."
+          );
+        }
+
+        handleChange(
+          section,
+          field,
+          imageUrl
+        );
+      } catch (error) {
+        console.error(
+          error
+        );
+
+        setErrorMessage(
+          getErrorMessage(
+            error,
+            "Image upload failed."
+          )
+        );
+      } finally {
+        setUploadingField(
+          ""
+        );
+
+        event.target.value =
+          "";
+      }
+    };
+
+  const handleCertificationLogoUpload =
+    async (
+      event,
+      index
+    ) => {
+      const file =
+        event.target.files?.[0];
+
+      if (!file) {
+        return;
+      }
+
+      const uploadKey =
+        `certificationsSection.items.${index}.logo`;
+
+      try {
+        setUploadingField(
+          uploadKey
+        );
+
+        setErrorMessage(
+          ""
+        );
+
+        setSuccessMessage(
+          ""
+        );
+
+        const response =
+          await uploadPageImage(
+            file
+          );
+
+        const imageUrl =
+          getImageUrl(
+            response
+          );
+
+        if (!imageUrl) {
+          throw new Error(
+            "Certification logo URL was not received."
+          );
+        }
+
+        handleItemChange(
+          "certificationsSection",
+          index,
+          "logo",
+          imageUrl
+        );
+      } catch (error) {
+        console.error(
+          error
+        );
+
+        setErrorMessage(
+          getErrorMessage(
+            error,
+            "Certification logo upload failed."
+          )
+        );
+      } finally {
+        setUploadingField(
+          ""
+        );
+
+        event.target.value =
+          "";
+      }
+    };
 
   const handleItemPdfUpload =
     async ({
@@ -1058,7 +1301,9 @@ const SilicaFirst = () => {
       const file =
         event.target.files?.[0];
 
-      if (!file) return;
+      if (!file) {
+        return;
+      }
 
       const isPdf =
         file.type ===
@@ -1071,7 +1316,10 @@ const SilicaFirst = () => {
         setErrorMessage(
           "Please select a valid PDF file."
         );
-        event.target.value = "";
+
+        event.target.value =
+          "";
+
         return;
       }
 
@@ -1079,11 +1327,19 @@ const SilicaFirst = () => {
         setUploadingField(
           uploadKey
         );
-        setErrorMessage("");
-        setSuccessMessage("");
+
+        setErrorMessage(
+          ""
+        );
+
+        setSuccessMessage(
+          ""
+        );
 
         const response =
-          await uploadPagePdf(file);
+          await uploadPagePdf(
+            file
+          );
 
         const pdf =
           getPdfData(
@@ -1097,31 +1353,43 @@ const SilicaFirst = () => {
           );
         }
 
-        setForm((previous) => {
-          const items = [
-            ...previous[section]
-              .items,
-          ];
-
-          items[index] = {
-            ...items[index],
-            [urlField]: pdf.url,
-            [nameField]:
-              pdf.name,
-          };
-
-          return {
-            ...previous,
-            [section]: {
+        setForm(
+          (previous) => {
+            const items = [
               ...previous[
                 section
+              ].items,
+            ];
+
+            items[index] = {
+              ...items[
+                index
               ],
-              items,
-            },
-          };
-        });
+
+              [urlField]:
+                pdf.url,
+
+              [nameField]:
+                pdf.name,
+            };
+
+            return {
+              ...previous,
+
+              [section]: {
+                ...previous[
+                  section
+                ],
+
+                items,
+              },
+            };
+          }
+        );
       } catch (error) {
-        console.error(error);
+        console.error(
+          error
+        );
 
         setErrorMessage(
           getErrorMessage(
@@ -1130,8 +1398,12 @@ const SilicaFirst = () => {
           )
         );
       } finally {
-        setUploadingField("");
-        event.target.value = "";
+        setUploadingField(
+          ""
+        );
+
+        event.target.value =
+          "";
       }
     };
 
@@ -1143,19 +1415,25 @@ const SilicaFirst = () => {
   ) => {
     setForm((previous) => {
       const items = [
-        ...previous[section].items,
+        ...previous[
+          section
+        ].items,
       ];
 
       items[index] = {
         ...items[index],
+
         [urlField]: "",
         [nameField]: "",
       };
 
       return {
         ...previous,
+
         [section]: {
-          ...previous[section],
+          ...previous[
+            section
+          ],
           items,
         },
       };
@@ -1172,7 +1450,9 @@ const SilicaFirst = () => {
       const file =
         event.target.files?.[0];
 
-      if (!file) return;
+      if (!file) {
+        return;
+      }
 
       const isPdf =
         file.type ===
@@ -1185,7 +1465,10 @@ const SilicaFirst = () => {
         setErrorMessage(
           "Please select a valid PDF file."
         );
-        event.target.value = "";
+
+        event.target.value =
+          "";
+
         return;
       }
 
@@ -1196,11 +1479,19 @@ const SilicaFirst = () => {
         setUploadingField(
           uploadKey
         );
-        setErrorMessage("");
-        setSuccessMessage("");
+
+        setErrorMessage(
+          ""
+        );
+
+        setSuccessMessage(
+          ""
+        );
 
         const response =
-          await uploadPagePdf(file);
+          await uploadPagePdf(
+            file
+          );
 
         const pdf =
           getPdfData(
@@ -1214,16 +1505,27 @@ const SilicaFirst = () => {
           );
         }
 
-        setForm((previous) => ({
-          ...previous,
-          [section]: {
-            ...previous[section],
-            [urlField]: pdf.url,
-            [nameField]: pdf.name,
-          },
-        }));
+        setForm(
+          (previous) => ({
+            ...previous,
+
+            [section]: {
+              ...previous[
+                section
+              ],
+
+              [urlField]:
+                pdf.url,
+
+              [nameField]:
+                pdf.name,
+            },
+          })
+        );
       } catch (error) {
-        console.error(error);
+        console.error(
+          error
+        );
 
         setErrorMessage(
           getErrorMessage(
@@ -1232,8 +1534,12 @@ const SilicaFirst = () => {
           )
         );
       } finally {
-        setUploadingField("");
-        event.target.value = "";
+        setUploadingField(
+          ""
+        );
+
+        event.target.value =
+          "";
       }
     };
 
@@ -1244,7 +1550,9 @@ const SilicaFirst = () => {
       return "Page heading is required.";
     }
 
-    if (!form.hero.title.trim()) {
+    if (
+      !form.hero.title.trim()
+    ) {
       return "Hero title is required.";
     }
 
@@ -1263,9 +1571,13 @@ const SilicaFirst = () => {
     ) {
       const item =
         form.hazardAwareness
-          .questions[index];
+          .questions[
+          index
+        ];
 
-      if (!item.question.trim()) {
+      if (
+        !item.question.trim()
+      ) {
         return `Question ${
           index + 1
         }: question text is required.`;
@@ -1275,288 +1587,429 @@ const SilicaFirst = () => {
     return "";
   };
 
-  const handleSave = async () => {
-    const validationError =
-      validateForm();
+  const handleSave =
+    async () => {
+      const validationError =
+        validateForm();
 
-    if (validationError) {
-      setErrorMessage(
+      if (
         validationError
-      );
-      return;
-    }
+      ) {
+        setErrorMessage(
+          validationError
+        );
 
-    if (!pageId) {
-      setErrorMessage(
-        "Page ID is missing. Please refresh the page."
-      );
-      return;
-    }
+        return;
+      }
 
-    try {
-      setSaving(true);
-      setErrorMessage("");
-      setSuccessMessage("");
+      if (!pageId) {
+        setErrorMessage(
+          "Page ID is missing. Please refresh the page."
+        );
 
-      const content = {
-        pageHeader: {
-          ...form.pageHeader,
-          heading:
-            form.pageHeader.heading.trim(),
-        },
+        return;
+      }
 
-        hero: {
-          ...form.hero,
-          imageAlt:
-            form.hero.imageAlt.trim(),
-          title:
-            form.hero.title.trim(),
-          description:
-            form.hero.description.trim(),
-          primaryButtonText:
-            form.hero.primaryButtonText.trim(),
-          primaryButtonLink:
-            form.hero.primaryButtonLink.trim(),
-          secondaryButtonText:
-            form.hero.secondaryButtonText.trim(),
-          secondaryButtonLink:
-            form.hero.secondaryButtonLink.trim(),
-        },
+      try {
+        setSaving(true);
 
-        aboutSection: {
-          eyebrow:
-            form.aboutSection.eyebrow.trim(),
-          paragraphs:
-            form.aboutSection.paragraphs
-              .map((item) =>
-                item.trim()
-              )
-              .filter(Boolean),
-        },
+        setErrorMessage(
+          ""
+        );
 
-        hazardAwareness: {
-          eyebrow:
-            form.hazardAwareness.eyebrow.trim(),
-          title:
-            form.hazardAwareness.title.trim(),
-          description:
-            form.hazardAwareness.description.trim(),
-          questions:
-            form.hazardAwareness.questions.map(
-              (item, index) => ({
-                id: index + 1,
-                question:
-                  item.question.trim(),
-                answer:
-                  item.answer.trim(),
-              })
-            ),
-        },
+        setSuccessMessage(
+          ""
+        );
 
-        resourcesSection: {
-          eyebrow:
-            form.resourcesSection.eyebrow.trim(),
-          title:
-            form.resourcesSection.title.trim(),
-          description:
-            form.resourcesSection.description.trim(),
-          items:
-            form.resourcesSection.items.map(
-              (item, index) => ({
-                id: index + 1,
-                organization:
-                  item.organization.trim(),
-                title:
-                  item.title.trim(),
-                description:
-                  item.description.trim(),
-                buttonText:
-                  item.buttonText.trim(),
-                url: item.url,
-                pdfName:
-                  item.pdfName,
-                type:
-                  item.type,
-              })
-            ),
-        },
+        const content = {
+          pageHeader: {
+            ...form.pageHeader,
 
-        safetyDataSheetsSection: {
-          eyebrow:
-            form.safetyDataSheetsSection.eyebrow.trim(),
-          title:
-            form.safetyDataSheetsSection.title.trim(),
-          description:
-            form.safetyDataSheetsSection.description.trim(),
-          searchPlaceholder:
-            form.safetyDataSheetsSection.searchPlaceholder.trim(),
-          initialVisibleCount:
-            Number(
-              form.safetyDataSheetsSection.initialVisibleCount
-            ) || 6,
-          items:
-            form.safetyDataSheetsSection.items.map(
-              (item, index) => ({
-                id: index + 1,
-                name:
-                  item.name.trim(),
-                category:
-                  item.category.trim(),
-                description:
-                  item.description.trim(),
-                englishUrl:
-                  item.englishUrl,
-                englishPdfName:
-                  item.englishPdfName,
-                spanishUrl:
-                  item.spanishUrl,
-                spanishPdfName:
-                  item.spanishPdfName,
-              })
-            ),
-        },
+            heading:
+              form.pageHeader.heading.trim(),
+          },
 
-        guidesSection: {
-          ...form.guidesSection,
-          imageAlt:
-            form.guidesSection.imageAlt.trim(),
-          eyebrow:
-            form.guidesSection.eyebrow.trim(),
-          title:
-            form.guidesSection.title.trim(),
-          description:
-            form.guidesSection.description.trim(),
-          primaryButtonText:
-            form.guidesSection.primaryButtonText.trim(),
-          secondaryButtonText:
-            form.guidesSection.secondaryButtonText.trim(),
-          points:
-            form.guidesSection.points.map(
-              (item, index) => ({
-                id: index + 1,
-                text:
-                  item.text.trim(),
-              })
-            ),
-        },
+          hero: {
+            ...form.hero,
 
-        labelsSection: {
-          eyebrow:
-            form.labelsSection.eyebrow.trim(),
-          title:
-            form.labelsSection.title.trim(),
-          description:
-            form.labelsSection.description.trim(),
-          items:
-            form.labelsSection.items.map(
-              (item, index) => ({
-                id: index + 1,
-                name:
-                  item.name.trim(),
-                url: item.url,
-                pdfName:
-                  item.pdfName,
-              })
-            ),
-        },
+            imageAlt:
+              form.hero.imageAlt.trim(),
 
-        certificationsSection: {
-          eyebrow:
-            form.certificationsSection.eyebrow.trim(),
-          title:
-            form.certificationsSection.title.trim(),
-          description:
-            form.certificationsSection.description.trim(),
-          footerText:
-            form.certificationsSection.footerText.trim(),
-          items:
-            form.certificationsSection.items.map(
-              (item, index) => ({
-                id: index + 1,
-                shortName:
-                  item.shortName.trim(),
-                title:
-                  item.title.trim(),
-                description:
-                  item.description.trim(),
-              })
-            ),
-        },
+            title:
+              form.hero.title.trim(),
 
-        noticeSection: {
-          title:
-            form.noticeSection.title.trim(),
-          paragraphs:
-            form.noticeSection.paragraphs
-              .map((item) =>
-                item.trim()
-              )
-              .filter(Boolean),
-        },
+            description:
+              form.hero.description.trim(),
 
-        contactSection: {
-          eyebrow:
-            form.contactSection.eyebrow.trim(),
-          title:
-            form.contactSection.title.trim(),
-          description:
-            form.contactSection.description.trim(),
-          phone:
-            form.contactSection.phone.trim(),
-          phoneLink:
-            form.contactSection.phoneLink.trim(),
-          email:
-            form.contactSection.email.trim(),
-        },
-      };
+            primaryButtonText:
+              form.hero.primaryButtonText.trim(),
 
-      await updatePage(pageId, {
-        slug: PAGE_SLUG,
-        title:
-          form.pageHeader.heading.trim(),
-        status: "published",
-        content,
-      });
+            primaryButtonLink:
+              form.hero.primaryButtonLink.trim(),
 
-      setSuccessMessage(
-        "Silica First page updated successfully."
-      );
-    } catch (error) {
-      console.error(error);
+            secondaryButtonText:
+              form.hero.secondaryButtonText.trim(),
 
-      setErrorMessage(
-        getErrorMessage(
-          error,
-          "Failed to update Silica First page."
-        )
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+            secondaryButtonLink:
+              form.hero.secondaryButtonLink.trim(),
+          },
 
-  const getSaveButtonLabel = () => {
-  if (saving) {
-    return "Saving...";
-  }
+          aboutSection: {
+            eyebrow:
+              form.aboutSection.eyebrow.trim(),
 
-  if (isUploading) {
-    return "Upload in Progress...";
-  }
+            paragraphs:
+              form.aboutSection.paragraphs
+                .map(
+                  (item) =>
+                    item.trim()
+                )
+                .filter(
+                  Boolean
+                ),
+          },
 
-  return "Save Changes";
-};
+          hazardAwareness: {
+            eyebrow:
+              form.hazardAwareness.eyebrow.trim(),
+
+            title:
+              form.hazardAwareness.title.trim(),
+
+            description:
+              form.hazardAwareness.description.trim(),
+
+            questions:
+              form.hazardAwareness.questions.map(
+                (
+                  item,
+                  index
+                ) => ({
+                  id:
+                    index +
+                    1,
+
+                  question:
+                    item.question.trim(),
+
+                  answer:
+                    item.answer.trim(),
+                })
+              ),
+          },
+
+          resourcesSection: {
+            eyebrow:
+              form.resourcesSection.eyebrow.trim(),
+
+            title:
+              form.resourcesSection.title.trim(),
+
+            description:
+              form.resourcesSection.description.trim(),
+
+            items:
+              form.resourcesSection.items.map(
+                (
+                  item,
+                  index
+                ) => ({
+                  id:
+                    index +
+                    1,
+
+                  organization:
+                    item.organization.trim(),
+
+                  title:
+                    item.title.trim(),
+
+                  description:
+                    item.description.trim(),
+
+                  buttonText:
+                    item.buttonText.trim(),
+
+                  url:
+                    item.url,
+
+                  pdfName:
+                    item.pdfName,
+
+                  type:
+                    item.type,
+                })
+              ),
+          },
+
+          safetyDataSheetsSection:
+            {
+              eyebrow:
+                form.safetyDataSheetsSection.eyebrow.trim(),
+
+              title:
+                form.safetyDataSheetsSection.title.trim(),
+
+              description:
+                form.safetyDataSheetsSection.description.trim(),
+
+              searchPlaceholder:
+                form.safetyDataSheetsSection.searchPlaceholder.trim(),
+
+              initialVisibleCount:
+                Number(
+                  form
+                    .safetyDataSheetsSection
+                    .initialVisibleCount
+                ) || 6,
+
+              items:
+                form.safetyDataSheetsSection.items.map(
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      index +
+                      1,
+
+                    name:
+                      item.name.trim(),
+
+                    category:
+                      item.category.trim(),
+
+                    description:
+                      item.description.trim(),
+
+                    englishUrl:
+                      item.englishUrl,
+
+                    englishPdfName:
+                      item.englishPdfName,
+
+                    spanishUrl:
+                      item.spanishUrl,
+
+                    spanishPdfName:
+                      item.spanishPdfName,
+                  })
+                ),
+            },
+
+          guidesSection: {
+            ...form.guidesSection,
+
+            imageAlt:
+              form.guidesSection.imageAlt.trim(),
+
+            eyebrow:
+              form.guidesSection.eyebrow.trim(),
+
+            title:
+              form.guidesSection.title.trim(),
+
+            description:
+              form.guidesSection.description.trim(),
+
+            primaryButtonText:
+              form.guidesSection.primaryButtonText.trim(),
+
+            secondaryButtonText:
+              form.guidesSection.secondaryButtonText.trim(),
+
+            points:
+              form.guidesSection.points.map(
+                (
+                  item,
+                  index
+                ) => ({
+                  id:
+                    index +
+                    1,
+
+                  text:
+                    item.text.trim(),
+                })
+              ),
+          },
+
+          labelsSection: {
+            eyebrow:
+              form.labelsSection.eyebrow.trim(),
+
+            title:
+              form.labelsSection.title.trim(),
+
+            description:
+              form.labelsSection.description.trim(),
+
+            items:
+              form.labelsSection.items.map(
+                (
+                  item,
+                  index
+                ) => ({
+                  id:
+                    index +
+                    1,
+
+                  name:
+                    item.name.trim(),
+
+                  url:
+                    item.url,
+
+                  pdfName:
+                    item.pdfName,
+                })
+              ),
+          },
+
+          certificationsSection:
+            {
+              eyebrow:
+                form.certificationsSection.eyebrow.trim(),
+
+              title:
+                form.certificationsSection.title.trim(),
+
+              description:
+                form.certificationsSection.description.trim(),
+
+              footerText:
+                form.certificationsSection.footerText.trim(),
+
+              items:
+                form.certificationsSection.items.map(
+                  (
+                    item,
+                    index
+                  ) => ({
+                    id:
+                      index +
+                      1,
+
+                    shortName:
+                      item.shortName.trim(),
+
+                    title:
+                      item.title.trim(),
+
+                    description:
+                      item.description.trim(),
+
+                    logo:
+                      item.logo ||
+                      "",
+
+                    logoAlt:
+                      item.logoAlt.trim(),
+                  })
+                ),
+            },
+
+          noticeSection: {
+            title:
+              form.noticeSection.title.trim(),
+
+            paragraphs:
+              form.noticeSection.paragraphs
+                .map(
+                  (item) =>
+                    item.trim()
+                )
+                .filter(
+                  Boolean
+                ),
+          },
+
+          contactSection: {
+            eyebrow:
+              form.contactSection.eyebrow.trim(),
+
+            title:
+              form.contactSection.title.trim(),
+
+            description:
+              form.contactSection.description.trim(),
+
+            phone:
+              form.contactSection.phone.trim(),
+
+            phoneLink:
+              form.contactSection.phoneLink.trim(),
+
+            email:
+              form.contactSection.email.trim(),
+          },
+        };
+
+        await updatePage(
+          pageId,
+          {
+            slug:
+              PAGE_SLUG,
+
+            title:
+              form.pageHeader.heading.trim(),
+
+            status:
+              "published",
+
+            content,
+          }
+        );
+
+        setSuccessMessage(
+          "Silica First page updated successfully."
+        );
+      } catch (error) {
+        console.error(
+          error
+        );
+
+        setErrorMessage(
+          getErrorMessage(
+            error,
+            "Failed to update Silica First page."
+          )
+        );
+      } finally {
+        setSaving(false);
+      }
+    };
 
   const isUploading =
-    Boolean(uploadingField);
+    Boolean(
+      uploadingField
+    );
+
+  const getSaveButtonLabel =
+    () => {
+      if (saving) {
+        return "Saving...";
+      }
+
+      if (
+        isUploading
+      ) {
+        return "Upload in Progress...";
+      }
+
+      return "Save Changes";
+    };
 
   if (loading) {
     return (
       <Box
         sx={{
-          display: "flex",
+          display:
+            "flex",
+
           justifyContent:
             "center",
+
           py: 10,
         }}
       >
@@ -1568,7 +2021,9 @@ const SilicaFirst = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight:
+          "100vh",
+
         py: 4,
       }}
     >
@@ -1585,7 +2040,8 @@ const SilicaFirst = () => {
           sx={{
             width: 70,
             height: 4,
-            background: BRAND_RED,
+            background:
+              BRAND_RED,
             mb: 4,
           }}
         />
@@ -1594,9 +2050,13 @@ const SilicaFirst = () => {
           <Alert
             severity="error"
             onClose={() =>
-              setErrorMessage("")
+              setErrorMessage(
+                ""
+              )
             }
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+            }}
           >
             {errorMessage}
           </Alert>
@@ -1606,23 +2066,33 @@ const SilicaFirst = () => {
           <Alert
             severity="success"
             onClose={() =>
-              setSuccessMessage("")
+              setSuccessMessage(
+                ""
+              )
             }
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+            }}
           >
             {successMessage}
           </Alert>
         )}
 
         <SectionCard title="Page Header">
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+          <Grid
+            container
+            spacing={3}
+          >
+            <Grid
+              item
+              xs={12}
+              md={6}
+            >
               <TextField
                 fullWidth
                 label="Page Heading"
                 value={
-                  form.pageHeader
-                    .heading
+                  form.pageHeader.heading
                 }
                 onChange={(event) =>
                   handleChange(
@@ -1634,13 +2104,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid
+              item
+              xs={12}
+              md={6}
+            >
               <TextField
                 fullWidth
                 label="Breadcrumb Label"
                 value={
-                  form.pageHeader
-                    .breadcrumbLabel
+                  form.pageHeader.breadcrumbLabel
                 }
                 onChange={(event) =>
                   handleChange(
@@ -1652,13 +2125,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid
+              item
+              xs={12}
+              md={6}
+            >
               <TextField
                 fullWidth
                 label="Parent Breadcrumb Label"
                 value={
-                  form.pageHeader
-                    .parentBreadcrumbLabel
+                  form.pageHeader.parentBreadcrumbLabel
                 }
                 onChange={(event) =>
                   handleChange(
@@ -1670,13 +2146,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid
+              item
+              xs={12}
+              md={6}
+            >
               <TextField
                 fullWidth
                 label="Parent Breadcrumb Link"
                 value={
-                  form.pageHeader
-                    .parentBreadcrumbLink
+                  form.pageHeader.parentBreadcrumbLink
                 }
                 onChange={(event) =>
                   handleChange(
@@ -1691,8 +2170,15 @@ const SilicaFirst = () => {
         </SectionCard>
 
         <SectionCard title="Hero Section">
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={5}>
+          <Grid
+            container
+            spacing={4}
+          >
+            <Grid
+              item
+              xs={12}
+              md={5}
+            >
               <UploadButton
                 accept="image/*"
                 uploading={
@@ -1705,11 +2191,11 @@ const SilicaFirst = () => {
                 uploadText="Upload Hero Image"
                 replaceText="Replace Hero Image"
                 icon={
-  <Iconify
-    icon="solar:gallery-add-bold"
-    width={18}
-  />
-}
+                  <Iconify
+                    icon="solar:gallery-add-bold"
+                    width={18}
+                  />
+                }
                 onChange={(event) =>
                   handleImageUpload(
                     event,
@@ -1726,9 +2212,12 @@ const SilicaFirst = () => {
                   form.hero.image
                 }
                 InputProps={{
-                  readOnly: true,
+                  readOnly:
+                    true,
                 }}
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                }}
               />
 
               <TextField
@@ -1744,29 +2233,45 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                }}
               />
 
               {form.hero.image && (
                 <Box
                   component="img"
-                  src={form.hero.image}
+                  src={
+                    form.hero.image
+                  }
                   alt={
                     form.hero.imageAlt ||
                     "Hero preview"
                   }
                   sx={{
-                    width: "100%",
-                    height: 320,
-                    objectFit: "cover",
-                    borderRadius: 1,
+                    width:
+                      "100%",
+
+                    height:
+                      320,
+
+                    objectFit:
+                      "cover",
+
+                    borderRadius:
+                      1,
+
                     mt: 2,
                   }}
                 />
               )}
             </Grid>
 
-            <Grid item xs={12} md={7}>
+            <Grid
+              item
+              xs={12}
+              md={7}
+            >
               <TextField
                 fullWidth
                 label="Hero Title"
@@ -1780,7 +2285,9 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
               <TextField
@@ -1798,17 +2305,25 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <Grid
+                container
+                spacing={2}
+              >
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                >
                   <TextField
                     fullWidth
                     label="Primary Button Text"
                     value={
-                      form.hero
-                        .primaryButtonText
+                      form.hero.primaryButtonText
                     }
                     onChange={(event) =>
                       handleChange(
@@ -1820,13 +2335,16 @@ const SilicaFirst = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                >
                   <TextField
                     fullWidth
                     label="Primary Button Link"
                     value={
-                      form.hero
-                        .primaryButtonLink
+                      form.hero.primaryButtonLink
                     }
                     onChange={(event) =>
                       handleChange(
@@ -1838,13 +2356,16 @@ const SilicaFirst = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                >
                   <TextField
                     fullWidth
                     label="Secondary Button Text"
                     value={
-                      form.hero
-                        .secondaryButtonText
+                      form.hero.secondaryButtonText
                     }
                     onChange={(event) =>
                       handleChange(
@@ -1856,13 +2377,16 @@ const SilicaFirst = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid
+                  item
+                  xs={12}
+                  md={6}
+                >
                   <TextField
                     fullWidth
                     label="Secondary Button Link"
                     value={
-                      form.hero
-                        .secondaryButtonLink
+                      form.hero.secondaryButtonLink
                     }
                     onChange={(event) =>
                       handleChange(
@@ -1884,11 +2408,11 @@ const SilicaFirst = () => {
             <Button
               variant="outlined"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addArrayText(
                   "aboutSection",
@@ -1904,8 +2428,7 @@ const SilicaFirst = () => {
             fullWidth
             label="Eyebrow"
             value={
-              form.aboutSection
-                .eyebrow
+              form.aboutSection.eyebrow
             }
             onChange={(event) =>
               handleChange(
@@ -1914,17 +2437,27 @@ const SilicaFirst = () => {
                 event.target.value
               )
             }
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+            }}
           />
 
           {form.aboutSection.paragraphs.map(
-            (paragraph, index) => (
+            (
+              paragraph,
+              index
+            ) => (
               <Box
                 key={`about-${index}`}
                 sx={{
-                  display: "flex",
+                  display:
+                    "flex",
+
                   gap: 1,
-                  alignItems: "flex-start",
+
+                  alignItems:
+                    "flex-start",
+
                   mb: 2,
                 }}
               >
@@ -1935,7 +2468,9 @@ const SilicaFirst = () => {
                   label={`Paragraph ${
                     index + 1
                   }`}
-                  value={paragraph}
+                  value={
+                    paragraph
+                  }
                   onChange={(event) =>
                     handleArrayTextChange(
                       "aboutSection",
@@ -1957,9 +2492,9 @@ const SilicaFirst = () => {
                   }
                 >
                   <Iconify
-  icon="solar:trash-bin-trash-bold"
-  width={20}
-/>
+                    icon="solar:trash-bin-trash-bold"
+                    width={20}
+                  />
                 </Button>
               </Box>
             )
@@ -1972,11 +2507,11 @@ const SilicaFirst = () => {
             <Button
               variant="contained"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addItem(
                   "hazardAwareness",
@@ -1984,7 +2519,9 @@ const SilicaFirst = () => {
                 )
               }
               sx={{
-                background: BRAND_RED,
+                background:
+                  BRAND_RED,
+
                 "&:hover": {
                   background:
                     BRAND_RED_DARK,
@@ -1995,14 +2532,23 @@ const SilicaFirst = () => {
             </Button>
           }
         >
-          <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: 3,
+            }}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form.hazardAwareness
-                    .eyebrow
+                  form.hazardAwareness.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2014,13 +2560,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form.hazardAwareness
-                    .title
+                  form.hazardAwareness.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2039,8 +2588,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="Section Description"
                 value={
-                  form.hazardAwareness
-                    .description
+                  form.hazardAwareness.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2054,19 +2602,37 @@ const SilicaFirst = () => {
           </Grid>
 
           {form.hazardAwareness.questions.map(
-            (item, index) => (
-              <Box key={item.id}>
+            (
+              item,
+              index
+            ) => (
+              <Box
+                key={
+                  item.id
+                }
+              >
                 <Box
                   sx={{
-                    display: "flex",
+                    display:
+                      "flex",
+
                     justifyContent:
                       "space-between",
-                    alignItems: "center",
+
+                    alignItems:
+                      "center",
+
                     mb: 2,
                   }}
                 >
-                  <Typography fontWeight={600}>
-                    Question {index + 1}
+                  <Typography
+                    fontWeight={
+                      600
+                    }
+                  >
+                    Question{" "}
+                    {index +
+                      1}
                   </Typography>
 
                   <Button
@@ -2086,7 +2652,9 @@ const SilicaFirst = () => {
                 <TextField
                   fullWidth
                   label="Question"
-                  value={item.question}
+                  value={
+                    item.question
+                  }
                   onChange={(event) =>
                     handleItemChange(
                       "hazardAwareness",
@@ -2095,7 +2663,9 @@ const SilicaFirst = () => {
                       event.target.value
                     )
                   }
-                  sx={{ mb: 2 }}
+                  sx={{
+                    mb: 2,
+                  }}
                 />
 
                 <TextField
@@ -2103,7 +2673,9 @@ const SilicaFirst = () => {
                   multiline
                   minRows={4}
                   label="Answer"
-                  value={item.answer}
+                  value={
+                    item.answer
+                  }
                   onChange={(event) =>
                     handleItemChange(
                       "hazardAwareness",
@@ -2115,10 +2687,13 @@ const SilicaFirst = () => {
                 />
 
                 {index <
-                  form.hazardAwareness
-                    .questions.length -
+                  form.hazardAwareness.questions.length -
                     1 && (
-                  <Divider sx={{ my: 4 }} />
+                  <Divider
+                    sx={{
+                      my: 4,
+                    }}
+                  />
                 )}
               </Box>
             )
@@ -2131,11 +2706,11 @@ const SilicaFirst = () => {
             <Button
               variant="contained"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addItem(
                   "resourcesSection",
@@ -2143,7 +2718,9 @@ const SilicaFirst = () => {
                 )
               }
               sx={{
-                background: BRAND_RED,
+                background:
+                  BRAND_RED,
+
                 "&:hover": {
                   background:
                     BRAND_RED_DARK,
@@ -2154,14 +2731,23 @@ const SilicaFirst = () => {
             </Button>
           }
         >
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: 4,
+            }}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form.resourcesSection
-                    .eyebrow
+                  form.resourcesSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2173,13 +2759,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form.resourcesSection
-                    .title
+                  form.resourcesSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2198,8 +2787,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="Section Description"
                 value={
-                  form.resourcesSection
-                    .description
+                  form.resourcesSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2213,23 +2801,41 @@ const SilicaFirst = () => {
           </Grid>
 
           {form.resourcesSection.items.map(
-            (item, index) => {
+            (
+              item,
+              index
+            ) => {
               const uploadKey =
                 `resourcesSection.items.${index}.pdf`;
 
               return (
-                <Box key={item.id}>
+                <Box
+                  key={
+                    item.id
+                  }
+                >
                   <Box
                     sx={{
-                      display: "flex",
+                      display:
+                        "flex",
+
                       justifyContent:
                         "space-between",
-                      alignItems: "center",
+
+                      alignItems:
+                        "center",
+
                       mb: 2,
                     }}
                   >
-                    <Typography fontWeight={600}>
-                      Resource {index + 1}
+                    <Typography
+                      fontWeight={
+                        600
+                      }
+                    >
+                      Resource{" "}
+                      {index +
+                        1}
                     </Typography>
 
                     <Button
@@ -2246,8 +2852,15 @@ const SilicaFirst = () => {
                     </Button>
                   </Box>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
+                  <Grid
+                    container
+                    spacing={2}
+                  >
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         label="Organization"
@@ -2265,11 +2878,17 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         label="Title"
-                        value={item.title}
+                        value={
+                          item.title
+                        }
                         onChange={(event) =>
                           handleItemChange(
                             "resourcesSection",
@@ -2281,12 +2900,18 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         select
                         fullWidth
                         label="Resource Type"
-                        value={item.type}
+                        value={
+                          item.type
+                        }
                         onChange={(event) =>
                           handleItemChange(
                             "resourcesSection",
@@ -2299,6 +2924,7 @@ const SilicaFirst = () => {
                         <MenuItem value="download">
                           PDF Download
                         </MenuItem>
+
                         <MenuItem value="external">
                           External Link
                         </MenuItem>
@@ -2325,7 +2951,11 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         label="Button Text"
@@ -2343,7 +2973,11 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={8}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={8}
+                    >
                       {item.type ===
                       "download" ? (
                         <>
@@ -2352,17 +2986,24 @@ const SilicaFirst = () => {
                               uploadingField ===
                               uploadKey
                             }
-                            url={item.url}
+                            url={
+                              item.url
+                            }
                             onUpload={(event) =>
                               handleItemPdfUpload({
                                 event,
+
                                 section:
                                   "resourcesSection",
+
                                 index,
+
                                 urlField:
                                   "url",
+
                                 nameField:
                                   "pdfName",
+
                                 uploadKey,
                               })
                             }
@@ -2384,16 +3025,21 @@ const SilicaFirst = () => {
                               item.url
                             }
                             InputProps={{
-                              readOnly: true,
+                              readOnly:
+                                true,
                             }}
-                            sx={{ mt: 2 }}
+                            sx={{
+                              mt: 2,
+                            }}
                           />
                         </>
                       ) : (
                         <TextField
                           fullWidth
                           label="External URL"
-                          value={item.url}
+                          value={
+                            item.url
+                          }
                           onChange={(event) =>
                             handleItemChange(
                               "resourcesSection",
@@ -2408,10 +3054,13 @@ const SilicaFirst = () => {
                   </Grid>
 
                   {index <
-                    form.resourcesSection
-                      .items.length -
+                    form.resourcesSection.items.length -
                       1 && (
-                    <Divider sx={{ my: 4 }} />
+                    <Divider
+                      sx={{
+                        my: 4,
+                      }}
+                    />
                   )}
                 </Box>
               );
@@ -2425,11 +3074,11 @@ const SilicaFirst = () => {
             <Button
               variant="contained"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addItem(
                   "safetyDataSheetsSection",
@@ -2437,7 +3086,9 @@ const SilicaFirst = () => {
                 )
               }
               sx={{
-                background: BRAND_RED,
+                background:
+                  BRAND_RED,
+
                 "&:hover": {
                   background:
                     BRAND_RED_DARK,
@@ -2448,15 +3099,23 @@ const SilicaFirst = () => {
             </Button>
           }
         >
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: 4,
+            }}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form
-                    .safetyDataSheetsSection
-                    .eyebrow
+                  form.safetyDataSheetsSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2468,14 +3127,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form
-                    .safetyDataSheetsSection
-                    .title
+                  form.safetyDataSheetsSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2494,9 +3155,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="Description"
                 value={
-                  form
-                    .safetyDataSheetsSection
-                    .description
+                  form.safetyDataSheetsSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2508,14 +3167,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Search Placeholder"
                 value={
-                  form
-                    .safetyDataSheetsSection
-                    .searchPlaceholder
+                  form.safetyDataSheetsSection.searchPlaceholder
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2527,15 +3188,17 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 type="number"
                 label="Initial Visible Count"
                 value={
-                  form
-                    .safetyDataSheetsSection
-                    .initialVisibleCount
+                  form.safetyDataSheetsSection.initialVisibleCount
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2544,31 +3207,52 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                inputProps={{ min: 1 }}
+                inputProps={{
+                  min: 1,
+                }}
               />
             </Grid>
           </Grid>
 
           {form.safetyDataSheetsSection.items.map(
-            (item, index) => {
+            (
+              item,
+              index
+            ) => {
               const englishKey =
                 `safetyDataSheetsSection.items.${index}.english`;
+
               const spanishKey =
                 `safetyDataSheetsSection.items.${index}.spanish`;
 
               return (
-                <Box key={item.id}>
+                <Box
+                  key={
+                    item.id
+                  }
+                >
                   <Box
                     sx={{
-                      display: "flex",
+                      display:
+                        "flex",
+
                       justifyContent:
                         "space-between",
-                      alignItems: "center",
+
+                      alignItems:
+                        "center",
+
                       mb: 2,
                     }}
                   >
-                    <Typography fontWeight={600}>
-                      Data Sheet {index + 1}
+                    <Typography
+                      fontWeight={
+                        600
+                      }
+                    >
+                      Data Sheet{" "}
+                      {index +
+                        1}
                     </Typography>
 
                     <Button
@@ -2585,12 +3269,21 @@ const SilicaFirst = () => {
                     </Button>
                   </Box>
 
-                  <Grid container spacing={2}>
-                    <Grid item xs={12} md={4}>
+                  <Grid
+                    container
+                    spacing={2}
+                  >
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         label="Material Name"
-                        value={item.name}
+                        value={
+                          item.name
+                        }
                         onChange={(event) =>
                           handleItemChange(
                             "safetyDataSheetsSection",
@@ -2602,7 +3295,11 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         label="Category"
@@ -2620,7 +3317,11 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={4}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
                       <TextField
                         fullWidth
                         multiline
@@ -2640,7 +3341,11 @@ const SilicaFirst = () => {
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={6}
+                    >
                       <Typography
                         variant="subtitle2"
                         mb={1.5}
@@ -2659,13 +3364,18 @@ const SilicaFirst = () => {
                         onUpload={(event) =>
                           handleItemPdfUpload({
                             event,
+
                             section:
                               "safetyDataSheetsSection",
+
                             index,
+
                             urlField:
                               "englishUrl",
+
                             nameField:
                               "englishPdfName",
+
                             uploadKey:
                               englishKey,
                           })
@@ -2688,13 +3398,20 @@ const SilicaFirst = () => {
                           item.englishUrl
                         }
                         InputProps={{
-                          readOnly: true,
+                          readOnly:
+                            true,
                         }}
-                        sx={{ mt: 2 }}
+                        sx={{
+                          mt: 2,
+                        }}
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid
+                      item
+                      xs={12}
+                      md={6}
+                    >
                       <Typography
                         variant="subtitle2"
                         mb={1.5}
@@ -2713,13 +3430,18 @@ const SilicaFirst = () => {
                         onUpload={(event) =>
                           handleItemPdfUpload({
                             event,
+
                             section:
                               "safetyDataSheetsSection",
+
                             index,
+
                             urlField:
                               "spanishUrl",
+
                             nameField:
                               "spanishPdfName",
+
                             uploadKey:
                               spanishKey,
                           })
@@ -2742,19 +3464,24 @@ const SilicaFirst = () => {
                           item.spanishUrl
                         }
                         InputProps={{
-                          readOnly: true,
+                          readOnly:
+                            true,
                         }}
-                        sx={{ mt: 2 }}
+                        sx={{
+                          mt: 2,
+                        }}
                       />
                     </Grid>
                   </Grid>
 
                   {index <
-                    form
-                      .safetyDataSheetsSection
-                      .items.length -
+                    form.safetyDataSheetsSection.items.length -
                       1 && (
-                    <Divider sx={{ my: 4 }} />
+                    <Divider
+                      sx={{
+                        my: 4,
+                      }}
+                    />
                   )}
                 </Box>
               );
@@ -2768,30 +3495,42 @@ const SilicaFirst = () => {
             <Button
               variant="outlined"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
-                setForm((previous) => ({
-                  ...previous,
-                  guidesSection: {
-                    ...previous.guidesSection,
-                    points: [
-                      ...previous.guidesSection.points,
-                      createGuidePoint(),
-                    ],
-                  },
-                }))
+                setForm(
+                  (previous) => ({
+                    ...previous,
+
+                    guidesSection: {
+                      ...previous.guidesSection,
+
+                      points: [
+                        ...previous.guidesSection.points,
+
+                        createGuidePoint(),
+                      ],
+                    },
+                  })
+                )
               }
             >
               Add Guide Point
             </Button>
           }
         >
-          <Grid container spacing={4}>
-            <Grid item xs={12} md={5}>
+          <Grid
+            container
+            spacing={4}
+          >
+            <Grid
+              item
+              xs={12}
+              md={5}
+            >
               <UploadButton
                 accept="image/*"
                 uploading={
@@ -2799,17 +3538,16 @@ const SilicaFirst = () => {
                   "guidesSection.image"
                 }
                 hasFile={Boolean(
-                  form.guidesSection
-                    .image
+                  form.guidesSection.image
                 )}
                 uploadText="Upload Guide Image"
                 replaceText="Replace Guide Image"
                 icon={
-  <Iconify
-    icon="solar:gallery-add-bold"
-    width={18}
-  />
-}
+                  <Iconify
+                    icon="solar:gallery-add-bold"
+                    width={18}
+                  />
+                }
                 onChange={(event) =>
                   handleImageUpload(
                     event,
@@ -2823,21 +3561,22 @@ const SilicaFirst = () => {
                 fullWidth
                 label="Guide Image URL"
                 value={
-                  form.guidesSection
-                    .image
+                  form.guidesSection.image
                 }
                 InputProps={{
-                  readOnly: true,
+                  readOnly:
+                    true,
                 }}
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                }}
               />
 
               <TextField
                 fullWidth
                 label="Guide Image Alt Text"
                 value={
-                  form.guidesSection
-                    .imageAlt
+                  form.guidesSection.imageAlt
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2846,40 +3585,50 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                }}
               />
 
-              {form.guidesSection
-                .image && (
+              {form.guidesSection.image && (
                 <Box
                   component="img"
                   src={
-                    form.guidesSection
-                      .image
+                    form.guidesSection.image
                   }
                   alt={
-                    form.guidesSection
-                      .imageAlt ||
+                    form.guidesSection.imageAlt ||
                     "Guide preview"
                   }
                   sx={{
-                    width: "100%",
-                    height: 280,
-                    objectFit: "cover",
-                    borderRadius: 1,
+                    width:
+                      "100%",
+
+                    height:
+                      280,
+
+                    objectFit:
+                      "cover",
+
+                    borderRadius:
+                      1,
+
                     mt: 2,
                   }}
                 />
               )}
             </Grid>
 
-            <Grid item xs={12} md={7}>
+            <Grid
+              item
+              xs={12}
+              md={7}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form.guidesSection
-                    .eyebrow
+                  form.guidesSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2888,15 +3637,16 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form.guidesSection
-                    .title
+                  form.guidesSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2905,7 +3655,9 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
               <TextField
@@ -2914,8 +3666,7 @@ const SilicaFirst = () => {
                 minRows={4}
                 label="Description"
                 value={
-                  form.guidesSection
-                    .description
+                  form.guidesSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2924,15 +3675,16 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 3 }}
+                sx={{
+                  mb: 3,
+                }}
               />
 
               <TextField
                 fullWidth
                 label="Primary Button Text"
                 value={
-                  form.guidesSection
-                    .primaryButtonText
+                  form.guidesSection.primaryButtonText
                 }
                 onChange={(event) =>
                   handleChange(
@@ -2941,7 +3693,9 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
               <PdfControls
@@ -2950,8 +3704,7 @@ const SilicaFirst = () => {
                   "guidesSection.primaryPdfUrl"
                 }
                 url={
-                  form.guidesSection
-                    .primaryPdfUrl
+                  form.guidesSection.primaryPdfUrl
                 }
                 onUpload={(event) =>
                   handleSectionPdfUpload(
@@ -2967,6 +3720,7 @@ const SilicaFirst = () => {
                     "primaryPdfUrl",
                     ""
                   );
+
                   handleChange(
                     "guidesSection",
                     "primaryPdfName",
@@ -2979,23 +3733,24 @@ const SilicaFirst = () => {
                 fullWidth
                 label="Primary PDF"
                 value={
-                  form.guidesSection
-                    .primaryPdfName ||
-                  form.guidesSection
-                    .primaryPdfUrl
+                  form.guidesSection.primaryPdfName ||
+                  form.guidesSection.primaryPdfUrl
                 }
                 InputProps={{
-                  readOnly: true,
+                  readOnly:
+                    true,
                 }}
-                sx={{ mt: 2, mb: 3 }}
+                sx={{
+                  mt: 2,
+                  mb: 3,
+                }}
               />
 
               <TextField
                 fullWidth
                 label="Secondary Button Text"
                 value={
-                  form.guidesSection
-                    .secondaryButtonText
+                  form.guidesSection.secondaryButtonText
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3004,7 +3759,9 @@ const SilicaFirst = () => {
                     event.target.value
                   )
                 }
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                }}
               />
 
               <PdfControls
@@ -3013,8 +3770,7 @@ const SilicaFirst = () => {
                   "guidesSection.secondaryPdfUrl"
                 }
                 url={
-                  form.guidesSection
-                    .secondaryPdfUrl
+                  form.guidesSection.secondaryPdfUrl
                 }
                 onUpload={(event) =>
                   handleSectionPdfUpload(
@@ -3030,6 +3786,7 @@ const SilicaFirst = () => {
                     "secondaryPdfUrl",
                     ""
                   );
+
                   handleChange(
                     "guidesSection",
                     "secondaryPdfName",
@@ -3042,28 +3799,41 @@ const SilicaFirst = () => {
                 fullWidth
                 label="Secondary PDF"
                 value={
-                  form.guidesSection
-                    .secondaryPdfName ||
-                  form.guidesSection
-                    .secondaryPdfUrl
+                  form.guidesSection.secondaryPdfName ||
+                  form.guidesSection.secondaryPdfUrl
                 }
                 InputProps={{
-                  readOnly: true,
+                  readOnly:
+                    true,
                 }}
-                sx={{ mt: 2 }}
+                sx={{
+                  mt: 2,
+                }}
               />
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 4 }} />
+          <Divider
+            sx={{
+              my: 4,
+            }}
+          />
 
           {form.guidesSection.points.map(
-            (item, index) => (
+            (
+              item,
+              index
+            ) => (
               <Box
-                key={item.id}
+                key={
+                  item.id
+                }
                 sx={{
-                  display: "flex",
+                  display:
+                    "flex",
+
                   gap: 1,
+
                   mb: 2,
                 }}
               >
@@ -3072,29 +3842,34 @@ const SilicaFirst = () => {
                   label={`Guide Point ${
                     index + 1
                   }`}
-                  value={item.text}
+                  value={
+                    item.text
+                  }
                   onChange={(event) => {
                     setForm(
                       (previous) => {
                         const points = [
-                          ...previous
-                            .guidesSection
-                            .points,
+                          ...previous.guidesSection.points,
                         ];
 
                         points[index] = {
-                          ...points[index],
+                          ...points[
+                            index
+                          ],
+
                           text:
-                            event.target
-                              .value,
+                            event.target.value,
                         };
 
                         return {
                           ...previous,
-                          guidesSection: {
-                            ...previous.guidesSection,
-                            points,
-                          },
+
+                          guidesSection:
+                            {
+                              ...previous.guidesSection,
+
+                              points,
+                            },
                         };
                       }
                     );
@@ -3107,26 +3882,29 @@ const SilicaFirst = () => {
                     setForm(
                       (previous) => ({
                         ...previous,
-                        guidesSection: {
-                          ...previous.guidesSection,
-                          points:
-                            previous.guidesSection.points.filter(
-                              (
-                                _,
-                                itemIndex
-                              ) =>
-                                itemIndex !==
-                                index
-                            ),
-                        },
+
+                        guidesSection:
+                          {
+                            ...previous.guidesSection,
+
+                            points:
+                              previous.guidesSection.points.filter(
+                                (
+                                  _,
+                                  itemIndex
+                                ) =>
+                                  itemIndex !==
+                                  index
+                              ),
+                          },
                       })
                     )
                   }
                 >
                   <Iconify
-  icon="solar:trash-bin-trash-bold"
-  width={20}
-/>
+                    icon="solar:trash-bin-trash-bold"
+                    width={20}
+                  />
                 </Button>
               </Box>
             )
@@ -3139,11 +3917,11 @@ const SilicaFirst = () => {
             <Button
               variant="contained"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addItem(
                   "labelsSection",
@@ -3151,7 +3929,9 @@ const SilicaFirst = () => {
                 )
               }
               sx={{
-                background: BRAND_RED,
+                background:
+                  BRAND_RED,
+
                 "&:hover": {
                   background:
                     BRAND_RED_DARK,
@@ -3162,14 +3942,23 @@ const SilicaFirst = () => {
             </Button>
           }
         >
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: 4,
+            }}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form.labelsSection
-                    .eyebrow
+                  form.labelsSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3181,13 +3970,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form.labelsSection
-                    .title
+                  form.labelsSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3206,8 +3998,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="Description"
                 value={
-                  form.labelsSection
-                    .description
+                  form.labelsSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3221,12 +4012,19 @@ const SilicaFirst = () => {
           </Grid>
 
           {form.labelsSection.items.map(
-            (item, index) => {
+            (
+              item,
+              index
+            ) => {
               const uploadKey =
                 `labelsSection.items.${index}.pdf`;
 
               return (
-                <Box key={item.id}>
+                <Box
+                  key={
+                    item.id
+                  }
+                >
                   <Grid
                     container
                     spacing={2}
@@ -3240,7 +4038,9 @@ const SilicaFirst = () => {
                       <TextField
                         fullWidth
                         label="Label Name"
-                        value={item.name}
+                        value={
+                          item.name
+                        }
                         onChange={(event) =>
                           handleItemChange(
                             "labelsSection",
@@ -3262,17 +4062,24 @@ const SilicaFirst = () => {
                           uploadingField ===
                           uploadKey
                         }
-                        url={item.url}
+                        url={
+                          item.url
+                        }
                         onUpload={(event) =>
                           handleItemPdfUpload({
                             event,
+
                             section:
                               "labelsSection",
+
                             index,
+
                             urlField:
                               "url",
+
                             nameField:
                               "pdfName",
+
                             uploadKey,
                           })
                         }
@@ -3316,17 +4123,21 @@ const SilicaFirst = () => {
                           item.url
                         }
                         InputProps={{
-                          readOnly: true,
+                          readOnly:
+                            true,
                         }}
                       />
                     </Grid>
                   </Grid>
 
                   {index <
-                    form.labelsSection
-                      .items.length -
+                    form.labelsSection.items.length -
                       1 && (
-                    <Divider sx={{ my: 3 }} />
+                    <Divider
+                      sx={{
+                        my: 3,
+                      }}
+                    />
                   )}
                 </Box>
               );
@@ -3334,17 +4145,21 @@ const SilicaFirst = () => {
           )}
         </SectionCard>
 
+        {/* =================================================
+            CERTIFICATIONS
+        ================================================= */}
+
         <SectionCard
           title="Certifications"
           action={
             <Button
               variant="contained"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addItem(
                   "certificationsSection",
@@ -3352,7 +4167,9 @@ const SilicaFirst = () => {
                 )
               }
               sx={{
-                background: BRAND_RED,
+                background:
+                  BRAND_RED,
+
                 "&:hover": {
                   background:
                     BRAND_RED_DARK,
@@ -3363,15 +4180,23 @@ const SilicaFirst = () => {
             </Button>
           }
         >
-          <Grid container spacing={2} sx={{ mb: 4 }}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              mb: 4,
+            }}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form
-                    .certificationsSection
-                    .eyebrow
+                  form.certificationsSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3383,14 +4208,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="Section Title"
                 value={
-                  form
-                    .certificationsSection
-                    .title
+                  form.certificationsSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3409,9 +4236,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="Description"
                 value={
-                  form
-                    .certificationsSection
-                    .description
+                  form.certificationsSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3430,9 +4255,7 @@ const SilicaFirst = () => {
                 minRows={2}
                 label="Footer Text"
                 value={
-                  form
-                    .certificationsSection
-                    .footerText
+                  form.certificationsSection.footerText
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3445,100 +4268,387 @@ const SilicaFirst = () => {
             </Grid>
           </Grid>
 
+          {form.certificationsSection.items.length ===
+            0 && (
+            <Box
+              sx={{
+                py: 5,
+                px: 2,
+
+                textAlign:
+                  "center",
+
+                border:
+                  "1px dashed",
+
+                borderColor:
+                  "divider",
+
+                borderRadius:
+                  1,
+              }}
+            >
+              <Typography
+                color="text.secondary"
+                mb={2}
+              >
+                No certifications have been added.
+              </Typography>
+
+              <Button
+                variant="outlined"
+                startIcon={
+                  <Iconify
+                    icon="mingcute:add-line"
+                    width={18}
+                  />
+                }
+                onClick={() =>
+                  addItem(
+                    "certificationsSection",
+                    createCertification
+                  )
+                }
+              >
+                Add First Certification
+              </Button>
+            </Box>
+          )}
+
           {form.certificationsSection.items.map(
-            (item, index) => (
-              <Box key={item.id}>
+            (
+              item,
+              index
+            ) => {
+              const logoUploadKey =
+                `certificationsSection.items.${index}.logo`;
+
+              return (
                 <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent:
-                      "space-between",
-                    alignItems: "center",
-                    mb: 2,
-                  }}
+                  key={
+                    item.id
+                  }
                 >
-                  <Typography fontWeight={600}>
-                    Certification {index + 1}
-                  </Typography>
+                  <Box
+                    sx={{
+                      display:
+                        "flex",
 
-                  <Button
-                    color="error"
-                    onClick={() =>
-                      removeItem(
-                        "certificationsSection",
-                        index,
-                        item.title
-                      )
-                    }
+                      justifyContent:
+                        "space-between",
+
+                      alignItems:
+                        "center",
+
+                      gap: 2,
+
+                      mb: 3,
+                    }}
                   >
-                    Remove
-                  </Button>
+                    <Typography
+                      fontWeight={
+                        600
+                      }
+                    >
+                      Certification{" "}
+                      {index +
+                        1}
+                    </Typography>
+
+                    <Button
+                      color="error"
+                      startIcon={
+                        <Iconify
+                          icon="solar:trash-bin-trash-bold"
+                          width={18}
+                        />
+                      }
+                      onClick={() =>
+                        removeItem(
+                          "certificationsSection",
+                          index,
+                          item.title ||
+                            item.shortName
+                        )
+                      }
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+
+                  <Grid
+                    container
+                    spacing={3}
+                  >
+                    <Grid
+                      item
+                      xs={12}
+                      md={4}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={
+                          600
+                        }
+                        mb={1.5}
+                      >
+                        Certification Logo
+                      </Typography>
+
+                      <UploadButton
+                        accept="image/*"
+                        uploading={
+                          uploadingField ===
+                          logoUploadKey
+                        }
+                        hasFile={Boolean(
+                          item.logo
+                        )}
+                        uploadText="Upload Logo"
+                        replaceText="Replace Logo"
+                        icon={
+                          <Iconify
+                            icon="solar:gallery-add-bold"
+                            width={18}
+                          />
+                        }
+                        onChange={(event) =>
+                          handleCertificationLogoUpload(
+                            event,
+                            index
+                          )
+                        }
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Logo URL"
+                        value={
+                          item.logo ||
+                          ""
+                        }
+                        InputProps={{
+                          readOnly:
+                            true,
+                        }}
+                        sx={{
+                          mt: 2,
+                        }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Logo Alt Text"
+                        placeholder="NSF certification logo"
+                        value={
+                          item.logoAlt ||
+                          ""
+                        }
+                        onChange={(event) =>
+                          handleItemChange(
+                            "certificationsSection",
+                            index,
+                            "logoAlt",
+                            event.target.value
+                          )
+                        }
+                        sx={{
+                          mt: 2,
+                        }}
+                      />
+
+                      {item.logo && (
+                        <Box
+                          sx={{
+                            width:
+                              "100%",
+
+                            minHeight:
+                              220,
+
+                            display:
+                              "flex",
+
+                            alignItems:
+                              "center",
+
+                            justifyContent:
+                              "center",
+
+                            mt: 2,
+                            p: 3,
+
+                            border:
+                              "1px solid",
+
+                            borderColor:
+                              "divider",
+
+                            borderRadius:
+                              1,
+
+                            background:
+                              "#fafafa",
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={
+                              item.logo
+                            }
+                            alt={
+                              item.logoAlt ||
+                              item.title ||
+                              item.shortName ||
+                              "Certification logo"
+                            }
+                            sx={{
+                              display:
+                                "block",
+
+                              width:
+                                "100%",
+
+                              maxWidth:
+                                220,
+
+                              height:
+                                150,
+
+                              objectFit:
+                                "contain",
+                            }}
+                          />
+                        </Box>
+                      )}
+                    </Grid>
+
+                    <Grid
+                      item
+                      xs={12}
+                      md={8}
+                    >
+                      <Grid
+                        container
+                        spacing={2}
+                      >
+                        <Grid
+                          item
+                          xs={12}
+                          md={4}
+                        >
+                          <TextField
+                            fullWidth
+                            label="Short Name"
+                            placeholder="NSF"
+                            value={
+                              item.shortName
+                            }
+                            onChange={(event) =>
+                              handleItemChange(
+                                "certificationsSection",
+                                index,
+                                "shortName",
+                                event.target.value
+                              )
+                            }
+                          />
+                        </Grid>
+
+                        <Grid
+                          item
+                          xs={12}
+                          md={8}
+                        >
+                          <TextField
+                            fullWidth
+                            label="Title"
+                            placeholder="NSF Certified"
+                            value={
+                              item.title
+                            }
+                            onChange={(event) =>
+                              handleItemChange(
+                                "certificationsSection",
+                                index,
+                                "title",
+                                event.target.value
+                              )
+                            }
+                          />
+                        </Grid>
+
+                        <Grid
+                          item
+                          xs={12}
+                        >
+                          <TextField
+                            fullWidth
+                            multiline
+                            minRows={5}
+                            label="Description"
+                            value={
+                              item.description
+                            }
+                            onChange={(event) =>
+                              handleItemChange(
+                                "certificationsSection",
+                                index,
+                                "description",
+                                event.target.value
+                              )
+                            }
+                          />
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  </Grid>
+
+                  {index <
+                    form.certificationsSection.items.length -
+                      1 && (
+                    <Divider
+                      sx={{
+                        my: 4,
+                      }}
+                    />
+                  )}
                 </Box>
+              );
+            }
+          )}
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={3}>
-                    <TextField
-                      fullWidth
-                      label="Short Name"
-                      value={
-                        item.shortName
-                      }
-                      onChange={(event) =>
-                        handleItemChange(
-                          "certificationsSection",
-                          index,
-                          "shortName",
-                          event.target.value
-                        )
-                      }
-                    />
-                  </Grid>
+          {form.certificationsSection.items.length >
+            0 && (
+            <Box
+              sx={{
+                display:
+                  "flex",
 
-                  <Grid item xs={12} md={4}>
-                    <TextField
-                      fullWidth
-                      label="Title"
-                      value={item.title}
-                      onChange={(event) =>
-                        handleItemChange(
-                          "certificationsSection",
-                          index,
-                          "title",
-                          event.target.value
-                        )
-                      }
-                    />
-                  </Grid>
+                justifyContent:
+                  "center",
 
-                  <Grid item xs={12} md={5}>
-                    <TextField
-                      fullWidth
-                      multiline
-                      minRows={3}
-                      label="Description"
-                      value={
-                        item.description
-                      }
-                      onChange={(event) =>
-                        handleItemChange(
-                          "certificationsSection",
-                          index,
-                          "description",
-                          event.target.value
-                        )
-                      }
-                    />
-                  </Grid>
-                </Grid>
-
-                {index <
-                  form.certificationsSection
-                    .items.length -
-                    1 && (
-                  <Divider sx={{ my: 3 }} />
-                )}
-              </Box>
-            )
+                mt: 4,
+              }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={
+                  <Iconify
+                    icon="mingcute:add-line"
+                    width={18}
+                  />
+                }
+                onClick={() =>
+                  addItem(
+                    "certificationsSection",
+                    createCertification
+                  )
+                }
+              >
+                Add More Certification
+              </Button>
+            </Box>
           )}
         </SectionCard>
 
@@ -3548,11 +4658,11 @@ const SilicaFirst = () => {
             <Button
               variant="outlined"
               startIcon={
-  <Iconify
-    icon="mingcute:add-line"
-    width={18}
-  />
-}
+                <Iconify
+                  icon="mingcute:add-line"
+                  width={18}
+                />
+              }
               onClick={() =>
                 addArrayText(
                   "noticeSection",
@@ -3568,8 +4678,7 @@ const SilicaFirst = () => {
             fullWidth
             label="Notice Title"
             value={
-              form.noticeSection
-                .title
+              form.noticeSection.title
             }
             onChange={(event) =>
               handleChange(
@@ -3578,17 +4687,27 @@ const SilicaFirst = () => {
                 event.target.value
               )
             }
-            sx={{ mb: 3 }}
+            sx={{
+              mb: 3,
+            }}
           />
 
           {form.noticeSection.paragraphs.map(
-            (paragraph, index) => (
+            (
+              paragraph,
+              index
+            ) => (
               <Box
                 key={`notice-${index}`}
                 sx={{
-                  display: "flex",
+                  display:
+                    "flex",
+
                   gap: 1,
-                  alignItems: "flex-start",
+
+                  alignItems:
+                    "flex-start",
+
                   mb: 2,
                 }}
               >
@@ -3599,7 +4718,9 @@ const SilicaFirst = () => {
                   label={`Paragraph ${
                     index + 1
                   }`}
-                  value={paragraph}
+                  value={
+                    paragraph
+                  }
                   onChange={(event) =>
                     handleArrayTextChange(
                       "noticeSection",
@@ -3621,9 +4742,9 @@ const SilicaFirst = () => {
                   }
                 >
                   <Iconify
-  icon="solar:trash-bin-trash-bold"
-  width={20}
-/>
+                    icon="solar:trash-bin-trash-bold"
+                    width={20}
+                  />
                 </Button>
               </Box>
             )
@@ -3631,14 +4752,20 @@ const SilicaFirst = () => {
         </SectionCard>
 
         <SectionCard title="Contact CTA">
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
+          <Grid
+            container
+            spacing={2}
+          >
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Eyebrow"
                 value={
-                  form.contactSection
-                    .eyebrow
+                  form.contactSection.eyebrow
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3650,13 +4777,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={8}>
+            <Grid
+              item
+              xs={12}
+              md={8}
+            >
               <TextField
                 fullWidth
                 label="CTA Title"
                 value={
-                  form.contactSection
-                    .title
+                  form.contactSection.title
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3675,8 +4805,7 @@ const SilicaFirst = () => {
                 minRows={3}
                 label="CTA Description"
                 value={
-                  form.contactSection
-                    .description
+                  form.contactSection.description
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3688,13 +4817,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Phone Display Text"
                 value={
-                  form.contactSection
-                    .phone
+                  form.contactSection.phone
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3706,13 +4838,16 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 label="Phone Link Value"
                 value={
-                  form.contactSection
-                    .phoneLink
+                  form.contactSection.phoneLink
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3724,14 +4859,17 @@ const SilicaFirst = () => {
               />
             </Grid>
 
-            <Grid item xs={12} md={4}>
+            <Grid
+              item
+              xs={12}
+              md={4}
+            >
               <TextField
                 fullWidth
                 type="email"
                 label="Email"
                 value={
-                  form.contactSection
-                    .email
+                  form.contactSection.email
                 }
                 onChange={(event) =>
                   handleChange(
@@ -3747,24 +4885,29 @@ const SilicaFirst = () => {
 
         <Button
           variant="contained"
-          onClick={handleSave}
+          onClick={
+            handleSave
+          }
           disabled={
             saving ||
             isUploading ||
             !pageId
           }
           sx={{
-            background: BRAND_RED,
+            background:
+              BRAND_RED,
+
             px: 5,
             py: 1.4,
             mb: 5,
+
             "&:hover": {
               background:
                 BRAND_RED_DARK,
             },
           }}
         >
-{getSaveButtonLabel()}
+          {getSaveButtonLabel()}
         </Button>
       </Container>
     </Box>
