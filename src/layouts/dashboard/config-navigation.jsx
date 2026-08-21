@@ -86,6 +86,10 @@ export const getNavConfig = () => {
           title: 'Silica First',
           path: '/dashboard/silicafirst',
         },
+        {
+          title: 'CEU',
+          path: '/dashboard/ceu',
+        },
       ],
     },
 
