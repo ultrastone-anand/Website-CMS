@@ -143,10 +143,10 @@ export default function BlogQuickForm({
         published:
           currentPost.status
             ? currentPost.status ===
-              'PUBLISHED'
+            'PUBLISHED'
             : Boolean(
-                currentPost.published
-              ),
+              currentPost.published
+            ),
       });
 
       setCoverPreview(
@@ -155,7 +155,7 @@ export default function BlogQuickForm({
 
       setCoverMedia(
         currentPost.coverMedia ||
-          null
+        null
       );
 
       setContentMedia(
@@ -549,7 +549,7 @@ export default function BlogQuickForm({
 
       setSubmitError(
         error.message ||
-          'Failed to save blog post'
+        'Failed to save blog post'
       );
     } finally {
       setSubmitting(false);
@@ -948,7 +948,7 @@ export default function BlogQuickForm({
                                   theme
                                     .palette
                                     .grey[
-                                    900
+                                  900
                                   ],
                                   0.62
                                 ),
@@ -1104,22 +1104,14 @@ export default function BlogQuickForm({
                 />
 
                 <TextField
-
-  fullWidth
-
-  name="slug"
-
-  label="Slug"
-
-  placeholder="example-blog-post"
-
-  value={formData.slug}
-
-  onChange={handleFieldChange}
-
-  helperText="URL-friendly slug, for example: natural-stone-countertop-guide"
-
-/>
+                  fullWidth
+                  name="slug"
+                  label="Slug"
+                  placeholder="example-blog-post"
+                  value={formData.slug}
+                  onChange={handleFieldChange}
+                  helperText="URL-friendly slug, for example: natural-stone-countertop-guide"
+                />
 
                 <TextField
                   fullWidth
@@ -1514,7 +1506,7 @@ function BlogContentEditor({
 
         setImageError(
           uploadError.message ||
-            'Failed to upload image'
+          'Failed to upload image'
         );
       } finally {
         setImageUploading(false);
@@ -1988,130 +1980,130 @@ function BlogContentEditor({
               'background.neutral',
 
             '& .blog-rich-text-editor':
-              {
-                minHeight: 280,
-                px: 2,
-                py: 2,
-                outline: 'none',
-                color:
-                  'text.primary',
-                typography:
-                  'body1',
-              },
+            {
+              minHeight: 280,
+              px: 2,
+              py: 2,
+              outline: 'none',
+              color:
+                'text.primary',
+              typography:
+                'body1',
+            },
 
             '& .blog-rich-text-editor p':
-              {
-                mt: 0,
-                mb: 1.5,
-              },
+            {
+              mt: 0,
+              mb: 1.5,
+            },
 
             '& .blog-rich-text-editor h1':
-              {
-                typography: 'h2',
-                mt: 3,
-                mb: 1.5,
-              },
+            {
+              typography: 'h2',
+              mt: 3,
+              mb: 1.5,
+            },
 
             '& .blog-rich-text-editor h2':
-              {
-                typography: 'h3',
-                mt: 3,
-                mb: 1.5,
-              },
+            {
+              typography: 'h3',
+              mt: 3,
+              mb: 1.5,
+            },
 
             '& .blog-rich-text-editor h3':
-              {
-                typography: 'h4',
-                mt: 2.5,
-                mb: 1.25,
-              },
+            {
+              typography: 'h4',
+              mt: 2.5,
+              mb: 1.25,
+            },
 
             '& .blog-rich-text-editor h4':
-              {
-                typography: 'h5',
-                mt: 2,
-                mb: 1,
-              },
+            {
+              typography: 'h5',
+              mt: 2,
+              mb: 1,
+            },
 
             '& .blog-rich-text-editor h5':
-              {
-                typography: 'h6',
-                mt: 2,
-                mb: 1,
-              },
+            {
+              typography: 'h6',
+              mt: 2,
+              mb: 1,
+            },
 
             '& .blog-rich-text-editor h6':
-              {
-                typography:
-                  'subtitle1',
-                mt: 2,
-                mb: 1,
-              },
+            {
+              typography:
+                'subtitle1',
+              mt: 2,
+              mb: 1,
+            },
 
             '& .blog-rich-text-editor ul, & .blog-rich-text-editor ol':
-              {
-                pl: 4,
-              },
+            {
+              pl: 4,
+            },
 
             '& .blog-rich-text-editor li':
-              {
-                mb: 0.5,
-              },
+            {
+              mb: 0.5,
+            },
 
             '& .blog-rich-text-editor blockquote':
-              {
-                mx: 0,
-                my: 2,
-                pl: 2,
-                borderLeft: 3,
-                borderColor:
-                  'primary.main',
-                color:
-                  'text.secondary',
-              },
+            {
+              mx: 0,
+              my: 2,
+              pl: 2,
+              borderLeft: 3,
+              borderColor:
+                'primary.main',
+              color:
+                'text.secondary',
+            },
 
             '& .blog-rich-text-editor a':
-              {
-                color:
-                  'primary.main',
-                textDecoration:
-                  'underline',
-                cursor: 'pointer',
-              },
+            {
+              color:
+                'primary.main',
+              textDecoration:
+                'underline',
+              cursor: 'pointer',
+            },
 
             '& .blog-rich-text-editor hr':
-              {
-                my: 3,
-                border: 0,
-                borderTop: 1,
-                borderColor:
-                  'divider',
-              },
+            {
+              my: 3,
+              border: 0,
+              borderTop: 1,
+              borderColor:
+                'divider',
+            },
 
             '& .blog-rich-text-editor img':
-              {
-                display: 'block',
-                width: 'auto',
-                maxWidth: '100%',
-                maxHeight: 650,
-                my: 2,
-                mx: 'auto',
-                borderRadius: 1.5,
-                objectFit:
-                  'contain',
-              },
+            {
+              display: 'block',
+              width: 'auto',
+              maxWidth: '100%',
+              maxHeight: 650,
+              my: 2,
+              mx: 'auto',
+              borderRadius: 1.5,
+              objectFit:
+                'contain',
+            },
 
             '& .blog-rich-text-editor p.is-editor-empty:first-of-type::before':
-              {
-                content:
-                  'attr(data-placeholder)',
-                float: 'left',
-                height: 0,
-                pointerEvents:
-                  'none',
-                color:
-                  'text.disabled',
-              },
+            {
+              content:
+                'attr(data-placeholder)',
+              float: 'left',
+              height: 0,
+              pointerEvents:
+                'none',
+              color:
+                'text.disabled',
+            },
           }}
         >
           <EditorContent
@@ -2177,11 +2169,11 @@ function EditorToolbarButton({
 
             bgcolor: active
               ? (theme) =>
-                  alpha(
-                    theme.palette
-                      .primary.main,
-                    0.12
-                  )
+                alpha(
+                  theme.palette
+                    .primary.main,
+                  0.12
+                )
               : 'transparent',
           }}
         >
@@ -2279,8 +2271,8 @@ BlogQuickForm.defaultProps = {
   open: false,
   currentPost: null,
   externalSubmitting: false,
-  onClose: () => {},
-  onSubmit: () => {},
+  onClose: () => { },
+  onSubmit: () => { },
 };
 
 BlogContentEditor.propTypes = {
