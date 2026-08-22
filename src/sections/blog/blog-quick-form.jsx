@@ -50,6 +50,7 @@ const INITIAL_FORM = {
   description: '',
   content: '',
   tags: '',
+  slug: '',
   metaTitle: '',
   metaDescription: '',
   metaKeywords: '',
@@ -136,6 +137,8 @@ export default function BlogQuickForm({
 
         metaKeywords:
           currentPost.metaKeywords || '',
+
+        slug: currentPost.slug || '',
 
         published:
           currentPost.status
@@ -510,6 +513,8 @@ export default function BlogQuickForm({
           formData.content,
 
         tags,
+
+        slug: formData.slug.trim(),
 
         metaTitle:
           formData.metaTitle.trim(),
@@ -1097,6 +1102,24 @@ export default function BlogQuickForm({
                   }
                   helperText="Separate multiple tags using commas."
                 />
+
+                <TextField
+
+  fullWidth
+
+  name="slug"
+
+  label="Slug"
+
+  placeholder="example-blog-post"
+
+  value={formData.slug}
+
+  onChange={handleFieldChange}
+
+  helperText="URL-friendly slug, for example: natural-stone-countertop-guide"
+
+/>
 
                 <TextField
                   fullWidth
