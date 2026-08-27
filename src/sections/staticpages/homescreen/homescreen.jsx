@@ -41,6 +41,7 @@ import {
   getDefaultHomeHero,
   getHomeHeroHolidays,
   getHomeHeroCampaigns,
+  forceHomeHeroHoliday,
   toggleHomeHeroHoliday,
   updateDefaultHomeHero,
   updateHomeHeroHoliday,
@@ -51,7 +52,6 @@ import {
   uploadHomeHeroMediaToR2,
   createHomeHeroUploadUrls,
 } from "../../../services/home.service";
-
 
 /* =========================================================
    CONSTANTS
@@ -121,6 +121,9 @@ const createHeroForm = () => ({
 
   text_animation:
     "SLIDE_UP",
+
+  keep_text_visible:
+    false,
 
   text_start_delay:
     150,
@@ -274,6 +277,12 @@ const statusColor = (
   }
 
   if (
+    status === "FORCED"
+  ) {
+    return "error";
+  }
+
+  if (
     status === "UPCOMING"
   ) {
     return "info";
@@ -337,10 +346,6 @@ const getPublicUrl = (
   data?.url ||
   "";
 
-/* =========================================================
-   FIELD HELPERS
-========================================================= */
-
 const updateField = (
   setter,
   field,
@@ -349,6 +354,7 @@ const updateField = (
   setter(
     (current) => ({
       ...current,
+
       [field]:
         value,
     })
@@ -484,207 +490,319 @@ MediaPreview.propTypes = {
 const HeroContentFields = ({
   form,
   setForm,
-}) => (
-  <Grid
-    container
-    spacing={2}
-  >
-    <Grid
-      item
-      xs={12}
-    >
-      <TextField
-        fullWidth
-        required
-        label="Heading"
-        value={
-          form.heading ||
-          ""
-        }
-        onChange={(
-          event
-        ) =>
-          updateField(
-            setForm,
-            "heading",
-            event.target.value
-          )
-        }
-      />
-    </Grid>
+}) => {
+  const keepTextVisible =
+    Boolean(
+      form.keep_text_visible
+    );
 
-    <Grid
-      item
-      xs={12}
-    >
-      <TextField
-        fullWidth
-        multiline
-        minRows={3}
-        label="Description"
-        value={
-          form.description ||
-          ""
-        }
-        onChange={(
-          event
-        ) =>
-          updateField(
-            setForm,
-            "description",
-            event.target.value
-          )
-        }
-      />
-    </Grid>
+  const timingFields = [
+    {
+      field:
+        "text_start_delay",
 
+      label:
+        "Text Start Delay",
+    },
+
+    {
+      field:
+        "text_animation_duration",
+
+      label:
+        "Animation Duration",
+    },
+
+    {
+      field:
+        "description_delay",
+
+      label:
+        "Description Delay",
+    },
+
+    {
+      field:
+        "text_visible_duration",
+
+      label:
+        "Text Visible Duration",
+
+      disabled:
+        keepTextVisible,
+    },
+
+    {
+      field:
+        "text_fade_duration",
+
+      label:
+        "Text Fade Duration",
+
+      disabled:
+        keepTextVisible,
+    },
+
+    {
+      field:
+        "video_load_delay",
+
+      label:
+        "Video Load Delay",
+    },
+  ];
+
+  return (
     <Grid
-      item
-      xs={12}
-      md={6}
+      container
+      spacing={2}
     >
-      <FormControl
-        fullWidth
+      <Grid
+        item
+        xs={12}
       >
-        <InputLabel>
-          Text Animation
-        </InputLabel>
-
-        <Select
+        <TextField
+          fullWidth
+          required
+          label="Heading"
           value={
-            form.text_animation ||
-            "SLIDE_UP"
+            form.heading ||
+            ""
           }
-          label="Text Animation"
           onChange={(
             event
           ) =>
             updateField(
               setForm,
-              "text_animation",
+              "heading",
               event.target.value
             )
           }
-        >
-          {ANIMATIONS.map(
-            (
-              animation
-            ) => (
-              <MenuItem
-                key={
-                  animation
-                }
-                value={
-                  animation
-                }
-              >
-                {formatLabel(
-                  animation
-                )}
-              </MenuItem>
-            )
-          )}
-        </Select>
-      </FormControl>
-    </Grid>
+        />
+      </Grid>
 
-    <Grid
-      item
-      xs={12}
-      md={6}
-    >
-      <TextField
-        fullWidth
-        type="number"
-        label="Overlay Opacity"
-        value={
-          form.overlay_opacity
-        }
-        inputProps={{
-          min: 0,
-          max: 100,
-        }}
-        onChange={(
-          event
-        ) =>
-          updateField(
-            setForm,
-            "overlay_opacity",
-            event.target.value
-          )
-        }
-      />
-    </Grid>
-
-    {[
-      [
-        "text_start_delay",
-        "Text Start Delay",
-      ],
-
-      [
-        "text_animation_duration",
-        "Animation Duration",
-      ],
-
-      [
-        "description_delay",
-        "Description Delay",
-      ],
-
-      [
-        "text_visible_duration",
-        "Text Visible Duration",
-      ],
-
-      [
-        "text_fade_duration",
-        "Text Fade Duration",
-      ],
-
-      [
-        "video_load_delay",
-        "Video Load Delay",
-      ],
-    ].map(
-      ([
-        field,
-        label,
-      ]) => (
-        <Grid
-          item
-          xs={12}
-          sm={6}
-          md={4}
-          key={
-            field
+      <Grid
+        item
+        xs={12}
+      >
+        <TextField
+          fullWidth
+          multiline
+          minRows={3}
+          label="Description"
+          value={
+            form.description ||
+            ""
           }
+          onChange={(
+            event
+          ) =>
+            updateField(
+              setForm,
+              "description",
+              event.target.value
+            )
+          }
+        />
+      </Grid>
+
+      <Grid
+        item
+        xs={12}
+        md={6}
+      >
+        <FormControl
+          fullWidth
         >
-          <TextField
-            fullWidth
-            type="number"
-            label={
-              label
-            }
+          <InputLabel>
+            Text Animation
+          </InputLabel>
+
+          <Select
             value={
-              form[field]
+              form.text_animation ||
+              "SLIDE_UP"
             }
-            helperText="Milliseconds"
+            label="Text Animation"
             onChange={(
               event
             ) =>
               updateField(
                 setForm,
-                field,
+                "text_animation",
                 event.target.value
               )
             }
-          />
-        </Grid>
-      )
-    )}
-  </Grid>
-);
+          >
+            {ANIMATIONS.map(
+              (
+                animation
+              ) => (
+                <MenuItem
+                  key={
+                    animation
+                  }
+                  value={
+                    animation
+                  }
+                >
+                  {formatLabel(
+                    animation
+                  )}
+                </MenuItem>
+              )
+            )}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid
+        item
+        xs={12}
+        md={6}
+      >
+        <TextField
+          fullWidth
+          type="number"
+          label="Overlay Opacity"
+          value={
+            form.overlay_opacity
+          }
+          inputProps={{
+            min: 0,
+            max: 100,
+          }}
+          onChange={(
+            event
+          ) =>
+            updateField(
+              setForm,
+              "overlay_opacity",
+              event.target.value
+            )
+          }
+        />
+      </Grid>
+
+      {/* =================================================
+          KEEP TEXT VISIBLE
+      ================================================= */}
+
+      <Grid
+        item
+        xs={12}
+      >
+        <Box
+          sx={{
+            border:
+              "1px solid",
+
+            borderColor:
+              keepTextVisible
+                ? "primary.main"
+                : "divider",
+
+            borderRadius:
+              2,
+
+            px:
+              2,
+
+            py:
+              1.25,
+          }}
+        >
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Box>
+              <Typography
+                variant="body2"
+                fontWeight={600}
+              >
+                Keep Text Always Visible
+              </Typography>
+
+              <Typography
+                variant="caption"
+                color="text.secondary"
+              >
+                When enabled, heading and description will not fade out.
+              </Typography>
+            </Box>
+
+            <Switch
+              checked={
+                keepTextVisible
+              }
+              onChange={(
+                event
+              ) =>
+                updateField(
+                  setForm,
+                  "keep_text_visible",
+                  event.target.checked
+                )
+              }
+            />
+          </Stack>
+        </Box>
+      </Grid>
+
+      {timingFields.map(
+        ({
+          field,
+          label,
+          disabled = false,
+        }) => (
+          <Grid
+            item
+            xs={12}
+            sm={6}
+            md={4}
+            key={
+              field
+            }
+          >
+            <TextField
+              fullWidth
+              type="number"
+              label={
+                label
+              }
+              value={
+                form[field]
+              }
+              disabled={
+                disabled
+              }
+              inputProps={{
+                min: 0,
+              }}
+              helperText={
+                disabled
+                  ? "Ignored while text stays visible"
+                  : "Milliseconds"
+              }
+              onChange={(
+                event
+              ) =>
+                updateField(
+                  setForm,
+                  field,
+                  event.target.value
+                )
+              }
+            />
+          </Grid>
+        )
+      )}
+    </Grid>
+  );
+};
 
 HeroContentFields.propTypes = {
   form:
@@ -697,6 +815,9 @@ HeroContentFields.propTypes = {
 
       text_animation:
         PropTypes.string,
+
+      keep_text_visible:
+        PropTypes.bool,
 
       overlay_opacity:
         PropTypes.oneOfType([
@@ -806,8 +927,10 @@ const HeroMediaFields = ({
             onUpload({
               file,
               field,
+
               type:
                 uploadType,
+
               setter:
                 setForm,
             });
@@ -990,6 +1113,7 @@ const HeroMediaFields = ({
             form.mobile_media_url ||
             ""
           }
+          helperText="Optional. Desktop media is used when empty."
           onChange={(
             event
           ) =>
@@ -1205,8 +1329,13 @@ const HomeScreen = () => {
   const fetchData =
     useCallback(
       async () => {
-        setLoading(true);
-        setError("");
+        setLoading(
+          true
+        );
+
+        setError(
+          ""
+        );
 
         try {
           const [
@@ -1224,6 +1353,7 @@ const HomeScreen = () => {
 
           setDefaultHero({
             ...createHeroForm(),
+
             ...getData(
               defaultResponse
             ),
@@ -1246,7 +1376,9 @@ const HomeScreen = () => {
               activeResponse
             )
           );
-        } catch (fetchError) {
+        } catch (
+          fetchError
+        ) {
           setError(
             getErrorMessage(
               fetchError,
@@ -1254,7 +1386,9 @@ const HomeScreen = () => {
             )
           );
         } finally {
-          setLoading(false);
+          setLoading(
+            false
+          );
         }
       },
       []
@@ -1270,7 +1404,7 @@ const HomeScreen = () => {
   );
 
   /* =======================================================
-     ACTIVE REFRESH
+     ACTIVE
   ======================================================= */
 
   const refreshActive =
@@ -1300,7 +1434,9 @@ const HomeScreen = () => {
         field
       );
 
-      setError("");
+      setError(
+        ""
+      );
 
       try {
         const response =
@@ -1345,6 +1481,7 @@ const HomeScreen = () => {
         await uploadHomeHeroMediaToR2({
           uploadUrl,
           file,
+
           contentType:
             file.type,
         });
@@ -1358,7 +1495,9 @@ const HomeScreen = () => {
         setSuccess(
           "Media uploaded successfully."
         );
-      } catch (uploadError) {
+      } catch (
+        uploadError
+      ) {
         setError(
           getErrorMessage(
             uploadError,
@@ -1373,7 +1512,7 @@ const HomeScreen = () => {
     };
 
   /* =======================================================
-     DEFAULT SAVE
+     DEFAULT
   ======================================================= */
 
   const saveDefault =
@@ -1389,8 +1528,13 @@ const HomeScreen = () => {
         return;
       }
 
-      setSaving(true);
-      setError("");
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
 
       try {
         const response =
@@ -1400,6 +1544,7 @@ const HomeScreen = () => {
 
         setDefaultHero({
           ...createHeroForm(),
+
           ...getData(
             response
           ),
@@ -1410,7 +1555,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (saveError) {
+      } catch (
+        saveError
+      ) {
         setError(
           getErrorMessage(
             saveError,
@@ -1418,7 +1565,9 @@ const HomeScreen = () => {
           )
         );
       } finally {
-        setSaving(false);
+        setSaving(
+          false
+        );
       }
     };
 
@@ -1437,6 +1586,7 @@ const HomeScreen = () => {
 
         setCampaignForm({
           ...createCampaignForm(),
+
           ...campaign,
 
           start_at:
@@ -1480,8 +1630,13 @@ const HomeScreen = () => {
         return;
       }
 
-      setSaving(true);
-      setError("");
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
 
       try {
         const payload = {
@@ -1498,7 +1653,9 @@ const HomeScreen = () => {
             ).toISOString(),
         };
 
-        if (campaignId) {
+        if (
+          campaignId
+        ) {
           await updateHomeHeroCampaign(
             campaignId,
             payload
@@ -1529,7 +1686,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (saveError) {
+      } catch (
+        saveError
+      ) {
         setError(
           getErrorMessage(
             saveError,
@@ -1537,7 +1696,9 @@ const HomeScreen = () => {
           )
         );
       } finally {
-        setSaving(false);
+        setSaving(
+          false
+        );
       }
     };
 
@@ -1561,7 +1722,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (toggleError) {
+      } catch (
+        toggleError
+      ) {
         setError(
           getErrorMessage(
             toggleError,
@@ -1602,7 +1765,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (deleteError) {
+      } catch (
+        deleteError
+      ) {
         setError(
           getErrorMessage(
             deleteError,
@@ -1621,14 +1786,18 @@ const HomeScreen = () => {
       holiday
     ) => {
       setHolidayForm({
+        ...createHeroForm(),
+
         ...holiday,
 
         custom_start_offset_hours:
-          holiday.custom_start_offset_hours ??
+          holiday
+            .custom_start_offset_hours ??
           "",
 
         custom_end_offset_hours:
-          holiday.custom_end_offset_hours ??
+          holiday
+            .custom_end_offset_hours ??
           "",
       });
 
@@ -1639,8 +1808,19 @@ const HomeScreen = () => {
 
   const saveHoliday =
     async () => {
-      setSaving(true);
-      setError("");
+      if (
+        !holidayForm
+      ) {
+        return;
+      }
+
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
 
       try {
         const response =
@@ -1678,7 +1858,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (saveError) {
+      } catch (
+        saveError
+      ) {
         setError(
           getErrorMessage(
             saveError,
@@ -1686,7 +1868,9 @@ const HomeScreen = () => {
           )
         );
       } finally {
-        setSaving(false);
+        setSaving(
+          false
+        );
       }
     };
 
@@ -1694,6 +1878,10 @@ const HomeScreen = () => {
     async (
       holiday
     ) => {
+      setError(
+        ""
+      );
+
       try {
         await toggleHomeHeroHoliday(
           holiday.id,
@@ -1710,7 +1898,9 @@ const HomeScreen = () => {
         );
 
         await refreshActive();
-      } catch (toggleError) {
+      } catch (
+        toggleError
+      ) {
         setError(
           getErrorMessage(
             toggleError,
@@ -1721,10 +1911,75 @@ const HomeScreen = () => {
     };
 
   /* =======================================================
+     FORCE HOLIDAY
+  ======================================================= */
+
+  const handleForceHoliday =
+    async (
+      holiday
+    ) => {
+      setError(
+        ""
+      );
+
+      setSuccess(
+        ""
+      );
+
+      try {
+        const forceActive =
+          !holiday.force_active;
+
+        await forceHomeHeroHoliday(
+          holiday.id,
+          forceActive
+        );
+
+        const [
+          holidayResponse,
+          activeResponse,
+        ] =
+          await Promise.all([
+            getHomeHeroHolidays(),
+            getActiveHomeHero(),
+          ]);
+
+        setHolidays(
+          getData(
+            holidayResponse
+          ) || []
+        );
+
+        setActiveHero(
+          getData(
+            activeResponse
+          )
+        );
+
+        setSuccess(
+          forceActive
+            ? `${holiday.name} is now forced live on the homepage.`
+            : "Force Live disabled. Automatic scheduling restored."
+        );
+      } catch (
+        forceError
+      ) {
+        setError(
+          getErrorMessage(
+            forceError,
+            "Failed to update Force Live."
+          )
+        );
+      }
+    };
+
+  /* =======================================================
      LOADING
   ======================================================= */
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <Box
         sx={{
@@ -1825,7 +2080,7 @@ const HomeScreen = () => {
       )}
 
       {/* ===================================================
-          ACTIVE HERO
+          CURRENT LIVE
       =================================================== */}
 
       <Card
@@ -1867,6 +2122,8 @@ const HomeScreen = () => {
             <Stack
               direction="row"
               spacing={1}
+              flexWrap="wrap"
+              useFlexGap
             >
               <Chip
                 label={
@@ -1874,6 +2131,21 @@ const HomeScreen = () => {
                   "DEFAULT"
                 }
               />
+
+              {activeHero?.keep_text_visible && (
+                <Chip
+                  label="TEXT ALWAYS VISIBLE"
+                  color="info"
+                  variant="outlined"
+                />
+              )}
+
+              {activeHero?.force_active && (
+                <Chip
+                  label="FORCE LIVE"
+                  color="error"
+                />
+              )}
 
               {activeHero?.runtime_status && (
                 <Chip
@@ -1900,12 +2172,16 @@ const HomeScreen = () => {
         variant="outlined"
       >
         <Tabs
-          value={tab}
+          value={
+            tab
+          }
           onChange={(
             event,
             value
           ) =>
-            setTab(value)
+            setTab(
+              value
+            )
           }
         >
           <Tab
@@ -2097,6 +2373,7 @@ const HomeScreen = () => {
                         <Stack
                           direction="row"
                           justifyContent="space-between"
+                          spacing={2}
                         >
                           <Box>
                             <Typography
@@ -2147,6 +2424,8 @@ const HomeScreen = () => {
                         <Stack
                           direction="row"
                           spacing={1}
+                          flexWrap="wrap"
+                          useFlexGap
                           sx={{
                             mt: 2,
                           }}
@@ -2169,6 +2448,15 @@ const HomeScreen = () => {
                             label={`Priority ${campaign.priority}`}
                             variant="outlined"
                           />
+
+                          {campaign.keep_text_visible && (
+                            <Chip
+                              size="small"
+                              label="Text Always Visible"
+                              color="info"
+                              variant="outlined"
+                            />
+                          )}
                         </Stack>
 
                         <Divider
@@ -2209,7 +2497,9 @@ const HomeScreen = () => {
 
                           <Switch
                             checked={
-                              campaign.is_enabled
+                              Boolean(
+                                campaign.is_enabled
+                              )
                             }
                             onChange={() =>
                               toggleCampaign(
@@ -2243,6 +2533,15 @@ const HomeScreen = () => {
               Holidays
             </Typography>
 
+            <Alert
+              severity="info"
+              sx={{
+                mb: 3,
+              }}
+            >
+              Automatic follows the holiday schedule. Force Live overrides the date and shows that holiday immediately.
+            </Alert>
+
             <Grid
               container
               spacing={2}
@@ -2262,11 +2561,21 @@ const HomeScreen = () => {
                   >
                     <Card
                       variant="outlined"
+                      sx={{
+                        height:
+                          "100%",
+
+                        borderColor:
+                          holiday.force_active
+                            ? "error.main"
+                            : "divider",
+                      }}
                     >
                       <CardContent>
                         <Stack
                           direction="row"
                           justifyContent="space-between"
+                          spacing={2}
                         >
                           <Box>
                             <Typography
@@ -2302,6 +2611,8 @@ const HomeScreen = () => {
                         <Stack
                           direction="row"
                           spacing={1}
+                          flexWrap="wrap"
+                          useFlexGap
                           sx={{
                             mt: 2,
                           }}
@@ -2314,6 +2625,23 @@ const HomeScreen = () => {
                             />
                           )}
 
+                          {holiday.force_active && (
+                            <Chip
+                              size="small"
+                              label="FORCED"
+                              color="error"
+                            />
+                          )}
+
+                          {holiday.keep_text_visible && (
+                            <Chip
+                              size="small"
+                              label="Text Always Visible"
+                              color="info"
+                              variant="outlined"
+                            />
+                          )}
+
                           <Chip
                             size="small"
                             label={
@@ -2323,26 +2651,98 @@ const HomeScreen = () => {
                             }
                             variant="outlined"
                           />
+
+                          <Chip
+                            size="small"
+                            label={`Priority ${holiday.priority}`}
+                            variant="outlined"
+                          />
                         </Stack>
+
+                        <Divider
+                          sx={{
+                            my: 2,
+                          }}
+                        />
 
                         <Stack
                           direction="row"
                           justifyContent="space-between"
                           alignItems="center"
-                          sx={{
-                            mt: 2,
-                          }}
+                          spacing={2}
                         >
-                          <Typography>
-                            Enabled
-                          </Typography>
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                            >
+                              Automatic
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Use scheduled holiday date
+                            </Typography>
+                          </Box>
 
                           <Switch
                             checked={
-                              holiday.is_enabled
+                              Boolean(
+                                holiday.is_enabled
+                              )
                             }
                             onChange={() =>
                               toggleHoliday(
+                                holiday
+                              )
+                            }
+                          />
+                        </Stack>
+
+                        <Divider
+                          sx={{
+                            my: 1.5,
+                          }}
+                        />
+
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          spacing={2}
+                        >
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              fontWeight={600}
+                              color={
+                                holiday.force_active
+                                  ? "error.main"
+                                  : "text.primary"
+                              }
+                            >
+                              Force Live
+                            </Typography>
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              Show immediately regardless of date
+                            </Typography>
+                          </Box>
+
+                          <Switch
+                            color="error"
+                            checked={
+                              Boolean(
+                                holiday.force_active
+                              )
+                            }
+                            onChange={() =>
+                              handleForceHoliday(
                                 holiday
                               )
                             }
@@ -2425,6 +2825,9 @@ const HomeScreen = () => {
                   value={
                     campaignForm.priority
                   }
+                  inputProps={{
+                    min: 0,
+                  }}
                   onChange={(
                     event
                   ) =>
@@ -2605,7 +3008,9 @@ const HomeScreen = () => {
               control={
                 <Switch
                   checked={
-                    campaignForm.is_enabled
+                    Boolean(
+                      campaignForm.is_enabled
+                    )
                   }
                   onChange={(
                     event
@@ -2717,6 +3122,9 @@ const HomeScreen = () => {
                     value={
                       holidayForm.priority
                     }
+                    inputProps={{
+                      min: 0,
+                    }}
                     onChange={(
                       event
                     ) =>
@@ -2787,14 +3195,16 @@ const HomeScreen = () => {
                 >
                   <Grid
                     item
-                    xs={6}
+                    xs={12}
+                    sm={6}
                   >
                     <TextField
                       fullWidth
                       type="number"
                       label="Start Offset Hours"
                       value={
-                        holidayForm.custom_start_offset_hours
+                        holidayForm
+                          .custom_start_offset_hours
                       }
                       onChange={(
                         event
@@ -2810,14 +3220,16 @@ const HomeScreen = () => {
 
                   <Grid
                     item
-                    xs={6}
+                    xs={12}
+                    sm={6}
                   >
                     <TextField
                       fullWidth
                       type="number"
                       label="End Offset Hours"
                       value={
-                        holidayForm.custom_end_offset_hours
+                        holidayForm
+                          .custom_end_offset_hours
                       }
                       onChange={(
                         event
@@ -2879,7 +3291,10 @@ const HomeScreen = () => {
                     control={
                       <Switch
                         checked={
-                          holidayForm.enable_countdown
+                          Boolean(
+                            holidayForm
+                              .enable_countdown
+                          )
                         }
                         onChange={(
                           event
@@ -2908,7 +3323,8 @@ const HomeScreen = () => {
                           fullWidth
                           label="Countdown Heading"
                           value={
-                            holidayForm.countdown_heading ||
+                            holidayForm
+                              .countdown_heading ||
                             ""
                           }
                           onChange={(
@@ -2933,7 +3349,8 @@ const HomeScreen = () => {
                           minRows={3}
                           label="Countdown Description"
                           value={
-                            holidayForm.countdown_description ||
+                            holidayForm
+                              .countdown_description ||
                             ""
                           }
                           onChange={(
@@ -2956,7 +3373,8 @@ const HomeScreen = () => {
                           fullWidth
                           label="Countdown Media URL"
                           value={
-                            holidayForm.countdown_media_url ||
+                            holidayForm
+                              .countdown_media_url ||
                             ""
                           }
                           onChange={(

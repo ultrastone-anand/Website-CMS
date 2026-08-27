@@ -475,6 +475,36 @@ export const toggleHomeHeroHoliday =
     );
   };
 
+  /* =========================================================
+   FORCE HOLIDAY
+========================================================= */
+
+export const forceHomeHeroHoliday =
+  async (
+    holidayId,
+    forceActive
+  ) => {
+    if (!holidayId) {
+      throw new Error(
+        "Holiday ID is required"
+      );
+    }
+
+    return request(
+      `/holidays/${holidayId}/force`,
+      {
+        method:
+          "PATCH",
+
+        body: {
+          force_active:
+            forceActive,
+        },
+      },
+      "Failed to update holiday force status"
+    );
+  };
+
 /* =========================================================
    MEDIA PRESIGN
 ========================================================= */
