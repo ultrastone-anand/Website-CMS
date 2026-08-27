@@ -90,6 +90,10 @@ export const getNavConfig = () => {
           title: 'CEU',
           path: '/dashboard/ceu',
         },
+        {
+          title: 'Hero Section',
+          path: '/dashboard/homescreen',
+        },
       ],
     },
 
