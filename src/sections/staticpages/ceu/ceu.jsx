@@ -75,6 +75,8 @@ const DEFAULT_FORM = {
         "Explore sustainability and maintenance practices.",
       ],
 
+      bottomDescriptions: [],
+
       buttonText:
         "Request Course",
     },
@@ -101,6 +103,8 @@ const DEFAULT_FORM = {
         "Apply specification principles to real projects.",
       ],
 
+      bottomDescriptions: [],
+
       buttonText:
         "Request Course",
     },
@@ -126,6 +130,8 @@ const DEFAULT_FORM = {
         "Review lifecycle performance advantages.",
         "Explore design possibilities and applications.",
       ],
+
+      bottomDescriptions: [],
 
       buttonText:
         "Request Course",
@@ -230,6 +236,12 @@ const Ceu = () => {
 
                         buttonText:
                           "Request Course",
+
+                        objectives:
+                          [],
+
+                        bottomDescriptions:
+                          [],
                       };
 
                     return {
@@ -242,6 +254,13 @@ const Ceu = () => {
                           course.objectives,
                         )
                           ? course.objectives
+                          : [],
+
+                      bottomDescriptions:
+                        Array.isArray(
+                          course.bottomDescriptions,
+                        )
+                          ? course.bottomDescriptions
                           : [],
                     };
                   },
@@ -456,6 +475,149 @@ const Ceu = () => {
     };
 
   /* =======================================================
+     BOTTOM DESCRIPTION CHANGE
+  ======================================================= */
+
+  const handleBottomDescriptionChange =
+    (
+      courseIndex,
+      descriptionIndex,
+      value,
+    ) => {
+      setForm(
+        (prev) => {
+          const courses =
+            [
+              ...prev.courses,
+            ];
+
+          const bottomDescriptions =
+            [
+              ...(
+                courses[
+                  courseIndex
+                ]
+                  .bottomDescriptions ||
+                []
+              ),
+            ];
+
+          bottomDescriptions[
+            descriptionIndex
+          ] = value;
+
+          courses[
+            courseIndex
+          ] = {
+            ...courses[
+              courseIndex
+            ],
+
+            bottomDescriptions,
+          };
+
+          return {
+            ...prev,
+            courses,
+          };
+        },
+      );
+    };
+
+  /* =======================================================
+     ADD BOTTOM DESCRIPTION
+  ======================================================= */
+
+  const handleAddBottomDescription =
+    (
+      courseIndex,
+    ) => {
+      setForm(
+        (prev) => {
+          const courses =
+            [
+              ...prev.courses,
+            ];
+
+          courses[
+            courseIndex
+          ] = {
+            ...courses[
+              courseIndex
+            ],
+
+            bottomDescriptions: [
+              ...(
+                courses[
+                  courseIndex
+                ]
+                  .bottomDescriptions ||
+                []
+              ),
+
+              "",
+            ],
+          };
+
+          return {
+            ...prev,
+            courses,
+          };
+        },
+      );
+    };
+
+  /* =======================================================
+     REMOVE BOTTOM DESCRIPTION
+  ======================================================= */
+
+  const handleRemoveBottomDescription =
+    (
+      courseIndex,
+      descriptionIndex,
+    ) => {
+      setForm(
+        (prev) => {
+          const courses =
+            [
+              ...prev.courses,
+            ];
+
+          const bottomDescriptions =
+            [
+              ...(
+                courses[
+                  courseIndex
+                ]
+                  .bottomDescriptions ||
+                []
+              ),
+            ];
+
+          bottomDescriptions.splice(
+            descriptionIndex,
+            1,
+          );
+
+          courses[
+            courseIndex
+          ] = {
+            ...courses[
+              courseIndex
+            ],
+
+            bottomDescriptions,
+          };
+
+          return {
+            ...prev,
+            courses,
+          };
+        },
+      );
+    };
+
+  /* =======================================================
      ADD COURSE
   ======================================================= */
 
@@ -484,6 +646,9 @@ const Ceu = () => {
               objectives: [
                 "",
               ],
+
+              bottomDescriptions:
+                [],
 
               buttonText:
                 "Request Course",
@@ -719,7 +884,8 @@ const Ceu = () => {
         >
           Manage the CEU
           hero, courses,
-          learning objectives
+          learning objectives,
+          course descriptions
           and course images.
         </Typography>
 
@@ -1499,6 +1665,191 @@ const Ceu = () => {
                                 courseIndex,
 
                                 objectiveIndex,
+                              )
+                            }
+                            sx={{
+                              minWidth:
+                                44,
+
+                              height:
+                                44,
+                            }}
+                          >
+                            <Iconify icon="eva:trash-2-fill" />
+                          </Button>
+                        </Box>
+                      </Grid>
+                    ),
+                  )}
+                </Grid>
+
+                {/* =========================================
+                    BOTTOM DESCRIPTIONS
+                ========================================= */}
+
+                <Divider
+                  sx={{
+                    my: 4,
+                  }}
+                />
+
+                <Box
+                  sx={{
+                    display:
+                      "flex",
+
+                    justifyContent:
+                      "space-between",
+
+                    alignItems:
+                      "center",
+
+                    gap: 2,
+
+                    mb: 3,
+
+                    flexWrap:
+                      "wrap",
+                  }}
+                >
+                  <Box>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight={
+                        600
+                      }
+                    >
+                      Bottom
+                      Descriptions
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                    >
+                      Add one or
+                      more description
+                      lines to display
+                      below this course.
+                    </Typography>
+                  </Box>
+
+                  <Button
+                    variant="outlined"
+                    startIcon={
+                      <Iconify icon="eva:plus-fill" />
+                    }
+                    onClick={() =>
+                      handleAddBottomDescription(
+                        courseIndex,
+                      )
+                    }
+                  >
+                    Add Description
+                  </Button>
+                </Box>
+
+                {(
+                  course.bottomDescriptions ||
+                  []
+                ).length ===
+                  0 && (
+                  <Box
+                    sx={{
+                      border:
+                        "1px dashed",
+
+                      borderColor:
+                        "divider",
+
+                      borderRadius:
+                        1,
+
+                      py: 3,
+
+                      px: 2,
+
+                      textAlign:
+                        "center",
+
+                      color:
+                        "text.secondary",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                    >
+                      No bottom
+                      descriptions added.
+                    </Typography>
+                  </Box>
+                )}
+
+                <Grid
+                  container
+                  spacing={2}
+                >
+                  {(
+                    course.bottomDescriptions ||
+                    []
+                  ).map(
+                    (
+                      description,
+                      descriptionIndex,
+                    ) => (
+                      <Grid
+                        item
+                        xs={12}
+                        key={
+                          descriptionIndex
+                        }
+                      >
+                        <Box
+                          sx={{
+                            display:
+                              "flex",
+
+                            alignItems:
+                              "flex-start",
+
+                            gap: 1,
+                          }}
+                        >
+                          <TextField
+                            fullWidth
+                            multiline
+                            minRows={
+                              2
+                            }
+                            label={`Bottom Description ${
+                              descriptionIndex +
+                              1
+                            }`}
+                            value={
+                              description
+                            }
+                            onChange={(
+                              event,
+                            ) =>
+                              handleBottomDescriptionChange(
+                                courseIndex,
+
+                                descriptionIndex,
+
+                                event
+                                  .target
+                                  .value,
+                              )
+                            }
+                          />
+
+                          <Button
+                            color="error"
+                            onClick={() =>
+                              handleRemoveBottomDescription(
+                                courseIndex,
+
+                                descriptionIndex,
                               )
                             }
                             sx={{
