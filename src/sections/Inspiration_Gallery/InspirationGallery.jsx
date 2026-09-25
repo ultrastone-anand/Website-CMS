@@ -300,6 +300,19 @@ const getProductSlug = (product) =>
     product?.product_slug ??
     '';
 
+const getLinkedProducts = (image) => {
+    if (
+        Array.isArray(
+            image?.linked_products
+        )
+    ) {
+        return image.linked_products;
+    }
+
+    return [];
+};
+
+
 const extractPresignedUploads = (
     response
 ) => {
@@ -973,79 +986,79 @@ export default function InspirationGallery() {
 
 ========================================================= */
 
-useEffect(() => {
+    useEffect(() => {
 
-    if (!productDialog.open) {
+        if (!productDialog.open) {
 
-        return undefined;
+            return undefined;
 
-    }
+        }
 
-    const timer = setTimeout(
+        const timer = setTimeout(
 
-        async () => {
+            async () => {
 
-            try {
+                try {
 
-                setLoadingProducts(true);
+                    setLoadingProducts(true);
 
-                const response =
+                    const response =
 
-                    await searchGalleryProducts(
+                        await searchGalleryProducts(
 
-                        productSearch
+                            productSearch
+
+                        );
+
+                    const products =
+
+                        extractProducts(
+
+                            response
+
+                        );
+
+                    setProductOptions(
+
+                        products
 
                     );
 
-                const products =
+                } catch (error) {
 
-                    extractProducts(
+                    console.error(
 
-                        response
+                        'Failed to search products:',
+
+                        error
 
                     );
 
-                setProductOptions(
+                } finally {
 
-                    products
+                    setLoadingProducts(false);
 
-                );
+                }
 
-            } catch (error) {
+            },
 
-                console.error(
+            350
 
-                    'Failed to search products:',
+        );
 
-                    error
+        return () => {
 
-                );
+            clearTimeout(timer);
 
-            } finally {
+        };
 
-                setLoadingProducts(false);
+    }, [
 
-            }
+        productSearch,
 
-        },
+        productDialog.open,
 
-        350
-
-    );
-
-    return () => {
-
-        clearTimeout(timer);
-
-    };
-
-}, [
-
-    productSearch,
-
-    productDialog.open,
-
-]);
+    ]);
 
     const validateFiles = useCallback(
         async (files) => {
@@ -1597,22 +1610,22 @@ useEffect(() => {
                                 );
 
                             return {
-                                    secure_url:
-                                        publicUrl,
+                                secure_url:
+                                    publicUrl,
 
-                                    file_name:
-                                        selectedFile.file.name,
+                                file_name:
+                                    selectedFile.file.name,
 
-                                    image_alt:
-                                        video
-                                            ? null
-                                            : selectedFile.imageAlt.trim(),
+                                image_alt:
+                                    video
+                                        ? null
+                                        : selectedFile.imageAlt.trim(),
 
-                                    title:
-                                        createDefaultAltText(
-                                            selectedFile.file.name
-                                        ),
-                                };
+                                title:
+                                    createDefaultAltText(
+                                        selectedFile.file.name
+                                    ),
+                            };
                         }
                     )
                 );
@@ -2112,12 +2125,18 @@ useEffect(() => {
             return;
         }
 
+        const existingLinkedProducts =
+            getLinkedProducts(image);
+
         setProductDialog({
             open: true,
             image,
         });
 
-        setSelectedProducts([]);
+        setSelectedProducts(
+            existingLinkedProducts
+        );
+
         setProductOptions([]);
         setProductSearch('');
         setLoadingProducts(true);
@@ -2148,8 +2167,36 @@ useEffect(() => {
                 linkedProducts
             );
 
+            /*
+             * Make sure currently linked
+             * products are present in options.
+             */
+            const productMap =
+                new Map();
+
+            [
+                ...linkedProducts,
+                ...products,
+            ].forEach((product) => {
+                const productId =
+                    getProductId(product);
+
+                if (
+                    productId !==
+                    undefined &&
+                    productId !== null
+                ) {
+                    productMap.set(
+                        String(productId),
+                        product
+                    );
+                }
+            });
+
             setProductOptions(
-                products
+                Array.from(
+                    productMap.values()
+                )
             );
         } catch (error) {
             showMessage(
@@ -2179,65 +2226,114 @@ useEffect(() => {
     };
 
 
-    const handleSaveProducts =
-        async () => {
-            const imageId =
-                getImageId(
-                    productDialog.image
-                );
+    const handleSaveProducts = async () => {
+        const imageId =
+            getImageId(
+                productDialog.image
+            );
 
-            if (!imageId) {
-                showMessage(
-                    'Unable to identify this media item',
-                    'error'
-                );
+        if (!imageId) {
+            showMessage(
+                'Unable to identify this media item',
+                'error'
+            );
 
-                return;
-            }
+            return;
+        }
 
-            setSavingProducts(true);
+        setSavingProducts(true);
 
-            try {
-                const productIds =
-                    selectedProducts
-                        .map(
-                            getProductId
-                        )
-                        .filter(
-                            (id) =>
-                                id !==
-                                undefined &&
-                                id !== null
-                        );
+        try {
+            const productIds =
+                selectedProducts
+                    .map(getProductId)
+                    .filter(
+                        (id) =>
+                            id !== undefined &&
+                            id !== null
+                    );
 
+            const response =
                 await updateGalleryImageProducts(
                     imageId,
                     productIds
                 );
 
-                setProductDialog({
-                    open: false,
-                    image: null,
-                });
-
-                setSelectedProducts([]);
-                setProductOptions([]);
-                setProductSearch('');
-
-                showMessage(
-                    'Linked products updated successfully'
+            const updatedProducts =
+                extractProducts(
+                    response
                 );
-            } catch (error) {
-                showMessage(
-                    error instanceof Error
-                        ? error.message
-                        : 'Failed to update linked products',
-                    'error'
-                );
-            } finally {
-                setSavingProducts(false);
-            }
-        };
+
+            /*
+             * Update the card immediately.
+             */
+            setImages(
+                (currentImages) =>
+                    currentImages.map(
+                        (image) => {
+                            if (
+                                String(
+                                    getImageId(
+                                        image
+                                    )
+                                ) !==
+                                String(
+                                    imageId
+                                )
+                            ) {
+                                return image;
+                            }
+
+                            return {
+                                ...image,
+
+                                linked_products:
+                                    updatedProducts,
+
+                                /*
+                                 * Keep legacy product_id
+                                 * synchronized in local UI.
+                                 */
+                                product_id:
+                                    updatedProducts[
+                                        0
+                                    ]
+                                        ? getProductId(
+                                            updatedProducts[
+                                            0
+                                            ]
+                                        )
+                                        : null,
+                            };
+                        }
+                    )
+            );
+
+            setProductDialog({
+                open: false,
+                image: null,
+            });
+
+            setSelectedProducts([]);
+            setProductOptions([]);
+            setProductSearch('');
+
+            showMessage(
+                updatedProducts.length
+                    ? 'Linked products updated successfully'
+                    : 'Product links removed successfully'
+            );
+        } catch (error) {
+            showMessage(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to update linked products',
+                'error'
+            );
+        } finally {
+            setSavingProducts(false);
+        }
+    };
 
     return (
         <Box sx={{ p: { xs: 2, md: 3 } }}>
@@ -3116,20 +3212,21 @@ useEffect(() => {
                                                     image
                                                 ) => {
                                                     const imageUrl =
-                                                        getImageUrl(
-                                                            image
-                                                        );
+                                                        getImageUrl(image);
 
                                                     const imageAlt =
-                                                        getImageAlt(
+                                                        getImageAlt(image);
+
+                                                    const video =
+                                                        isVideoUrl(imageUrl);
+
+                                                    const linkedProducts =
+                                                        getLinkedProducts(
                                                             image
                                                         );
 
-                                                    const video =
-                                                        isVideoUrl(
-                                                            imageUrl
-                                                        );
-
+                                                    const productLinked =
+                                                        linkedProducts.length > 0;
                                                     return (
                                                         <Paper
                                                             key={getImageId(
@@ -3267,10 +3364,110 @@ useEffect(() => {
                                                                                 : 'Add Alt Text'}
                                                                         </Button>
 
+                                                                        <Box
+                                                                            sx={{
+                                                                                mt: 1.25,
+                                                                                p: 1,
+                                                                                borderRadius: 1,
+                                                                                bgcolor: productLinked
+                                                                                    ? 'success.lighter'
+                                                                                    : 'error.lighter',
+                                                                                border: '1px solid',
+                                                                                borderColor: productLinked
+                                                                                    ? 'success.light'
+                                                                                    : 'error.light',
+                                                                            }}
+                                                                        >
+                                                                            {productLinked ? (
+                                                                                <>
+                                                                                    <Typography
+                                                                                        variant="caption"
+                                                                                        color="success.dark"
+                                                                                        fontWeight={700}
+                                                                                        sx={{
+                                                                                            display: 'block',
+                                                                                            mb: 0.5,
+                                                                                        }}
+                                                                                    >
+                                                                                        Product Linked
+                                                                                    </Typography>
+
+                                                                                    <Stack
+                                                                                        spacing={0.35}
+                                                                                    >
+                                                                                        {linkedProducts.map(
+                                                                                            (product) => (
+                                                                                                <Typography
+                                                                                                    key={String(
+                                                                                                        getProductId(
+                                                                                                            product
+                                                                                                        )
+                                                                                                    )}
+                                                                                                    variant="caption"
+                                                                                                    title={getProductName(
+                                                                                                        product
+                                                                                                    )}
+                                                                                                    sx={{
+                                                                                                        display:
+                                                                                                            'block',
+                                                                                                        fontWeight:
+                                                                                                            600,
+                                                                                                        overflow:
+                                                                                                            'hidden',
+                                                                                                        textOverflow:
+                                                                                                            'ellipsis',
+                                                                                                        whiteSpace:
+                                                                                                            'nowrap',
+                                                                                                    }}
+                                                                                                >
+                                                                                                    {getProductName(
+                                                                                                        product
+                                                                                                    )}
+                                                                                                </Typography>
+                                                                                            )
+                                                                                        )}
+                                                                                    </Stack>
+                                                                                </>
+                                                                            ) : (
+                                                                                <>
+                                                                                    <Typography
+                                                                                        variant="caption"
+                                                                                        color="error.dark"
+                                                                                        fontWeight={700}
+                                                                                        sx={{
+                                                                                            display: 'block',
+                                                                                        }}
+                                                                                    >
+                                                                                        Product Link Pending
+                                                                                    </Typography>
+
+                                                                                    <Typography
+                                                                                        variant="caption"
+                                                                                        color="text.secondary"
+                                                                                        sx={{
+                                                                                            display: 'block',
+                                                                                            mt: 0.25,
+                                                                                        }}
+                                                                                    >
+                                                                                        No stone product linked
+                                                                                    </Typography>
+                                                                                </>
+                                                                            )}
+                                                                        </Box>
+
                                                                         <Button
                                                                             fullWidth
                                                                             size="small"
-                                                                            variant="outlined"
+                                                                            variant={
+                                                                                productLinked
+                                                                                    ? 'outlined'
+                                                                                    : 'contained'
+                                                                            }
+                                                                            color={
+                                                                                productLinked
+                                                                                    ? 'primary'
+                                                                                    : 'error'
+                                                                            }
                                                                             sx={{
                                                                                 mt: 1,
                                                                             }}
@@ -3280,7 +3477,9 @@ useEffect(() => {
                                                                                 )
                                                                             }
                                                                         >
-                                                                            Link Products
+                                                                            {productLinked
+                                                                                ? 'Manage Products'
+                                                                                : 'Link Product'}
                                                                         </Button>
                                                                     </>
                                                                 )}
@@ -3724,8 +3923,56 @@ useEffect(() => {
                             <Box
                                 component="li"
                                 {...props}
+                                sx={{
+                                    gap: 1.25,
+                                }}
                             >
-                                <Box>
+                                {option?.thumbnail
+                                    ?.media_url ? (
+                                    <Box
+                                        component="img"
+                                        src={getOptimizedImageUrl(
+                                            option.thumbnail
+                                                .media_url,
+                                            100,
+                                            70
+                                        )}
+                                        alt={
+                                            option.thumbnail
+                                                .alt_text ||
+                                            getProductName(
+                                                option
+                                            )
+                                        }
+                                        sx={{
+                                            width: 46,
+                                            height: 46,
+                                            borderRadius: 1,
+                                            objectFit:
+                                                'cover',
+                                            flexShrink: 0,
+                                            bgcolor:
+                                                'action.hover',
+                                        }}
+                                    />
+                                ) : (
+                                    <Box
+                                        sx={{
+                                            width: 46,
+                                            height: 46,
+                                            borderRadius: 1,
+                                            bgcolor:
+                                                'action.hover',
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                )}
+
+                                <Box
+                                    sx={{
+                                        minWidth: 0,
+                                    }}
+                                >
                                     <Typography
                                         variant="body2"
                                         fontWeight={600}
@@ -3735,18 +3982,23 @@ useEffect(() => {
                                         )}
                                     </Typography>
 
-                                    {getProductSlug(
-                                        option
-                                    ) && (
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                            >
-                                                {getProductSlug(
-                                                    option
-                                                )}
-                                            </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        sx={{
+                                            display:
+                                                'block',
+                                        }}
+                                    >
+                                        {option?.category
+                                            ?.name
+                                            ? `${option.category.name} • `
+                                            : ''}
+
+                                        {getProductSlug(
+                                            option
                                         )}
+                                    </Typography>
                                 </Box>
                             </Box>
                         )}
