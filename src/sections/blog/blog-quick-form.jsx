@@ -652,7 +652,12 @@ export default function BlogQuickForm({
 
       <Divider />
 
-      <DialogContent sx={{ py: 3 }}>
+      <DialogContent
+        sx={{
+          py: 3,
+          position: 'relative',
+        }}
+      >
         {submitError && (
           <Alert
             severity="error"
@@ -1583,18 +1588,19 @@ function BlogContentEditor({
       )}
 
       <Box
-        ref={
-          fullscreenContainerRef
-        }
+        ref={fullscreenContainerRef}
         sx={{
           border: 1,
           borderColor: error
             ? 'error.main'
             : 'divider',
+
           borderRadius: 1.5,
-          overflow: 'hidden',
-          bgcolor:
-            'background.paper',
+
+          // IMPORTANT
+          overflow: 'visible',
+
+          bgcolor: 'background.paper',
 
           '&:fullscreen': {
             width: '100vw',
@@ -1602,8 +1608,7 @@ function BlogContentEditor({
             overflow: 'auto',
             border: 0,
             borderRadius: 0,
-            bgcolor:
-              'background.paper',
+            bgcolor: 'background.paper',
           },
         }}
       >
@@ -1613,17 +1618,33 @@ function BlogContentEditor({
             px: 1,
             py: 0.75,
             gap: 0.25,
+
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
+
             borderBottom: 1,
-            borderColor:
-              'divider',
-            bgcolor:
-              'background.paper',
+            borderColor: 'divider',
+
+            bgcolor: 'background.paper',
+
+            // Sticky toolbar
             position: 'sticky',
             top: 0,
-            zIndex: 2,
+            zIndex: 1200,
+
+            // Makes it visually separate while scrolling
+            boxShadow: (theme) =>
+              `0 4px 12px ${alpha(
+                theme.palette.grey[900],
+                0.08
+              )}`,
+
+            // Important for sticky inside this layout
+            alignSelf: 'flex-start',
+
+            // Full available width
+            width: '100%',
           }}
         >
           <Button
