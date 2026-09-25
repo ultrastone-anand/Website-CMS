@@ -11,6 +11,17 @@ import {
   useState,
   useEffect,
 } from 'react';
+import {
+
+  Table,
+
+  TableRow,
+
+  TableCell,
+
+  TableHeader,
+
+} from '@tiptap/extension-table';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -35,18 +46,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
-
-import {
-
-  Table,
-
-  TableRow,
-
-  TableCell,
-
-  TableHeader,
-
-} from '@tiptap/extension-table';
 
 import { uploadBlogImage } from 'src/services/blogs.service';
 
