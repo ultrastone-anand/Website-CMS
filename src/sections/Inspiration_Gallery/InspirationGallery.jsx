@@ -48,11 +48,11 @@ import {
     updateGalleryCategory,
     deleteGalleryCategory,
     createGalleryCategory,
-    uploadGalleryImageToR2,
-    createGalleryUploadUrls,
-
     // Product linking
     searchGalleryProducts,
+    uploadGalleryImageToR2,
+
+    createGalleryUploadUrls,
     getGalleryImageProducts,
     updateGalleryImageProducts,
 } from 'src/services/gallery.service';
@@ -1597,17 +1597,22 @@ useEffect(() => {
                                 );
 
                             return {
-                                secure_url:
-                                    publicUrl,
-                                image_alt:
-                                    video
-                                        ? null
-                                        : selectedFile.imageAlt.trim(),
-                                title:
-                                    selectedFile
-                                        .file
-                                        .name,
-                            };
+                                    secure_url:
+                                        publicUrl,
+
+                                    file_name:
+                                        selectedFile.file.name,
+
+                                    image_alt:
+                                        video
+                                            ? null
+                                            : selectedFile.imageAlt.trim(),
+
+                                    title:
+                                        createDefaultAltText(
+                                            selectedFile.file.name
+                                        ),
+                                };
                         }
                     )
                 );
