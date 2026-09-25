@@ -223,3 +223,81 @@ export const updateGalleryImageAlt = async (
     'Failed to update image alt text'
   );
 };
+
+/* ===============================================
+   IMAGE ↔ PRODUCT LINKS
+=============================================== */
+
+/**
+ * Get products linked to one inspiration image
+ */
+export const getGalleryImageProducts = async (
+  imageId
+) => {
+  const response = await fetch(
+    `${API_URL}/inspiration-gallery/images/${imageId}/products`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
+    }
+  );
+
+  return handleResponse(
+    response,
+    'Failed to fetch linked products'
+  );
+};
+
+/**
+ * Search products for CMS product selector
+ */
+export const searchGalleryProducts = async (
+  search = ''
+) => {
+  const query = new URLSearchParams();
+
+  if (search.trim()) {
+    query.set(
+      'search',
+      search.trim()
+    );
+  }
+
+  const response = await fetch(
+    `${API_URL}/inspiration-gallery/products?${query.toString()}`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
+    }
+  );
+
+  return handleResponse(
+    response,
+    'Failed to search products'
+  );
+};
+
+/**
+ * Replace/save all product links for one inspiration image
+ */
+export const updateGalleryImageProducts = async (
+  imageId,
+  productIds
+) => {
+  const response = await fetch(
+    `${API_URL}/inspiration-gallery/images/${imageId}/products`,
+    {
+      method: 'PUT',
+      headers: getHeaders(),
+
+      body: JSON.stringify({
+        product_ids: productIds,
+      }),
+    }
+  );
+
+  return handleResponse(
+    response,
+    'Failed to update linked products'
+  );
+};

@@ -22,6 +22,7 @@ import Accordion from '@mui/material/Accordion';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import LinearProgress from '@mui/material/LinearProgress';
@@ -49,6 +50,11 @@ import {
     createGalleryCategory,
     uploadGalleryImageToR2,
     createGalleryUploadUrls,
+
+    // Product linking
+    searchGalleryProducts,
+    getGalleryImageProducts,
+    updateGalleryImageProducts,
 } from 'src/services/gallery.service';
 
 const ALLOWED_TYPES = [
@@ -252,6 +258,47 @@ const mergeUniqueImages = (
         imageMap.values()
     );
 };
+
+const extractProducts = (response) => {
+    if (Array.isArray(response)) {
+        return response;
+    }
+
+    if (
+        Array.isArray(
+            response?.data?.products
+        )
+    ) {
+        return response.data.products;
+    }
+
+    if (
+        Array.isArray(response?.products)
+    ) {
+        return response.products;
+    }
+
+    if (Array.isArray(response?.data)) {
+        return response.data;
+    }
+
+    return [];
+};
+
+const getProductId = (product) =>
+    product?.id ??
+    product?.product_id;
+
+const getProductName = (product) =>
+    product?.name ??
+    product?.product_name ??
+    product?.title ??
+    'Unnamed Product';
+
+const getProductSlug = (product) =>
+    product?.slug ??
+    product?.product_slug ??
+    '';
 
 const extractPresignedUploads = (
     response
@@ -571,6 +618,39 @@ export default function InspirationGallery() {
         image: null,
     });
 
+    const [
+        productDialog,
+        setProductDialog,
+    ] = useState({
+        open: false,
+        image: null,
+    });
+
+    const [
+        productOptions,
+        setProductOptions,
+    ] = useState([]);
+
+    const [
+        selectedProducts,
+        setSelectedProducts,
+    ] = useState([]);
+
+    const [
+        productSearch,
+        setProductSearch,
+    ] = useState('');
+
+    const [
+        loadingProducts,
+        setLoadingProducts,
+    ] = useState(false);
+
+    const [
+        savingProducts,
+        setSavingProducts,
+    ] = useState(false);
+
     const [altText, setAltText] =
         useState('');
 
@@ -886,6 +966,86 @@ export default function InspirationGallery() {
         },
         []
     );
+
+    /* =========================================================
+
+   PRODUCT SEARCH
+
+========================================================= */
+
+useEffect(() => {
+
+    if (!productDialog.open) {
+
+        return undefined;
+
+    }
+
+    const timer = setTimeout(
+
+        async () => {
+
+            try {
+
+                setLoadingProducts(true);
+
+                const response =
+
+                    await searchGalleryProducts(
+
+                        productSearch
+
+                    );
+
+                const products =
+
+                    extractProducts(
+
+                        response
+
+                    );
+
+                setProductOptions(
+
+                    products
+
+                );
+
+            } catch (error) {
+
+                console.error(
+
+                    'Failed to search products:',
+
+                    error
+
+                );
+
+            } finally {
+
+                setLoadingProducts(false);
+
+            }
+
+        },
+
+        350
+
+    );
+
+    return () => {
+
+        clearTimeout(timer);
+
+    };
+
+}, [
+
+    productSearch,
+
+    productDialog.open,
+
+]);
 
     const validateFiles = useCallback(
         async (files) => {
@@ -1934,6 +2094,146 @@ export default function InspirationGallery() {
         uploadHeading = `Compressing video ${compressionProgress}%`;
     }
 
+    const openProductDialog = async (image) => {
+        const imageId =
+            getImageId(image);
+
+        if (!imageId) {
+            showMessage(
+                'Unable to identify this media item',
+                'error'
+            );
+
+            return;
+        }
+
+        setProductDialog({
+            open: true,
+            image,
+        });
+
+        setSelectedProducts([]);
+        setProductOptions([]);
+        setProductSearch('');
+        setLoadingProducts(true);
+
+        try {
+            const [
+                linkedResponse,
+                productsResponse,
+            ] = await Promise.all([
+                getGalleryImageProducts(
+                    imageId
+                ),
+
+                searchGalleryProducts(''),
+            ]);
+
+            const linkedProducts =
+                extractProducts(
+                    linkedResponse
+                );
+
+            const products =
+                extractProducts(
+                    productsResponse
+                );
+
+            setSelectedProducts(
+                linkedProducts
+            );
+
+            setProductOptions(
+                products
+            );
+        } catch (error) {
+            showMessage(
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to load product links',
+                'error'
+            );
+        } finally {
+            setLoadingProducts(false);
+        }
+    };
+
+    const closeProductDialog = () => {
+        if (savingProducts) {
+            return;
+        }
+
+        setProductDialog({
+            open: false,
+            image: null,
+        });
+
+        setSelectedProducts([]);
+        setProductOptions([]);
+        setProductSearch('');
+    };
+
+
+    const handleSaveProducts =
+        async () => {
+            const imageId =
+                getImageId(
+                    productDialog.image
+                );
+
+            if (!imageId) {
+                showMessage(
+                    'Unable to identify this media item',
+                    'error'
+                );
+
+                return;
+            }
+
+            setSavingProducts(true);
+
+            try {
+                const productIds =
+                    selectedProducts
+                        .map(
+                            getProductId
+                        )
+                        .filter(
+                            (id) =>
+                                id !==
+                                undefined &&
+                                id !== null
+                        );
+
+                await updateGalleryImageProducts(
+                    imageId,
+                    productIds
+                );
+
+                setProductDialog({
+                    open: false,
+                    image: null,
+                });
+
+                setSelectedProducts([]);
+                setProductOptions([]);
+                setProductSearch('');
+
+                showMessage(
+                    'Linked products updated successfully'
+                );
+            } catch (error) {
+                showMessage(
+                    error instanceof Error
+                        ? error.message
+                        : 'Failed to update linked products',
+                    'error'
+                );
+            } finally {
+                setSavingProducts(false);
+            }
+        };
+
     return (
         <Box sx={{ p: { xs: 2, md: 3 } }}>
             <Stack
@@ -2961,6 +3261,22 @@ export default function InspirationGallery() {
                                                                                 ? 'Edit Alt Text'
                                                                                 : 'Add Alt Text'}
                                                                         </Button>
+
+                                                                        <Button
+                                                                            fullWidth
+                                                                            size="small"
+                                                                            variant="outlined"
+                                                                            sx={{
+                                                                                mt: 1,
+                                                                            }}
+                                                                            onClick={() =>
+                                                                                openProductDialog(
+                                                                                    image
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Link Products
+                                                                        </Button>
                                                                     </>
                                                                 )}
 
@@ -3287,6 +3603,239 @@ export default function InspirationGallery() {
                         {savingAlt
                             ? 'Saving...'
                             : 'Save Alt Text'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog
+                open={productDialog.open}
+                onClose={closeProductDialog}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>
+                    Link Stone Products
+                </DialogTitle>
+
+                <DialogContent>
+                    {productDialog.image && (
+                        <Box
+                            sx={{
+                                mt: 1,
+                                mb: 2,
+                                overflow:
+                                    'hidden',
+                                borderRadius: 1.5,
+                                border:
+                                    '1px solid',
+                                borderColor:
+                                    'divider',
+                            }}
+                        >
+                            <MediaPreview
+                                url={getImageUrl(
+                                    productDialog.image
+                                )}
+                                name={getImageName(
+                                    productDialog.image
+                                )}
+                                height={220}
+                            />
+                        </Box>
+                    )}
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                    >
+                        Select the stone products
+                        shown or used in this
+                        inspiration image.
+                    </Typography>
+
+                    <Autocomplete
+                        multiple
+                        filterSelectedOptions
+                        options={
+                            productOptions
+                        }
+                        value={
+                            selectedProducts
+                        }
+                        loading={
+                            loadingProducts
+                        }
+                        disabled={
+                            savingProducts
+                        }
+
+                        isOptionEqualToValue={(
+                            option,
+                            value
+                        ) =>
+                            String(
+                                getProductId(
+                                    option
+                                )
+                            ) ===
+                            String(
+                                getProductId(
+                                    value
+                                )
+                            )
+                        }
+
+                        getOptionLabel={(
+                            option
+                        ) =>
+                            getProductName(
+                                option
+                            )
+                        }
+
+                        onInputChange={(
+                            _,
+                            value
+                        ) => {
+                            setProductSearch(
+                                value
+                            );
+                        }}
+
+                        onChange={(
+                            _,
+                            value
+                        ) => {
+                            setSelectedProducts(
+                                value
+                            );
+                        }}
+
+                        renderOption={(
+                            props,
+                            option
+                        ) => (
+                            <Box
+                                component="li"
+                                {...props}
+                            >
+                                <Box>
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                    >
+                                        {getProductName(
+                                            option
+                                        )}
+                                    </Typography>
+
+                                    {getProductSlug(
+                                        option
+                                    ) && (
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                            >
+                                                {getProductSlug(
+                                                    option
+                                                )}
+                                            </Typography>
+                                        )}
+                                </Box>
+                            </Box>
+                        )}
+
+                        renderInput={(
+                            params
+                        ) => (
+                            <TextField
+                                {...params}
+                                label="Stone Products"
+                                placeholder="Search products..."
+                                InputProps={{
+                                    ...params.InputProps,
+
+                                    endAdornment: (
+                                        <>
+                                            {loadingProducts ? (
+                                                <CircularProgress
+                                                    size={
+                                                        18
+                                                    }
+                                                />
+                                            ) : null}
+
+                                            {
+                                                params
+                                                    .InputProps
+                                                    .endAdornment
+                                            }
+                                        </>
+                                    ),
+                                }}
+                            />
+                        )}
+                    />
+
+                    {selectedProducts.length >
+                        0 && (
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{
+                                    display:
+                                        'block',
+                                    mt: 1,
+                                }}
+                            >
+                                {
+                                    selectedProducts.length
+                                }{' '}
+                                product
+                                {selectedProducts.length !==
+                                    1
+                                    ? 's'
+                                    : ''}{' '}
+                                selected
+                            </Typography>
+                        )}
+                </DialogContent>
+
+                <DialogActions>
+                    <Button
+                        color="inherit"
+                        disabled={
+                            savingProducts
+                        }
+                        onClick={
+                            closeProductDialog
+                        }
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        disabled={
+                            savingProducts ||
+                            loadingProducts
+                        }
+                        onClick={
+                            handleSaveProducts
+                        }
+                        startIcon={
+                            savingProducts ? (
+                                <CircularProgress
+                                    size={16}
+                                    color="inherit"
+                                />
+                            ) : null
+                        }
+                    >
+                        {savingProducts
+                            ? 'Saving...'
+                            : 'Save Products'}
                     </Button>
                 </DialogActions>
             </Dialog>
