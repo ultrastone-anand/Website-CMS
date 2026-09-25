@@ -36,6 +36,18 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 
+import {
+
+  Table,
+
+  TableRow,
+
+  TableCell,
+
+  TableHeader,
+
+} from '@tiptap/extension-table';
+
 import { uploadBlogImage } from 'src/services/blogs.service';
 
 import Iconify from 'src/components/iconify';
@@ -1297,6 +1309,20 @@ function BlogContentEditor({
         },
       }),
 
+      Table.configure({
+        resizable: true,
+
+        HTMLAttributes: {
+          class: 'blog-editor-table',
+        },
+      }),
+
+      TableRow,
+
+      TableHeader,
+
+      TableCell,
+
       TextAlign.configure({
         types: [
           'heading',
@@ -1870,6 +1896,100 @@ function BlogContentEditor({
             }
           />
 
+          <EditorToolbarButton
+            title="Insert table"
+            icon="solar:table-bold"
+            onClick={() =>
+              editor
+                .chain()
+                .focus()
+                .insertTable({
+                  rows: 3,
+                  cols: 3,
+                  withHeaderRow: true,
+                })
+                .run()
+            }
+          />
+
+          {editor.isActive('table') && (
+            <>
+              <ToolbarDivider />
+
+              <EditorToolbarButton
+                title="Add row below"
+                icon="solar:add-circle-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .addRowAfter()
+                    .run()
+                }
+              />
+
+              <EditorToolbarButton
+                title="Delete row"
+                icon="solar:minus-circle-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .deleteRow()
+                    .run()
+                }
+              />
+
+              <EditorToolbarButton
+                title="Add column right"
+                icon="solar:add-square-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .addColumnAfter()
+                    .run()
+                }
+              />
+
+              <EditorToolbarButton
+                title="Delete column"
+                icon="solar:minus-square-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .deleteColumn()
+                    .run()
+                }
+              />
+
+              <EditorToolbarButton
+                title="Toggle header row"
+                icon="solar:text-square-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .toggleHeaderRow()
+                    .run()
+                }
+              />
+
+              <EditorToolbarButton
+                title="Delete table"
+                icon="solar:trash-bin-trash-bold"
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .deleteTable()
+                    .run()
+                }
+              />
+            </>
+          )}
+
           <input
             ref={imageInputRef}
             hidden
@@ -2091,6 +2211,58 @@ function BlogContentEditor({
               borderRadius: 1.5,
               objectFit:
                 'contain',
+            },
+
+            '& .blog-rich-text-editor .tableWrapper':
+            {
+              overflowX: 'auto',
+              my: 3,
+            },
+
+            '& .blog-rich-text-editor table':
+            {
+              width: '100%',
+              borderCollapse: 'collapse',
+              tableLayout: 'fixed',
+            },
+
+            '& .blog-rich-text-editor th, & .blog-rich-text-editor td':
+            {
+              position: 'relative',
+              minWidth: 100,
+              border: '1px solid',
+              borderColor: 'divider',
+              px: 2,
+              py: 1.5,
+              verticalAlign: 'top',
+            },
+
+            '& .blog-rich-text-editor th':
+            {
+              bgcolor: 'grey.200',
+              fontWeight: 700,
+              textAlign: 'left',
+            },
+
+            '& .blog-rich-text-editor th p, & .blog-rich-text-editor td p':
+            {
+              m: 0,
+            },
+
+            '& .blog-rich-text-editor .selectedCell':
+            {
+              bgcolor: 'action.selected',
+            },
+
+            '& .blog-rich-text-editor .column-resize-handle':
+            {
+              position: 'absolute',
+              top: 0,
+              right: -2,
+              bottom: 0,
+              width: 4,
+              bgcolor: 'primary.main',
+              pointerEvents: 'none',
             },
 
             '& .blog-rich-text-editor p.is-editor-empty:first-of-type::before':
