@@ -6,31 +6,14 @@ import {
 import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
-  Dialog,
-  Button,
   Container,
-  TextField,
   Typography,
-  IconButton,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
 import {
-  useRouter,
-} from 'src/routes/hooks';
-
-import {
-  updateUser,
-} from 'src/services/user.service';
-import {
   getDashboard,
 } from 'src/services/dashboard.service';
-
-import Iconify from 'src/components/iconify';
 
 import AppCurrentVisits from '../app-current-visits';
 import AppWidgetSummary from '../app-widget-summary';
@@ -46,28 +29,15 @@ const roleMap = {
 };
 
 export default function AppView() {
-  const router = useRouter();
-
   const [dashboard, setDashboard] =
     useState(null);
 
   const [loading, setLoading] =
     useState(true);
 
-  const [
-    openPasswordModal,
-    setOpenPasswordModal,
-  ] = useState(false);
-
-  const [
-    showPassword,
-    setShowPassword,
-  ] = useState(false);
-
-  const [
-    newPassword,
-    setNewPassword,
-  ] = useState('');
+  /* =========================================================
+     GET LOGGED-IN USER
+  ========================================================= */
 
   const user = JSON.parse(
     sessionStorage.getItem('user') ||
@@ -78,13 +48,9 @@ export default function AppView() {
     roleMap[user?.role_id] ||
     'admin';
 
-  useEffect(() => {
-    if (
-      user.must_change_password
-    ) {
-      setOpenPasswordModal(true);
-    }
-  }, [user.must_change_password]);
+  /* =========================================================
+     GET DASHBOARD DATA
+  ========================================================= */
 
   useEffect(() => {
     const fetchDashboard =
@@ -113,52 +79,9 @@ export default function AppView() {
     fetchDashboard();
   }, [role]);
 
-  const handlePasswordChange =
-    async () => {
-      try {
-        await updateUser(
-          user.user_id,
-          {
-            password:
-              newPassword,
-          }
-        );
-
-        const updatedUser = {
-          ...user,
-          must_change_password:
-            false,
-        };
-
-        sessionStorage.setItem(
-          'user',
-          JSON.stringify(
-            updatedUser
-          )
-        );
-
-        setOpenPasswordModal(
-          false
-        );
-
-        setNewPassword('');
-
-        alert(
-          'Password changed successfully'
-        );
-      } catch (error) {
-        console.error(
-          'Password Update Error:',
-          error
-        );
-      }
-    };
-
-  const handleLogout = () => {
-    sessionStorage.clear();
-
-    router.replace('/login');
-  };
+  /* =========================================================
+     LOADING
+  ========================================================= */
 
   if (loading) {
     return (
@@ -168,7 +91,8 @@ export default function AppView() {
           display: 'flex',
           justifyContent:
             'center',
-          alignItems: 'center',
+          alignItems:
+            'center',
         }}
       >
         <CircularProgress />
@@ -179,6 +103,10 @@ export default function AppView() {
   const summaryCards =
     dashboard?.summaryCards ||
     {};
+
+  /* =========================================================
+     DASHBOARD
+  ========================================================= */
 
   return (
     <Container maxWidth={false}>
@@ -195,34 +123,40 @@ export default function AppView() {
         container
         spacing={3}
       >
-        {/* SUMMARY CARDS */}
+        {/* =================================================
+            SUMMARY CARDS
+        ================================================= */}
 
         {Object.entries(
           summaryCards
-        ).map(([title, total]) => (
-          <Grid
-            key={title}
-            xs={12}
-            sm={6}
-            md={3}
-          >
-            <AppWidgetSummary
-              title={title
-                .replace(
-                  /([A-Z])/g,
-                  ' $1'
-                )
-                .replace(
-                  /^./,
-                  (text) =>
-                    text.toUpperCase()
-                )}
-              total={total}
-            />
-          </Grid>
-        ))}
+        ).map(
+          ([title, total]) => (
+            <Grid
+              key={title}
+              xs={12}
+              sm={6}
+              md={3}
+            >
+              <AppWidgetSummary
+                title={title
+                  .replace(
+                    /([A-Z])/g,
+                    ' $1'
+                  )
+                  .replace(
+                    /^./,
+                    (text) =>
+                      text.toUpperCase()
+                  )}
+                total={total}
+              />
+            </Grid>
+          )
+        )}
 
-        {/* MISSING REPORT */}
+        {/* =================================================
+            MISSING REPORT
+        ================================================= */}
 
         {dashboard?.missingReports && (
           <Grid
@@ -243,6 +177,7 @@ export default function AppView() {
                         .missingFeaturedImages ||
                       0,
                   },
+
                   {
                     label:
                       'Gallery Images',
@@ -253,6 +188,7 @@ export default function AppView() {
                         .missingGalleryImages ||
                       0,
                   },
+
                   {
                     label:
                       'Videos',
@@ -263,6 +199,7 @@ export default function AppView() {
                         .missingVideos ||
                       0,
                   },
+
                   {
                     label:
                       'Descriptions',
@@ -273,6 +210,7 @@ export default function AppView() {
                         .missingLongDescriptions ||
                       0,
                   },
+
                   {
                     label:
                       'Origin Country',
@@ -289,7 +227,9 @@ export default function AppView() {
           </Grid>
         )}
 
-        {/* DAILY ACTIVITY */}
+        {/* =================================================
+            DAILY ACTIVITY
+        ================================================= */}
 
         {dashboard
           ?.dailyActivities
@@ -331,7 +271,9 @@ export default function AppView() {
           </Grid>
         )}
 
-        {/* ATTENTION REQUIRED PRODUCTS */}
+        {/* =================================================
+            ATTENTION REQUIRED PRODUCTS
+        ================================================= */}
 
         {dashboard
           ?.attentionRequiredProducts && (
@@ -351,111 +293,6 @@ export default function AppView() {
           </Grid>
         )}
       </Grid>
-
-      {/* PASSWORD CHANGE DIALOG */}
-
-      <Dialog
-        open={
-          openPasswordModal
-        }
-        disableEscapeKeyDown
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>
-          Change Password
-        </DialogTitle>
-
-        <DialogContent>
-          <TextField
-            fullWidth
-            autoFocus
-            margin="normal"
-            label="New Password"
-            type={
-              showPassword
-                ? 'text'
-                : 'password'
-            }
-            value={newPassword}
-            onChange={(
-              event
-            ) =>
-              setNewPassword(
-                event.target.value
-              )
-            }
-            onKeyDown={(
-              event
-            ) => {
-              if (
-                event.key ===
-                  'Enter' &&
-                newPassword
-              ) {
-                handlePasswordChange();
-              }
-            }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    edge="end"
-                    aria-label={
-                      showPassword
-                        ? 'Hide password'
-                        : 'Show password'
-                    }
-                    onClick={() =>
-                      setShowPassword(
-                        (previous) =>
-                          !previous
-                      )
-                    }
-                  >
-                    <Iconify
-                      icon={
-                        showPassword
-                          ? 'eva:eye-fill'
-                          : 'eva:eye-off-fill'
-                      }
-                    />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-        </DialogContent>
-
-        <DialogActions
-          sx={{
-            px: 3,
-            pb: 3,
-          }}
-        >
-          <Button
-            variant="contained"
-            onClick={
-              handlePasswordChange
-            }
-            disabled={
-              !newPassword.trim()
-            }
-          >
-            Update Password
-          </Button>
-
-          <Button
-            variant="contained"
-            color="error"
-            onClick={
-              handleLogout
-            }
-          >
-            Logout
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   );
 }
