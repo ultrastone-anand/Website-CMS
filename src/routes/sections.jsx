@@ -32,64 +32,225 @@ export const PrivacyPolicyPage = lazy(() => import('src/pages/staticpages/privac
 export const MerchandisePage = lazy(() => import('src/pages/staticpages/merchandise_display'));
 
 export default function Router() {
-  const token = sessionStorage.getItem('token');
+  const token =
+    sessionStorage.getItem('token');
+
+  const user = JSON.parse(
+    sessionStorage.getItem('user') || '{}'
+  );
+
+  const roleId =
+    Number(user?.role_id);
+
+  /* =======================================================
+     DEFAULT DASHBOARD PATH
+
+     Role 8 = Requests only
+  ======================================================= */
+
+  const defaultDashboardPath =
+    roleId === 8
+      ? '/dashboard/requests'
+      : '/dashboard';
 
   const routes = useRoutes([
+    /* =====================================================
+       ROOT
+    ===================================================== */
+
     {
       path: '/',
       element: token ? (
-        <Navigate to="/dashboard" replace />
+        <Navigate
+          to={defaultDashboardPath}
+          replace
+        />
       ) : (
-        <Navigate to="/login" replace />
+        <Navigate
+          to="/login"
+          replace
+        />
       ),
     },
 
+    /* =====================================================
+       DASHBOARD
+    ===================================================== */
+
     {
       path: '/dashboard',
+
       element: (
         <ProtectedRoute>
           <DashboardLayout>
-            <Suspense fallback={<div>Loading...</div>}>
+            <Suspense
+              fallback={
+                <div>
+                  Loading...
+                </div>
+              }
+            >
               <Outlet />
             </Suspense>
           </DashboardLayout>
         </ProtectedRoute>
       ),
+
       children: [
-        { index: true, element: <IndexPage /> },
-        { path: 'user', element: <UserPage /> },
-        { path: 'products', element: <ProductsPage /> },
-        { path: 'categorys', element: <CategorysPage /> },
-        { path: 'reports', element: <ReportPage /> },
-        { path: 'activitys', element: <ActivityPage /> },
-        { path: 'lookup', element: <LookupPage /> },
-        { path: 'company', element: <CompanyPage /> },
-        { path: 'blog', element: <BlogPage /> },
-        { path: 'socials', element: <SocialsPage /> },
-        { path: 'bulk', element: <BulkUploadPage /> },
-        { path: 'bulkdesc', element: <BulkDescPage /> },
-        { path: 'lead', element: <LeadPage /> },
-        { path: 'aboutus', element: <AboutusPage /> },
-        { path: 'process', element: <ProcessPage /> },
-        { path: 'gallery', element: <GalleryPage /> },
-        { path: 'career', element: <CareerPage /> },
-        { path: 'merchandise', element: <MerchandisePage /> },
-        { path: 'privacypolicy', element: <PrivacyPolicyPage /> },
-        { path: 'silicafirst', element: <SilicaFirstPage /> },
-        { path: 'ceu', element: <CeuPage /> },
-        { path: 'homescreen', element: <HomescreenPage /> },
-        { path: 'requests', element: <RequestsPage /> },
+        /* ===============================================
+           DEFAULT DASHBOARD PAGE
+        =============================================== */
+
+        {
+          index: true,
+
+          element:
+            roleId === 8 ? (
+              <Navigate
+                to="/dashboard/requests"
+                replace
+              />
+            ) : (
+              <IndexPage />
+            ),
+        },
+
+        /* ===============================================
+           DASHBOARD ROUTES
+        =============================================== */
+
+        {
+          path: 'user',
+          element: <UserPage />,
+        },
+
+        {
+          path: 'products',
+          element: <ProductsPage />,
+        },
+
+        {
+          path: 'categorys',
+          element: <CategorysPage />,
+        },
+
+        {
+          path: 'reports',
+          element: <ReportPage />,
+        },
+
+        {
+          path: 'activitys',
+          element: <ActivityPage />,
+        },
+
+        {
+          path: 'lookup',
+          element: <LookupPage />,
+        },
+
+        {
+          path: 'company',
+          element: <CompanyPage />,
+        },
+
+        {
+          path: 'blog',
+          element: <BlogPage />,
+        },
+
+        {
+          path: 'socials',
+          element: <SocialsPage />,
+        },
+
+        {
+          path: 'bulk',
+          element: <BulkUploadPage />,
+        },
+
+        {
+          path: 'bulkdesc',
+          element: <BulkDescPage />,
+        },
+
+        {
+          path: 'lead',
+          element: <LeadPage />,
+        },
+
+        {
+          path: 'aboutus',
+          element: <AboutusPage />,
+        },
+
+        {
+          path: 'process',
+          element: <ProcessPage />,
+        },
+
+        {
+          path: 'gallery',
+          element: <GalleryPage />,
+        },
+
+        {
+          path: 'career',
+          element: <CareerPage />,
+        },
+
+        {
+          path: 'merchandise',
+          element: <MerchandisePage />,
+        },
+
+        {
+          path: 'privacypolicy',
+          element: <PrivacyPolicyPage />,
+        },
+
+        {
+          path: 'silicafirst',
+          element: <SilicaFirstPage />,
+        },
+
+        {
+          path: 'ceu',
+          element: <CeuPage />,
+        },
+
+        {
+          path: 'homescreen',
+          element: <HomescreenPage />,
+        },
+
+        {
+          path: 'requests',
+          element: <RequestsPage />,
+        },
       ],
     },
 
+    /* =====================================================
+       LOGIN
+    ===================================================== */
+
     {
       path: '/login',
+
       element: token ? (
-        <Navigate to="/dashboard" replace />
+        <Navigate
+          to={defaultDashboardPath}
+          replace
+        />
       ) : (
         <LoginPage />
       ),
     },
+
+    /* =====================================================
+       404
+    ===================================================== */
 
     {
       path: '/404',
@@ -98,7 +259,12 @@ export default function Router() {
 
     {
       path: '*',
-      element: <Navigate to="/404" replace />,
+      element: (
+        <Navigate
+          to="/404"
+          replace
+        />
+      ),
     },
   ]);
 

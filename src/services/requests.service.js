@@ -270,7 +270,7 @@ export const getSampleRequests = async (
 
   const response =
     await fetch(
-      `${API_URL}/sample-request${query}`,
+      `${API_URL}/sample-requests${query}`,
       {
         method: 'GET',
 
@@ -305,7 +305,7 @@ export const downloadSampleRequests =
 
     await downloadFile({
       url:
-        `${API_URL}/sample-request/export${query}`,
+        `${API_URL}/sample-requests/export${query}`,
 
       fallbackFileName:
         'sample-requests.xlsx',
