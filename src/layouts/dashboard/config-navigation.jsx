@@ -12,59 +12,104 @@ export const getNavConfig = () => {
     sessionStorage.getItem('user') || '{}'
   );
 
-  const roleId = Number(user?.role_id);
+  const roleId = Number(
+    user?.role_id
+  );
 
-  // Role 7: Only Dashboard, Categories and Products
+  /* =========================================================
+     ROLE 7
+     Only Dashboard, Categories and Products
+  ========================================================= */
+
   if (roleId === 7) {
     return [
       {
         title: 'dashboard',
         path: '/dashboard',
-        icon: icon('ic_dashboard'),
+        icon: icon(
+          'ic_dashboard'
+        ),
       },
       {
         title: 'Categorys',
         path: '/dashboard/categorys',
-        icon: icon('ic_category'),
+        icon: icon(
+          'ic_category'
+        ),
       },
       {
         title: 'product',
         path: '/dashboard/products',
-        icon: icon('ic_products'),
+        icon: icon(
+          'ic_products'
+        ),
       },
     ];
   }
+
+  /* =========================================================
+     ROLE 8
+     Only Requests
+  ========================================================= */
+
+  if (roleId === 8) {
+    return [
+      {
+        title: 'Requests',
+        path: '/dashboard/requests',
+        icon: icon(
+          'ic_requests'
+        ),
+      },
+    ];
+  }
+
+  /* =========================================================
+     DEFAULT NAVIGATION
+  ========================================================= */
 
   return [
     {
       title: 'dashboard',
       path: '/dashboard',
-      icon: icon('ic_dashboard'),
+      icon: icon(
+        'ic_dashboard'
+      ),
     },
     {
       title: 'Categorys',
       path: '/dashboard/categorys',
-      icon: icon('ic_category'),
+      icon: icon(
+        'ic_category'
+      ),
     },
     {
       title: 'product',
       path: '/dashboard/products',
-      icon: icon('ic_products'),
+      icon: icon(
+        'ic_products'
+      ),
     },
     {
       title: 'Gallery',
       path: '/dashboard/gallery',
-      icon: icon('ic_gallery'),
+      icon: icon(
+        'ic_gallery'
+      ),
     },
     {
       title: 'Blogs',
       path: '/dashboard/blog',
-      icon: icon('ic_blogs'),
+      icon: icon(
+        'ic_blogs'
+      ),
     },
     {
       title: 'Pages',
       path: '/dashboard/pages',
-      icon: icon('ic_about'),
+      icon: icon(
+        'ic_about'
+      ),
       children: [
         {
           title: 'About Us',
@@ -75,89 +120,152 @@ export const getNavConfig = () => {
           path: '/dashboard/process',
         },
         {
-          title: 'Merchandise Display',
-          path: '/dashboard/merchandise',
+          title:
+            'Merchandise Display',
+          path:
+            '/dashboard/merchandise',
         },
         {
-          title: 'Privacy Policy',
-          path: '/dashboard/privacypolicy',
+          title:
+            'Privacy Policy',
+          path:
+            '/dashboard/privacypolicy',
         },
         {
-          title: 'Silica First',
-          path: '/dashboard/silicafirst',
+          title:
+            'Silica First',
+          path:
+            '/dashboard/silicafirst',
         },
         {
           title: 'CEU',
           path: '/dashboard/ceu',
         },
         {
-          title: 'Hero Section',
-          path: '/dashboard/homescreen',
+          title:
+            'Hero Section',
+          path:
+            '/dashboard/homescreen',
         },
       ],
     },
+    {
+      title: 'Requests',
+      path:
+        '/dashboard/requests',
+      icon: icon(
+        'ic_requests'
+      ),
+    },
+
+    /* =======================================================
+       NOT AVAILABLE FOR ROLE 6
+    ======================================================= */
 
     ...(roleId !== 6
       ? [
           {
-            title: 'Bulk Description',
-            path: '/dashboard/bulkdesc',
-            icon: icon('ic_desc'),
+            title:
+              'Bulk Description',
+            path:
+              '/dashboard/bulkdesc',
+            icon: icon(
+              'ic_desc'
+            ),
           },
           {
             title: 'Career',
-            path: '/dashboard/career',
-            icon: icon('ic_job'),
+            path:
+              '/dashboard/career',
+            icon: icon(
+              'ic_job'
+            ),
           },
           {
             title: 'Socials',
-            path: '/dashboard/socials',
-            icon: icon('ic_socials'),
+            path:
+              '/dashboard/socials',
+            icon: icon(
+              'ic_socials'
+            ),
           },
           {
             title: 'Showrooms',
-            path: '/dashboard/company',
-            icon: icon('ic_company'),
+            path:
+              '/dashboard/company',
+            icon: icon(
+              'ic_company'
+            ),
           },
         ]
       : []),
+
+    /* =======================================================
+       ROLE 1 ONLY
+    ======================================================= */
 
     ...(roleId === 1
       ? [
           {
             title: 'user',
-            path: '/dashboard/user',
-            icon: icon('ic_users'),
+            path:
+              '/dashboard/user',
+            icon: icon(
+              'ic_users'
+            ),
           },
           {
             title: 'Lookups',
-            path: '/dashboard/lookup',
-            icon: icon('ic_lookup'),
+            path:
+              '/dashboard/lookup',
+            icon: icon(
+              'ic_lookup'
+            ),
           },
           {
-            title: 'Bulk Upload',
-            path: '/dashboard/bulk',
-            icon: icon('ic_bulk'),
+            title:
+              'Bulk Upload',
+            path:
+              '/dashboard/bulk',
+            icon: icon(
+              'ic_bulk'
+            ),
           },
           {
-            title: 'Lead Management',
-            path: '/dashboard/lead',
-            icon: icon('ic_lead'),
+            title:
+              'Lead Management',
+            path:
+              '/dashboard/lead',
+            icon: icon(
+              'ic_lead'
+            ),
           },
         ]
       : []),
 
-    ...([1, 2].includes(roleId)
+    /* =======================================================
+       ROLE 1 AND 2
+    ======================================================= */
+
+    ...([1, 2].includes(
+      roleId
+    )
       ? [
           {
             title: 'Reports',
-            path: '/dashboard/reports',
-            icon: icon('ic_reports'),
+            path:
+              '/dashboard/reports',
+            icon: icon(
+              'ic_reports'
+            ),
           },
           {
             title: 'Activitys',
-            path: '/dashboard/activitys',
-            icon: icon('ic_activity'),
+            path:
+              '/dashboard/activitys',
+            icon: icon(
+              'ic_activity'
+            ),
           },
         ]
       : []),

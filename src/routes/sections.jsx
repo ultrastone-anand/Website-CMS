@@ -16,6 +16,7 @@ export const SocialsPage = lazy(() => import('src/pages/socials'));
 export const CompanyPage = lazy(() => import('src/pages/company'));
 export const BulkDescPage = lazy(() => import('src/pages/bulkdesc'));
 export const ActivityPage = lazy(() => import('src/pages/activity'));
+export const RequestsPage = lazy(() => import('src/pages/requests'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 export const CategorysPage = lazy(() => import('src/pages/category'));
@@ -77,6 +78,7 @@ export default function Router() {
         { path: 'silicafirst', element: <SilicaFirstPage /> },
         { path: 'ceu', element: <CeuPage /> },
         { path: 'homescreen', element: <HomescreenPage /> },
+        { path: 'requests', element: <RequestsPage /> },
       ],
     },
 
