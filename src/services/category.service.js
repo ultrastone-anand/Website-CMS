@@ -218,3 +218,146 @@ export const activateCategory = async (
     payload
   );
 };
+
+
+// =====================================================
+// CATEGORY RESOURCES APIs
+// =====================================================
+
+const RESOURCE_API = `${API_URL}/category-resources`;
+
+const getResourceHeaders = () => {
+  const token = sessionStorage.getItem('token');
+
+  return {
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
+const parseResourceResponse = async (response) => {
+  const contentType = response.headers.get('content-type') || '';
+
+  let data = null;
+
+  if (contentType.includes('application/json')) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+    data = text ? { message: text } : {};
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      `Request failed (${response.status})`
+    );
+  }
+
+  return data;
+};
+
+// ================= GET ALL RESOURCES =================
+
+export const getCategoryResources = async () => {
+  const response = await fetch(RESOURCE_API, {
+    method: 'GET',
+    headers: getResourceHeaders(),
+  });
+
+  return parseResourceResponse(response);
+};
+
+// ================= GET RESOURCES BY CATEGORY =================
+
+export const getResourcesByCategory = async (slug) => {
+  const response = await fetch(
+    `${RESOURCE_API}/category/${encodeURIComponent(slug)}`,
+    {
+      method: 'GET',
+      headers: getResourceHeaders(),
+    }
+  );
+
+  return parseResourceResponse(response);
+};
+
+// ================= GET SINGLE RESOURCE =================
+
+export const getCategoryResource = async (id) => {
+  const response = await fetch(
+    `${RESOURCE_API}/${encodeURIComponent(id)}`,
+    {
+      method: 'GET',
+      headers: getResourceHeaders(),
+    }
+  );
+
+  return parseResourceResponse(response);
+};
+
+// ================= CREATE RESOURCE =================
+
+export const createCategoryResource = async (payload) => {
+  const response = await fetch(RESOURCE_API, {
+    method: 'POST',
+    headers: getResourceHeaders(),
+    body: payload,
+  });
+
+  return parseResourceResponse(response);
+};
+
+// ================= UPDATE RESOURCE =================
+
+export const updateCategoryResource = async (id, payload) => {
+  const response = await fetch(
+    `${RESOURCE_API}/${encodeURIComponent(id)}`,
+    {
+      method: 'PUT',
+      headers: getResourceHeaders(),
+      body: payload,
+    }
+  );
+
+  return parseResourceResponse(response);
+};
+
+// ================= UPDATE RESOURCE STATUS =================
+
+export const updateCategoryResourceStatus = async (
+  id,
+  isActive
+) => {
+  const response = await fetch(
+    `${RESOURCE_API}/${encodeURIComponent(id)}/status`,
+    {
+      method: 'PATCH',
+      headers: {
+        ...getResourceHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        is_active: isActive,
+      }),
+    }
+  );
+
+  return parseResourceResponse(response);
+};
+
+// ================= DELETE RESOURCE =================
+
+export const deleteCategoryResource = async (id) => {
+  const response = await fetch(
+    `${RESOURCE_API}/${encodeURIComponent(id)}`,
+    {
+      method: 'DELETE',
+      headers: getResourceHeaders(),
+    }
+  );
+
+  return parseResourceResponse(response);
+};

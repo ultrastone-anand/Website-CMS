@@ -26,11 +26,16 @@ export default function CategoryCardRow({
   row,
   onEdit,
   onToggleStatus,
+  onManageResources,
   categories = [],
 }) {
   const [open, setOpen] = useState(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+
+  // ----------------------------------------------------------------------
+  // CATEGORY DATA
+  // ----------------------------------------------------------------------
 
   const parentCategory = categories.find(
     (item) => Number(item.id) === Number(row.parent_id)
@@ -57,7 +62,14 @@ export default function CategoryCardRow({
   };
 
   const thumbnailUrl = getFileUrl(row.thumbnail_url);
-  const silicaDatasheetUrl = getFileUrl(row.silica_datasheet_url);
+
+  const silicaDatasheetUrl = getFileUrl(
+    row.silica_datasheet_url
+  );
+
+  // ----------------------------------------------------------------------
+  // MENU HANDLERS
+  // ----------------------------------------------------------------------
 
   const handleOpenMenu = (event) => {
     setOpen(event.currentTarget);
@@ -69,13 +81,27 @@ export default function CategoryCardRow({
 
   const handleEditClick = () => {
     handleCloseMenu();
+
     onEdit?.(row);
   };
 
   const handleStatusClick = () => {
     handleCloseMenu();
+
     onToggleStatus?.(row);
   };
+
+  // NEW: MANAGE RESOURCES
+
+  const handleManageResourcesClick = () => {
+    handleCloseMenu();
+
+    onManageResources?.(row);
+  };
+
+  // ----------------------------------------------------------------------
+  // IMAGE PREVIEW
+  // ----------------------------------------------------------------------
 
   const handleOpenImagePreview = () => {
     if (thumbnailUrl && !imageError) {
@@ -87,6 +113,10 @@ export default function CategoryCardRow({
     setImagePreviewOpen(false);
   };
 
+  // ----------------------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------------------
+
   return (
     <>
       <Card
@@ -96,6 +126,7 @@ export default function CategoryCardRow({
         }}
       >
         {/* CATEGORY IMAGE */}
+
         {thumbnailUrl && !imageError ? (
           <Box
             component="button"
@@ -180,6 +211,8 @@ export default function CategoryCardRow({
           </Box>
         )}
 
+        {/* CATEGORY DETAILS */}
+
         <CardContent>
           <Stack
             direction="row"
@@ -214,7 +247,10 @@ export default function CategoryCardRow({
                 onClick={handleOpenMenu}
                 sx={{ ml: 1 }}
               >
-                <Iconify icon="eva:more-vertical-fill" />
+                <Iconify
+                  icon="eva:more-vertical-fill"
+                  width={24}
+                />
               </IconButton>
             )}
           </Stack>
@@ -223,6 +259,7 @@ export default function CategoryCardRow({
 
           <Stack spacing={1.5}>
             {/* PARENT */}
+
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -244,6 +281,7 @@ export default function CategoryCardRow({
             </Stack>
 
             {/* TYPE */}
+
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -270,6 +308,7 @@ export default function CategoryCardRow({
             </Stack>
 
             {/* SILICA WARNING */}
+
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -296,6 +335,7 @@ export default function CategoryCardRow({
             </Stack>
 
             {/* DATASHEET */}
+
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -333,6 +373,7 @@ export default function CategoryCardRow({
             </Stack>
 
             {/* STATUS */}
+
             <Stack
               direction="row"
               justifyContent="space-between"
@@ -362,6 +403,7 @@ export default function CategoryCardRow({
       </Card>
 
       {/* ACTION MENU */}
+
       {canEditCategory && (
         <Popover
           open={Boolean(open)}
@@ -376,20 +418,37 @@ export default function CategoryCardRow({
             horizontal: 'right',
           }}
           PaperProps={{
-            sx: { width: 180 },
+            sx: {
+              width: 230,
+              borderRadius: 2,
+            },
           }}
         >
-          <MenuItem onClick={handleEditClick}>
+          {/* EDIT */}
+
+          <MenuItem
+            onClick={handleEditClick}
+            sx={{
+              py: 1.5,
+              gap: 2,
+            }}
+          >
             <Iconify
               icon="eva:edit-fill"
-              sx={{ mr: 2 }}
+              width={24}
+              height={24}
             />
+
             Edit
           </MenuItem>
+
+          {/* ACTIVATE / DEACTIVATE */}
 
           <MenuItem
             onClick={handleStatusClick}
             sx={{
+              py: 1.5,
+              gap: 2,
               color: row.is_active
                 ? 'error.main'
                 : 'success.main',
@@ -401,24 +460,46 @@ export default function CategoryCardRow({
                   ? 'eva:close-circle-fill'
                   : 'eva:checkmark-circle-2-fill'
               }
-              sx={{ mr: 2 }}
+              width={24}
+              height={24}
             />
 
             {row.is_active
               ? 'Deactivate'
               : 'Activate'}
           </MenuItem>
+
+          <Divider sx={{ my: 0.5 }} />
+
+          {/* MANAGE RESOURCES */}
+
+          <MenuItem
+            onClick={handleManageResourcesClick}
+            sx={{
+              py: 1.5,
+              gap: 2,
+            }}
+          >
+            <Iconify
+              icon="solar:document-text-bold"
+              width={24}
+              height={24}
+            />
+
+            Manage Resources
+          </MenuItem>
         </Popover>
       )}
 
       {/* IMAGE PREVIEW */}
+
       <Dialog
         open={imagePreviewOpen}
         onClose={handleCloseImagePreview}
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx: {
+          sx:{
             overflow: 'hidden',
           },
         }}
@@ -450,8 +531,13 @@ export default function CategoryCardRow({
             </Typography>
           </Stack>
 
-          <IconButton onClick={handleCloseImagePreview}>
-            <Iconify icon="mingcute:close-line" />
+          <IconButton
+            onClick={handleCloseImagePreview}
+          >
+            <Iconify
+              icon="mingcute:close-line"
+              width={24}
+            />
           </IconButton>
         </Stack>
 
@@ -490,32 +576,49 @@ export default function CategoryCardRow({
   );
 }
 
+// ----------------------------------------------------------------------
+// PROP TYPES
+// ----------------------------------------------------------------------
+
 CategoryCardRow.propTypes = {
   row: PropTypes.shape({
     id: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.string,
     ]).isRequired,
+
     name: PropTypes.string.isRequired,
+
     slug: PropTypes.string,
+
     parent_id: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.string,
     ]),
+
     thumbnail_url: PropTypes.string,
+
     silica_warning: PropTypes.bool,
+
     silica_datasheet_url: PropTypes.string,
+
     is_active: PropTypes.bool,
   }).isRequired,
+
   categories: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([
         PropTypes.number,
         PropTypes.string,
       ]).isRequired,
+
       name: PropTypes.string.isRequired,
     })
   ),
+
   onEdit: PropTypes.func,
+
   onToggleStatus: PropTypes.func,
+
+  onManageResources: PropTypes.func,
 };

@@ -1,13 +1,17 @@
-const API_URL =
-  import.meta.env.VITE_API_URL;
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const API_URL = (
+  import.meta.env.VITE_API_URL || ''
+).replace(/\/$/, '');
 
 /* =========================================================
    AUTH HEADERS
 ========================================================= */
 
 const getHeaders = () => {
-  const token =
-    sessionStorage.getItem('token');
+  const token = sessionStorage.getItem('token');
 
   return {
     'Content-Type': 'application/json',
@@ -22,33 +26,60 @@ const getHeaders = () => {
    BUILD DATE FILTER QUERY
 ========================================================= */
 
-const buildDateQuery = ({
-  fromDate,
-  toDate,
-} = {}) => {
-  const params =
-    new URLSearchParams();
+const buildDateQuery = ({ fromDate, toDate } = {}) => {
+  const params = new URLSearchParams();
 
   if (fromDate) {
-    params.append(
-      'fromDate',
-      fromDate
-    );
+    params.append('fromDate', fromDate);
   }
 
   if (toDate) {
-    params.append(
-      'toDate',
-      toDate
-    );
+    params.append('toDate', toDate);
   }
 
-  const query =
-    params.toString();
+  const query = params.toString();
 
-  return query
-    ? `?${query}`
-    : '';
+  return query ? `?${query}` : '';
+};
+
+/* =========================================================
+   COMMON API ERROR HANDLER
+========================================================= */
+
+const getApiError = async (response, fallbackMessage) => {
+  try {
+    const data = await response.json();
+
+    return new Error(data.message || fallbackMessage);
+  } catch {
+    return new Error(fallbackMessage);
+  }
+};
+
+/* =========================================================
+   FETCH REPORT HELPER
+========================================================= */
+
+const fetchReport = async ({
+  endpoint,
+  filters = {},
+  errorMessage,
+}) => {
+  const query = buildDateQuery(filters);
+
+  const response = await fetch(
+    `${API_URL}/${endpoint}${query}`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    throw await getApiError(response, errorMessage);
+  }
+
+  return response.json();
 };
 
 /* =========================================================
@@ -60,257 +91,159 @@ const downloadFile = async ({
   fallbackFileName,
   errorMessage,
 }) => {
-  const token =
-    sessionStorage.getItem(
-      'token'
-    );
+  const token = sessionStorage.getItem('token');
 
-  const response =
-    await fetch(
-      url,
-      {
-        method: 'GET',
-
-        headers: {
-          ...(token && {
-            Authorization:
-              `Bearer ${token}`,
-          }),
-        },
-      }
-    );
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      ...(token && {
+        Authorization: `Bearer ${token}`,
+      }),
+    },
+  });
 
   if (!response.ok) {
-    let message =
-      errorMessage;
-
-    try {
-      const data =
-        await response.json();
-
-      message =
-        data.message ||
-        message;
-    } catch {
-      // Ignore JSON parsing error
-    }
-
-    throw new Error(
-      message
-    );
+    throw await getApiError(response, errorMessage);
   }
 
-  const blob =
-    await response.blob();
+  const blob = await response.blob();
 
-  const objectUrl =
-    window.URL.createObjectURL(
-      blob
-    );
+  const objectUrl = window.URL.createObjectURL(blob);
 
-  const link =
-    document.createElement('a');
+  const link = document.createElement('a');
 
-  link.href =
-    objectUrl;
+  link.href = objectUrl;
 
-  /* =====================================================
-     GET FILENAME FROM BACKEND
-  ===================================================== */
-
-  const contentDisposition =
-    response.headers.get(
-      'content-disposition'
-    );
-
-  const fileNameMatch =
-    contentDisposition?.match(
-      /filename="?([^"]+)"?/i
-    );
-
-  link.download =
-    fileNameMatch?.[1] ||
-    fallbackFileName;
-
-  document.body.appendChild(
-    link
+  const contentDisposition = response.headers.get(
+    'content-disposition'
   );
+
+  let fileName = fallbackFileName;
+
+  if (contentDisposition) {
+    const utf8Match = contentDisposition.match(
+      /filename\*=UTF-8''([^;]+)/i
+    );
+
+    const normalMatch = contentDisposition.match(
+      /filename="?([^";]+)"?/i
+    );
+
+    if (utf8Match?.[1]) {
+      try {
+        fileName = decodeURIComponent(utf8Match[1]);
+      } catch {
+        fileName = fallbackFileName;
+      }
+    } else if (normalMatch?.[1]) {
+      fileName = normalMatch[1];
+    }
+  }
+
+  link.download = fileName;
+
+  document.body.appendChild(link);
 
   link.click();
 
   link.remove();
 
-  window.URL.revokeObjectURL(
-    objectUrl
-  );
+  setTimeout(() => {
+    window.URL.revokeObjectURL(objectUrl);
+  }, 1000);
+};
+
+/* =========================================================
+   DOWNLOAD REPORT HELPER
+========================================================= */
+
+const downloadReport = async ({
+  endpoint,
+  filters = {},
+  fallbackFileName,
+  errorMessage,
+}) => {
+  const query = buildDateQuery(filters);
+
+  await downloadFile({
+    url: `${API_URL}/${endpoint}/export${query}`,
+    fallbackFileName,
+    errorMessage,
+  });
 };
 
 /* =========================================================
    CEU REQUESTS
 ========================================================= */
 
-export const getCeuRequests = async (
-  filters = {}
-) => {
-  const query =
-    buildDateQuery(filters);
-
-  const response =
-    await fetch(
-      `${API_URL}/ceu-request${query}`,
-      {
-        method: 'GET',
-
-        headers:
-          getHeaders(),
-      }
-    );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        'Failed to fetch CEU requests'
-    );
-  }
-
-  return data;
-};
-
-/* =========================================================
-   DOWNLOAD CEU REQUESTS EXCEL
-========================================================= */
-
-export const downloadCeuRequests = async (
-  filters = {}
-) => {
-  const query =
-    buildDateQuery(filters);
-
-  await downloadFile({
-    url:
-      `${API_URL}/ceu-request/export${query}`,
-
-    fallbackFileName:
-      'ceu-requests.xlsx',
-
-    errorMessage:
-      'Failed to download CEU report',
+export const getCeuRequests = async (filters = {}) =>
+  fetchReport({
+    endpoint: 'ceu-request',
+    filters,
+    errorMessage: 'Failed to fetch CEU requests',
   });
-};
+
+export const downloadCeuRequests = async (filters = {}) =>
+  downloadReport({
+    endpoint: 'ceu-request',
+    filters,
+    fallbackFileName: 'ceu-requests.xlsx',
+    errorMessage: 'Failed to download CEU report',
+  });
 
 /* =========================================================
    DISPLAY REQUESTS
 ========================================================= */
 
-export const getDisplayRequests = async (
-  filters = {}
-) => {
-  const query =
-    buildDateQuery(filters);
+export const getDisplayRequests = async (filters = {}) =>
+  fetchReport({
+    endpoint: 'display-request',
+    filters,
+    errorMessage: 'Failed to fetch display requests',
+  });
 
-  const response =
-    await fetch(
-      `${API_URL}/display-request${query}`,
-      {
-        method: 'GET',
-
-        headers:
-          getHeaders(),
-      }
-    );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        'Failed to fetch display requests'
-    );
-  }
-
-  return data;
-};
-
-/* =========================================================
-   DOWNLOAD DISPLAY REQUESTS EXCEL
-========================================================= */
-
-export const downloadDisplayRequests =
-  async (
-    filters = {}
-  ) => {
-    const query =
-      buildDateQuery(filters);
-
-    await downloadFile({
-      url:
-        `${API_URL}/display-request/export${query}`,
-
-      fallbackFileName:
-        'display-requests.xlsx',
-
-      errorMessage:
-        'Failed to download Display Requests report',
-    });
-  };
+export const downloadDisplayRequests = async (filters = {}) =>
+  downloadReport({
+    endpoint: 'display-request',
+    filters,
+    fallbackFileName: 'display-requests.xlsx',
+    errorMessage: 'Failed to download Display Requests report',
+  });
 
 /* =========================================================
    SAMPLE REQUESTS
 ========================================================= */
 
-export const getSampleRequests = async (
-  filters = {}
-) => {
-  const query =
-    buildDateQuery(filters);
+export const getSampleRequests = async (filters = {}) =>
+  fetchReport({
+    endpoint: 'sample-requests',
+    filters,
+    errorMessage: 'Failed to fetch sample requests',
+  });
 
-  const response =
-    await fetch(
-      `${API_URL}/sample-requests${query}`,
-      {
-        method: 'GET',
-
-        headers:
-          getHeaders(),
-      }
-    );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.message ||
-        'Failed to fetch sample requests'
-    );
-  }
-
-  return data;
-};
+export const downloadSampleRequests = async (filters = {}) =>
+  downloadReport({
+    endpoint: 'sample-requests',
+    filters,
+    fallbackFileName: 'sample-requests.xlsx',
+    errorMessage: 'Failed to download Sample Requests report',
+  });
 
 /* =========================================================
-   DOWNLOAD SAMPLE REQUESTS EXCEL
+   PRODUCT REGISTRATIONS
 ========================================================= */
 
-export const downloadSampleRequests =
-  async (
-    filters = {}
-  ) => {
-    const query =
-      buildDateQuery(filters);
+export const getProductRegistrations = async (filters = {}) =>
+  fetchReport({
+    endpoint: 'product-registrations',
+    filters,
+    errorMessage: 'Failed to fetch product registrations',
+  });
 
-    await downloadFile({
-      url:
-        `${API_URL}/sample-requests/export${query}`,
-
-      fallbackFileName:
-        'sample-requests.xlsx',
-
-      errorMessage:
-        'Failed to download Sample Requests report',
-    });
-  };
+export const downloadProductRegistrations = async (filters = {}) =>
+  downloadReport({
+    endpoint: 'product-registrations',
+    filters,
+    fallbackFileName: 'product-registrations.xlsx',
+    errorMessage: 'Failed to download Product Registration report',
+  });

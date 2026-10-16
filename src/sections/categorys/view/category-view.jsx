@@ -26,6 +26,7 @@ import TableEmptyRows from '../table-empty-rows';
 import CategoryCardRow from '../category-card-row';
 import { canAddCategory } from '../category-access';
 import CategoryTableRow from '../category-table-row';
+import CategoryResources from '../category_resources';
 import CategoryQuickEdit from '../category-quick-edit';
 import CategoryTableHead from '../category-table-head';
 import CategoryTableToolbar from '../category-table-toolbar';
@@ -46,7 +47,10 @@ export default function CategoryPage() {
   const [filterName, setFilterName] = useState('');
   const [categories, setCategories] = useState([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [openResources, setOpenResources] = useState(false);
+  const [resourceCategory, setResourceCategory] = useState(null);
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
 
   const [selectedCategory, setSelectedCategory] =
     useState(null);
@@ -204,6 +208,16 @@ const updateCategoryStatus = async (item) => {
   }
 };
 
+const handleManageResources = (category) => {
+  setResourceCategory(category);
+  setOpenResources(true);
+};
+
+const handleCloseResources = () => {
+  setOpenResources(false);
+  setResourceCategory(null);
+};
+
   if (loading) {
     return (
       <Container>
@@ -269,6 +283,7 @@ const updateCategoryStatus = async (item) => {
                   onToggleStatus={
                     updateCategoryStatus
                   }
+                  onManageResources={handleManageResources}
                 />
               ))}
 
@@ -350,6 +365,7 @@ const updateCategoryStatus = async (item) => {
                         onToggleStatus={
                           updateCategoryStatus
                         }
+                        onManageResources={handleManageResources}
                       />
                     ))}
 
@@ -410,6 +426,13 @@ const updateCategoryStatus = async (item) => {
           handleSubmitCategory
         }
       />
+
+        <CategoryResources
+  open={openResources}
+  onClose={handleCloseResources}
+  category={resourceCategory}
+/>
+      
     </Container>
   );
 }

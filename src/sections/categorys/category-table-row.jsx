@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import Popover from '@mui/material/Popover';
 import TableRow from '@mui/material/TableRow';
 import MenuItem from '@mui/material/MenuItem';
@@ -21,45 +22,16 @@ export default function CategoryTableRow({
   row,
   onEdit,
   onToggleStatus,
+  onManageResources,
   categories = [],
 }) {
   const [open, setOpen] = useState(null);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  const handleOpenMenu = (event) => {
-    setOpen(event.currentTarget);
-  };
-
-  const handleCloseMenu = () => {
-    setOpen(null);
-  };
-
-  const handleEditClick = () => {
-    handleCloseMenu();
-
-    if (onEdit) {
-      onEdit(row);
-    }
-  };
-
-  const handleStatusClick = () => {
-    handleCloseMenu();
-
-    if (onToggleStatus) {
-      onToggleStatus(row);
-    }
-  };
-
-  const handleOpenImagePreview = () => {
-    if (row.thumbnail_url && !imageError) {
-      setImagePreviewOpen(true);
-    }
-  };
-
-  const handleCloseImagePreview = () => {
-    setImagePreviewOpen(false);
-  };
+  // ----------------------------------------------------------------------
+  // CATEGORY DATA
+  // ----------------------------------------------------------------------
 
   const parentCategory = categories.find(
     (item) => Number(item.id) === Number(row.parent_id)
@@ -87,14 +59,70 @@ export default function CategoryTableRow({
   };
 
   const thumbnailUrl = getFileUrl(row.thumbnail_url);
-  const silicaDatasheetUrl = getFileUrl(row.silica_datasheet_url);
+
+  const silicaDatasheetUrl = getFileUrl(
+    row.silica_datasheet_url
+  );
+
+  // ----------------------------------------------------------------------
+  // MENU HANDLERS
+  // ----------------------------------------------------------------------
+
+  const handleOpenMenu = (event) => {
+    setOpen(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setOpen(null);
+  };
+
+  const handleEditClick = () => {
+    handleCloseMenu();
+
+    onEdit?.(row);
+  };
+
+  const handleStatusClick = () => {
+    handleCloseMenu();
+
+    onToggleStatus?.(row);
+  };
+
+  const handleManageResourcesClick = () => {
+    handleCloseMenu();
+
+    onManageResources?.(row);
+  };
+
+  // ----------------------------------------------------------------------
+  // IMAGE PREVIEW HANDLERS
+  // ----------------------------------------------------------------------
+
+  const handleOpenImagePreview = () => {
+    if (thumbnailUrl && !imageError) {
+      setImagePreviewOpen(true);
+    }
+  };
+
+  const handleCloseImagePreview = () => {
+    setImagePreviewOpen(false);
+  };
+
+  // ----------------------------------------------------------------------
+  // RENDER
+  // ----------------------------------------------------------------------
 
   return (
     <>
       <TableRow hover tabIndex={-1}>
         {/* NAME AND THUMBNAIL */}
+
         <TableCell component="th" scope="row">
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={2}
+          >
             {thumbnailUrl && !imageError ? (
               <Box
                 component="button"
@@ -152,8 +180,14 @@ export default function CategoryTableRow({
               </Box>
             )}
 
-            <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-              <Typography variant="subtitle2" noWrap>
+            <Stack
+              spacing={0.25}
+              sx={{ minWidth: 0 }}
+            >
+              <Typography
+                variant="subtitle2"
+                noWrap
+              >
                 {row.name}
               </Typography>
 
@@ -177,26 +211,51 @@ export default function CategoryTableRow({
         </TableCell>
 
         {/* SLUG */}
-        <TableCell>{row.slug}</TableCell>
+
+        <TableCell>
+          {row.slug}
+        </TableCell>
 
         {/* PARENT */}
-        <TableCell>{parentCategory?.name || '-'}</TableCell>
+
+        <TableCell>
+          {parentCategory?.name || '-'}
+        </TableCell>
 
         {/* TYPE */}
+
         <TableCell>
-          <Label color={row.parent_id ? 'info' : 'secondary'}>
-            {row.parent_id ? 'Child' : 'Parent'}
+          <Label
+            color={
+              row.parent_id
+                ? 'info'
+                : 'secondary'
+            }
+          >
+            {row.parent_id
+              ? 'Child'
+              : 'Parent'}
           </Label>
         </TableCell>
 
         {/* SILICA WARNING */}
+
         <TableCell>
-          <Label color={row.silica_warning ? 'warning' : 'default'}>
-            {row.silica_warning ? 'Enabled' : 'Disabled'}
+          <Label
+            color={
+              row.silica_warning
+                ? 'warning'
+                : 'default'
+            }
+          >
+            {row.silica_warning
+              ? 'Enabled'
+              : 'Disabled'}
           </Label>
         </TableCell>
 
         {/* SILICA PDF */}
+
         <TableCell>
           {silicaDatasheetUrl ? (
             <Typography
@@ -221,21 +280,38 @@ export default function CategoryTableRow({
         </TableCell>
 
         {/* STATUS */}
+
         <TableCell>
-          <Label color={row.is_active ? 'success' : 'error'}>
-            {row.is_active ? 'Active' : 'Inactive'}
+          <Label
+            color={
+              row.is_active
+                ? 'success'
+                : 'error'
+            }
+          >
+            {row.is_active
+              ? 'Active'
+              : 'Inactive'}
           </Label>
         </TableCell>
 
         {/* ACTION */}
+
         <TableCell align="right">
-          <IconButton onClick={handleOpenMenu}>
-            <Iconify icon="eva:more-vertical-fill" />
+          <IconButton
+            onClick={handleOpenMenu}
+          >
+            <Iconify
+              icon="eva:more-vertical-fill"
+              width={24}
+              height={24}
+            />
           </IconButton>
         </TableCell>
       </TableRow>
 
       {/* ACTION MENU */}
+
       <Popover
         open={Boolean(open)}
         anchorEl={open}
@@ -249,20 +325,37 @@ export default function CategoryTableRow({
           horizontal: 'right',
         }}
         PaperProps={{
-          sx: { width: 180 },
+          sx: {
+            width: 230,
+            borderRadius: 2,
+          },
         }}
       >
-        <MenuItem onClick={handleEditClick}>
+        {/* EDIT */}
+
+        <MenuItem
+          onClick={handleEditClick}
+          sx={{
+            py: 1.5,
+            gap: 2,
+          }}
+        >
           <Iconify
             icon="eva:edit-fill"
-            sx={{ mr: 2 }}
+            width={24}
+            height={24}
           />
+
           Edit
         </MenuItem>
+
+        {/* ACTIVATE / DEACTIVATE */}
 
         <MenuItem
           onClick={handleStatusClick}
           sx={{
+            py: 1.5,
+            gap: 2,
             color: row.is_active
               ? 'error.main'
               : 'success.main',
@@ -274,14 +367,38 @@ export default function CategoryTableRow({
                 ? 'eva:close-circle-fill'
                 : 'eva:checkmark-circle-2-fill'
             }
-            sx={{ mr: 2 }}
+            width={24}
+            height={24}
           />
 
-          {row.is_active ? 'Deactivate' : 'Activate'}
+          {row.is_active
+            ? 'Deactivate'
+            : 'Activate'}
+        </MenuItem>
+
+        <Divider sx={{ my: 0.5 }} />
+
+        {/* MANAGE RESOURCES */}
+
+        <MenuItem
+          onClick={handleManageResourcesClick}
+          sx={{
+            py: 1.5,
+            gap: 2,
+          }}
+        >
+          <Iconify
+            icon="solar:document-text-bold"
+            width={24}
+            height={24}
+          />
+
+          Manage Resources
         </MenuItem>
       </Popover>
 
       {/* IMAGE PREVIEW DIALOG */}
+
       <Dialog
         open={imagePreviewOpen}
         onClose={handleCloseImagePreview}
@@ -306,17 +423,28 @@ export default function CategoryTableRow({
           }}
         >
           <Stack sx={{ minWidth: 0 }}>
-            <Typography variant="h6" noWrap>
+            <Typography
+              variant="h6"
+              noWrap
+            >
               {row.name}
             </Typography>
 
-            <Typography variant="caption" color="text.secondary">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
               Category thumbnail
             </Typography>
           </Stack>
 
-          <IconButton onClick={handleCloseImagePreview}>
-            <Iconify icon="mingcute:close-line" />
+          <IconButton
+            onClick={handleCloseImagePreview}
+          >
+            <Iconify
+              icon="mingcute:close-line"
+              width={24}
+            />
           </IconButton>
         </Stack>
 
@@ -330,7 +458,7 @@ export default function CategoryTableRow({
             bgcolor: 'background.neutral',
           }}
         >
-          {thumbnailUrl && (
+          {thumbnailUrl && !imageError && (
             <Box
               component="img"
               src={thumbnailUrl}
@@ -355,32 +483,49 @@ export default function CategoryTableRow({
   );
 }
 
+// ----------------------------------------------------------------------
+// PROP TYPES
+// ----------------------------------------------------------------------
+
 CategoryTableRow.propTypes = {
   row: PropTypes.shape({
     id: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.string,
     ]).isRequired,
+
     name: PropTypes.string.isRequired,
+
     slug: PropTypes.string,
+
     parent_id: PropTypes.oneOfType([
       PropTypes.number,
       PropTypes.string,
     ]),
+
     thumbnail_url: PropTypes.string,
+
     silica_warning: PropTypes.bool,
+
     silica_datasheet_url: PropTypes.string,
+
     is_active: PropTypes.bool,
   }).isRequired,
+
   categories: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.oneOfType([
         PropTypes.number,
         PropTypes.string,
       ]).isRequired,
+
       name: PropTypes.string.isRequired,
     })
   ),
+
   onEdit: PropTypes.func,
+
   onToggleStatus: PropTypes.func,
+
+  onManageResources: PropTypes.func,
 };
