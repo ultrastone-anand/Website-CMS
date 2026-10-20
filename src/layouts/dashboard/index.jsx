@@ -1,4 +1,5 @@
 import PropTypes from 'prop-types';
+
 import {
   useState,
   useEffect,
@@ -33,8 +34,14 @@ import Header from './header';
 export default function DashboardLayout({
   children,
 }) {
-  const [openNav, setOpenNav] =
-    useState(false);
+  /* =========================================================
+     STATES
+  ========================================================= */
+
+  const [
+    openNav,
+    setOpenNav,
+  ] = useState(false);
 
   const [
     openPasswordModal,
@@ -50,6 +57,11 @@ export default function DashboardLayout({
     newPassword,
     setNewPassword,
   ] = useState('');
+
+  const [
+    openSessionWarning,
+    setOpenSessionWarning,
+  ] = useState(false);
 
   const router = useRouter();
 
@@ -76,7 +88,7 @@ export default function DashboardLayout({
   }, [user?.must_change_password]);
 
   /* =========================================================
-     AUTO LOGOUT
+     AUTO LOGOUT + SESSION EXPIRATION WARNING
   ========================================================= */
 
   useEffect(() => {
@@ -91,15 +103,47 @@ export default function DashboardLayout({
       return undefined;
     }
 
-    // Auto logout after 25 minutes
-    const logoutTimer =
-      setTimeout(() => {
-        sessionStorage.clear();
+    /* ===============================================
+       SESSION CONFIGURATION
+    =============================================== */
 
-        router.replace('/login');
-      }, 25 * 60 * 1000);
+    // Total session duration: 25 minutes
+    const SESSION_DURATION =
+      25 * 60 * 1000;
+
+    // Warning before expiration: 3 minutes
+    const WARNING_BEFORE =
+      3 * 60 * 1000;
+
+    /* ===============================================
+       SESSION WARNING TIMER
+    =============================================== */
+
+    // Show warning after 22 minutes
+    const warningTimer = setTimeout(() => {
+      setOpenSessionWarning(true);
+    }, SESSION_DURATION - WARNING_BEFORE);
+
+    /* ===============================================
+       AUTOMATIC LOGOUT TIMER
+    =============================================== */
+
+    // Automatically logout after 25 minutes
+    const logoutTimer = setTimeout(() => {
+      sessionStorage.clear();
+
+      setOpenSessionWarning(false);
+
+      router.replace('/login');
+    }, SESSION_DURATION);
+
+    /* ===============================================
+       CLEANUP TIMERS
+    =============================================== */
 
     return () => {
+      clearTimeout(warningTimer);
+
       clearTimeout(logoutTimer);
     };
   }, [router]);
@@ -143,9 +187,7 @@ export default function DashboardLayout({
           )
         );
 
-        setOpenPasswordModal(
-          false
-        );
+        setOpenPasswordModal(false);
 
         setNewPassword('');
 
@@ -172,6 +214,8 @@ export default function DashboardLayout({
   const handleLogout = () => {
     sessionStorage.clear();
 
+    setOpenSessionWarning(false);
+
     router.replace('/login');
   };
 
@@ -181,11 +225,19 @@ export default function DashboardLayout({
 
   return (
     <>
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <Header
         onOpenNav={() =>
           setOpenNav(true)
         }
       />
+
+      {/* =====================================================
+          MAIN LAYOUT
+      ===================================================== */}
 
       <Box
         sx={{
@@ -216,9 +268,7 @@ export default function DashboardLayout({
       ===================================================== */}
 
       <Dialog
-        open={
-          openPasswordModal
-        }
+        open={openPasswordModal}
         disableEscapeKeyDown
         fullWidth
         maxWidth="xs"
@@ -238,22 +288,15 @@ export default function DashboardLayout({
                 ? 'text'
                 : 'password'
             }
-            value={
-              newPassword
-            }
-            onChange={(
-              event
-            ) => {
+            value={newPassword}
+            onChange={(event) => {
               setNewPassword(
                 event.target.value
               );
             }}
-            onKeyDown={(
-              event
-            ) => {
+            onKeyDown={(event) => {
               if (
-                event.key ===
-                  'Enter' &&
+                event.key === 'Enter' &&
                 newPassword.trim()
               ) {
                 handlePasswordChange();
@@ -298,9 +341,7 @@ export default function DashboardLayout({
         >
           <Button
             variant="contained"
-            onClick={
-              handlePasswordChange
-            }
+            onClick={handlePasswordChange}
             disabled={
               !newPassword.trim()
             }
@@ -311,11 +352,96 @@ export default function DashboardLayout({
           <Button
             variant="contained"
             color="error"
-            onClick={
-              handleLogout
-            }
+            onClick={handleLogout}
           >
             Logout
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* =====================================================
+          SESSION EXPIRATION WARNING DIALOG
+      ===================================================== */}
+
+      <Dialog
+        open={openSessionWarning}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+          }}
+        >
+          <Iconify
+            icon="eva:alert-triangle-fill"
+            sx={{
+              color: 'warning.main',
+              width: 26,
+              height: 26,
+            }}
+          />
+
+          Session Expiring Soon
+        </DialogTitle>
+
+        <DialogContent>
+          <Box
+            sx={{
+              color: 'text.secondary',
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            Your session will expire in
+            approximately 3 minutes due
+            to token expiration.
+
+            <br />
+            <br />
+
+            Please log in again to
+            continue working without
+            interruption.
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            px: 3,
+            pb: 3,
+            gap: 1,
+          }}
+        >
+          {/* ===============================================
+              DISMISS WARNING
+          =============================================== */}
+
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => {
+              setOpenSessionWarning(false);
+            }}
+          >
+            Okay
+          </Button>
+
+          {/* ===============================================
+              RELOGIN
+          =============================================== */}
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={handleLogout}
+            startIcon={
+              <Iconify icon="eva:log-in-fill" />
+            }
+          >
+            Relogin
           </Button>
         </DialogActions>
       </Dialog>
