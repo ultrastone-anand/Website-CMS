@@ -66,7 +66,7 @@ const handleCloseLotDialog = () => {
 
   const handleDownloadQR = async () => {
     try {
-      const qrUrl = `https://web.ultrastone.in/product/${categories.slug}/${product.slug}`;
+      const qrUrl = `https://www.ultrastones.com/product/${categories.slug}/${product.slug}`;
 
       const dataUrl = await QRCode.toDataURL(qrUrl, {
         width: 500,
