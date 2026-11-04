@@ -6,6 +6,7 @@ import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -18,26 +19,31 @@ onSubmit,
 currentUser,
 }) {
 const [formData, setFormData] = useState({
-id : null,
-name: '',
-slug: '',
-address: '',
-city: '',
-state: '',
-zip_code: '',
-country: '',
-primary_phone: '',
-secondary_phone: '',
-company_phone: '',
-email: '',
-google_maps_url: '',
-short_description: '',
-business_hours_mon_fri: '',
-business_hours_saturday: '',
-business_hours_sunday: '',
-display_order: 0,
-is_active: true,
-is_featured: false,
+  id: null,
+  name: '',
+  slug: '',
+  address: '',
+  city: '',
+  state: '',
+  zip_code: '',
+  country: '',
+  primary_phone: '',
+  secondary_phone: '',
+  company_phone: '',
+  email: '',
+  google_maps_url: '',
+  short_description: '',
+
+  // SEO
+  meta_title: '',
+  meta_description: '',
+
+  business_hours_mon_fri: '',
+  business_hours_saturday: '',
+  business_hours_sunday: '',
+  display_order: 0,
+  is_active: true,
+  is_featured: false,
 });
 
 useEffect(() => {
@@ -59,6 +65,10 @@ google_maps_url:
 currentUser.google_maps_url || '',
 short_description:
 currentUser.short_description || '',
+meta_title:
+  currentUser.meta_title || '',
+meta_description:
+  currentUser.meta_description || '',
 business_hours_mon_fri:
 currentUser.business_hours_mon_fri || '',
 business_hours_saturday:
@@ -119,7 +129,15 @@ setFormData((prev) => ({
 };
 
 const handleSubmit = () => {
-onSubmit(formData);
+  onSubmit({
+    ...formData,
+
+    meta_title:
+      formData.meta_title.trim() || null,
+
+    meta_description:
+      formData.meta_description.trim() || null,
+  });
 };
 
 return ( <Dialog
@@ -246,6 +264,40 @@ return ( <Dialog
         multiline
         rows={3}
       />
+
+      {/* =====================================================
+    SEO SETTINGS
+===================================================== */}
+
+<Typography
+  variant="subtitle1"
+  sx={{
+    mt: 2,
+    fontWeight: 600,
+  }}
+>
+  Search Engine Optimization (SEO)
+</Typography>
+
+<TextField
+  label="Meta Title"
+  name="meta_title"
+  value={formData.meta_title}
+  onChange={handleChange}
+  fullWidth
+  helperText={`${(formData.meta_title ?? '').length}/60 characters (recommended target)`}
+/>
+
+<TextField
+  label="Meta Description"
+  name="meta_description"
+  value={formData.meta_description}
+  onChange={handleChange}
+  fullWidth
+  multiline
+  rows={3}
+  helperText={`${(formData.meta_description ?? '').length}/160 characters (recommended target)`}
+/>
 
       <TextField
         label="Mon - Fri Hours"
