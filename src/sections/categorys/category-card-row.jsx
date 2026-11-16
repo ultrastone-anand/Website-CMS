@@ -39,6 +39,22 @@ export default function CategoryCardRow({
   const [imageError, setImageError] = useState(false);
 
   // ----------------------------------------------------------------------
+  // ROLE PERMISSIONS - SESSION STORAGE
+  // ----------------------------------------------------------------------
+
+  const user = JSON.parse(
+    sessionStorage.getItem('user') || '{}'
+  );
+
+  const roleId = Number(user?.role_id);
+
+  // Only Role 1 can Edit or Activate/Deactivate.
+  const canEditOrChangeStatus = roleId === 1;
+
+  // Preserve existing category menu access.
+  const canOpenCategoryMenu = Boolean(canEditCategory);
+
+  // ----------------------------------------------------------------------
   // CATEGORY DATA
   // ----------------------------------------------------------------------
 
@@ -85,13 +101,31 @@ export default function CategoryCardRow({
     setOpen(null);
   };
 
+  // ----------------------------------------------------------------------
+  // EDIT - ROLE 1 ONLY
+  // ----------------------------------------------------------------------
+
   const handleEditClick = () => {
     handleCloseMenu();
+
+    if (!canEditOrChangeStatus) {
+      return;
+    }
+
     onEdit?.(row);
   };
 
+  // ----------------------------------------------------------------------
+  // ACTIVATE / DEACTIVATE - ROLE 1 ONLY
+  // ----------------------------------------------------------------------
+
   const handleStatusClick = () => {
     handleCloseMenu();
+
+    if (!canEditOrChangeStatus) {
+      return;
+    }
+
     onToggleStatus?.(row);
   };
 
@@ -105,7 +139,7 @@ export default function CategoryCardRow({
   };
 
   // ----------------------------------------------------------------------
-  // NEW: MANAGE SEO
+  // MANAGE SEO
   // ----------------------------------------------------------------------
 
   const handleManageSEOClick = () => {
@@ -256,7 +290,7 @@ export default function CategoryCardRow({
               </Typography>
             </Stack>
 
-            {canEditCategory && (
+            {canOpenCategoryMenu && (
               <IconButton
                 onClick={handleOpenMenu}
                 sx={{ ml: 1 }}
@@ -418,7 +452,7 @@ export default function CategoryCardRow({
 
       {/* ACTION MENU */}
 
-      {canEditCategory && (
+      {canOpenCategoryMenu && (
         <Popover
           open={Boolean(open)}
           anchorEl={open}
@@ -438,54 +472,60 @@ export default function CategoryCardRow({
             },
           }}
         >
-          {/* EDIT */}
+          {/* EDIT AND STATUS - ROLE 1 ONLY */}
 
-          <MenuItem
-            onClick={handleEditClick}
-            sx={{
-              py: 1.5,
-              gap: 2,
-            }}
-          >
-            <Iconify
-              icon="eva:edit-fill"
-              width={24}
-              height={24}
-            />
+          {canEditOrChangeStatus && (
+            <>
+              {/* EDIT */}
 
-            Edit
-          </MenuItem>
+              <MenuItem
+                onClick={handleEditClick}
+                sx={{
+                  py: 1.5,
+                  gap: 2,
+                }}
+              >
+                <Iconify
+                  icon="eva:edit-fill"
+                  width={24}
+                  height={24}
+                />
 
-          {/* ACTIVATE / DEACTIVATE */}
+                Edit
+              </MenuItem>
 
-          <MenuItem
-            onClick={handleStatusClick}
-            sx={{
-              py: 1.5,
-              gap: 2,
-              color: row.is_active
-                ? 'error.main'
-                : 'success.main',
-            }}
-          >
-            <Iconify
-              icon={
-                row.is_active
-                  ? 'eva:close-circle-fill'
-                  : 'eva:checkmark-circle-2-fill'
-              }
-              width={24}
-              height={24}
-            />
+              {/* ACTIVATE / DEACTIVATE */}
 
-            {row.is_active
-              ? 'Deactivate'
-              : 'Activate'}
-          </MenuItem>
+              <MenuItem
+                onClick={handleStatusClick}
+                sx={{
+                  py: 1.5,
+                  gap: 2,
+                  color: row.is_active
+                    ? 'error.main'
+                    : 'success.main',
+                }}
+              >
+                <Iconify
+                  icon={
+                    row.is_active
+                      ? 'eva:close-circle-fill'
+                      : 'eva:checkmark-circle-2-fill'
+                  }
+                  width={24}
+                  height={24}
+                />
 
-          <Divider sx={{ my: 0.5 }} />
+                {row.is_active
+                  ? 'Deactivate'
+                  : 'Activate'}
+              </MenuItem>
 
-          {/* MANAGE RESOURCES */}
+              <Divider sx={{ my: 0.5 }} />
+            </>
+          )}
+
+          {/* MANAGE RESOURCES - UNCHANGED */}
 
           <MenuItem
             onClick={handleManageResourcesClick}
@@ -503,7 +543,7 @@ export default function CategoryCardRow({
             Manage Resources
           </MenuItem>
 
-          {/* NEW: MANAGE SEO */}
+          {/* MANAGE SEO - UNCHANGED */}
 
           <MenuItem
             onClick={handleManageSEOClick}
@@ -654,6 +694,5 @@ CategoryCardRow.propTypes = {
 
   onManageResources: PropTypes.func,
 
-  // NEW: CATEGORY SEO CALLBACK
   onManageSEO: PropTypes.func,
 };

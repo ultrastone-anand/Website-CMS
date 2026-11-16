@@ -32,6 +32,25 @@ export default function CategoryTableRow({
   const [imageError, setImageError] = useState(false);
 
   // ----------------------------------------------------------------------
+  // ROLE PERMISSIONS — SESSION STORAGE
+  // ----------------------------------------------------------------------
+
+  let user = {};
+
+  try {
+    user = JSON.parse(
+      sessionStorage.getItem('user') || '{}'
+    ) || {};
+  } catch {
+    user = {};
+  }
+
+  const roleId = Number(user?.role_id);
+
+  const canEditOrChangeStatus = roleId === 1;
+  const canManageSEO = [1, 6].includes(roleId);
+
+  // ----------------------------------------------------------------------
   // CATEGORY DATA
   // ----------------------------------------------------------------------
 
@@ -40,7 +59,6 @@ export default function CategoryTableRow({
   );
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
-
   const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
 
   const getFileUrl = (url) => {
@@ -78,15 +96,37 @@ export default function CategoryTableRow({
     setOpen(null);
   };
 
+  // ----------------------------------------------------------------------
+  // EDIT — ROLE 1 ONLY
+  // ----------------------------------------------------------------------
+
   const handleEditClick = () => {
     handleCloseMenu();
+
+    if (!canEditOrChangeStatus) {
+      return;
+    }
+
     onEdit?.(row);
   };
 
+  // ----------------------------------------------------------------------
+  // ACTIVATE / DEACTIVATE — ROLE 1 ONLY
+  // ----------------------------------------------------------------------
+
   const handleStatusClick = () => {
     handleCloseMenu();
+
+    if (!canEditOrChangeStatus) {
+      return;
+    }
+
     onToggleStatus?.(row);
   };
+
+  // ----------------------------------------------------------------------
+  // MANAGE RESOURCES — UNCHANGED
+  // ----------------------------------------------------------------------
 
   const handleManageResourcesClick = () => {
     handleCloseMenu();
@@ -94,11 +134,16 @@ export default function CategoryTableRow({
   };
 
   // ----------------------------------------------------------------------
-  // NEW: MANAGE CATEGORY SEO
+  // MANAGE SEO — ROLE 1 AND ROLE 6 ONLY
   // ----------------------------------------------------------------------
 
   const handleManageSEOClick = () => {
     handleCloseMenu();
+
+    if (!canManageSEO) {
+      return;
+    }
+
     onManageSEO?.(row);
   };
 
@@ -337,54 +382,60 @@ export default function CategoryTableRow({
           },
         }}
       >
-        {/* EDIT */}
+        {/* EDIT AND ACTIVATE/DEACTIVATE — ROLE 1 ONLY */}
 
-        <MenuItem
-          onClick={handleEditClick}
-          sx={{
-            py: 1.5,
-            gap: 2,
-          }}
-        >
-          <Iconify
-            icon="eva:edit-fill"
-            width={24}
-            height={24}
-          />
+        {canEditOrChangeStatus && (
+          <>
+            {/* EDIT */}
 
-          Edit
-        </MenuItem>
+            <MenuItem
+              onClick={handleEditClick}
+              sx={{
+                py: 1.5,
+                gap: 2,
+              }}
+            >
+              <Iconify
+                icon="eva:edit-fill"
+                width={24}
+                height={24}
+              />
 
-        {/* ACTIVATE / DEACTIVATE */}
+              Edit
+            </MenuItem>
 
-        <MenuItem
-          onClick={handleStatusClick}
-          sx={{
-            py: 1.5,
-            gap: 2,
-            color: row.is_active
-              ? 'error.main'
-              : 'success.main',
-          }}
-        >
-          <Iconify
-            icon={
-              row.is_active
-                ? 'eva:close-circle-fill'
-                : 'eva:checkmark-circle-2-fill'
-            }
-            width={24}
-            height={24}
-          />
+            {/* ACTIVATE / DEACTIVATE */}
 
-          {row.is_active
-            ? 'Deactivate'
-            : 'Activate'}
-        </MenuItem>
+            <MenuItem
+              onClick={handleStatusClick}
+              sx={{
+                py: 1.5,
+                gap: 2,
+                color: row.is_active
+                  ? 'error.main'
+                  : 'success.main',
+              }}
+            >
+              <Iconify
+                icon={
+                  row.is_active
+                    ? 'eva:close-circle-fill'
+                    : 'eva:checkmark-circle-2-fill'
+                }
+                width={24}
+                height={24}
+              />
 
-        <Divider sx={{ my: 0.5 }} />
+              {row.is_active
+                ? 'Deactivate'
+                : 'Activate'}
+            </MenuItem>
 
-        {/* MANAGE RESOURCES */}
+            <Divider sx={{ my: 0.5 }} />
+          </>
+        )}
+
+        {/* MANAGE RESOURCES — UNCHANGED */}
 
         <MenuItem
           onClick={handleManageResourcesClick}
@@ -402,23 +453,25 @@ export default function CategoryTableRow({
           Manage Resources
         </MenuItem>
 
-        {/* NEW: MANAGE SEO */}
+        {/* MANAGE SEO — ROLE 1 AND ROLE 6 ONLY */}
 
-        <MenuItem
-          onClick={handleManageSEOClick}
-          sx={{
-            py: 1.5,
-            gap: 2,
-          }}
-        >
-          <Iconify
-            icon="solar:settings-bold"
-            width={24}
-            height={24}
-          />
+        {canManageSEO && (
+          <MenuItem
+            onClick={handleManageSEOClick}
+            sx={{
+              py: 1.5,
+              gap: 2,
+            }}
+          >
+            <Iconify
+              icon="solar:settings-bold"
+              width={24}
+              height={24}
+            />
 
-          Manage SEO
-        </MenuItem>
+            Manage SEO
+          </MenuItem>
+        )}
       </Popover>
 
       {/* IMAGE PREVIEW DIALOG */}
@@ -551,6 +604,5 @@ CategoryTableRow.propTypes = {
 
   onManageResources: PropTypes.func,
 
-  // NEW: CATEGORY SEO CALLBACK
   onManageSEO: PropTypes.func,
 };
