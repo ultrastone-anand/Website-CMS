@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
@@ -23,6 +24,7 @@ export default function CategoryTableRow({
   onEdit,
   onToggleStatus,
   onManageResources,
+  onManageSEO,
   categories = [],
 }) {
   const [open, setOpen] = useState(null);
@@ -78,20 +80,26 @@ export default function CategoryTableRow({
 
   const handleEditClick = () => {
     handleCloseMenu();
-
     onEdit?.(row);
   };
 
   const handleStatusClick = () => {
     handleCloseMenu();
-
     onToggleStatus?.(row);
   };
 
   const handleManageResourcesClick = () => {
     handleCloseMenu();
-
     onManageResources?.(row);
+  };
+
+  // ----------------------------------------------------------------------
+  // NEW: MANAGE CATEGORY SEO
+  // ----------------------------------------------------------------------
+
+  const handleManageSEOClick = () => {
+    handleCloseMenu();
+    onManageSEO?.(row);
   };
 
   // ----------------------------------------------------------------------
@@ -298,9 +306,7 @@ export default function CategoryTableRow({
         {/* ACTION */}
 
         <TableCell align="right">
-          <IconButton
-            onClick={handleOpenMenu}
-          >
+          <IconButton onClick={handleOpenMenu}>
             <Iconify
               icon="eva:more-vertical-fill"
               width={24}
@@ -395,6 +401,24 @@ export default function CategoryTableRow({
 
           Manage Resources
         </MenuItem>
+
+        {/* NEW: MANAGE SEO */}
+
+        <MenuItem
+          onClick={handleManageSEOClick}
+          sx={{
+            py: 1.5,
+            gap: 2,
+          }}
+        >
+          <Iconify
+            icon="solar:settings-bold"
+            width={24}
+            height={24}
+          />
+
+          Manage SEO
+        </MenuItem>
       </Popover>
 
       {/* IMAGE PREVIEW DIALOG */}
@@ -438,9 +462,7 @@ export default function CategoryTableRow({
             </Typography>
           </Stack>
 
-          <IconButton
-            onClick={handleCloseImagePreview}
-          >
+          <IconButton onClick={handleCloseImagePreview}>
             <Iconify
               icon="mingcute:close-line"
               width={24}
@@ -528,4 +550,7 @@ CategoryTableRow.propTypes = {
   onToggleStatus: PropTypes.func,
 
   onManageResources: PropTypes.func,
+
+  // NEW: CATEGORY SEO CALLBACK
+  onManageSEO: PropTypes.func,
 };

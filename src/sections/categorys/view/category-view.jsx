@@ -1,3 +1,4 @@
+
 import { useTheme } from '@emotion/react';
 import { useState, useEffect } from 'react';
 
@@ -21,6 +22,8 @@ import {
 import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 
+// NEW: CATEGORY SEO
+import CategorySEO from '../categorySEO';
 import TableNoData from '../table-no-data';
 import TableEmptyRows from '../table-empty-rows';
 import CategoryCardRow from '../category-card-row';
@@ -36,35 +39,75 @@ import {
   getComparator,
 } from '../utils';
 
+// ============================================================
+// CATEGORY PAGE
+// ============================================================
+
 export default function CategoryPage() {
   const theme = useTheme();
+
+  // ============================================================
+  // TABLE STATE
+  // ============================================================
+
   const [page, setPage] = useState(0);
   const [order, setOrder] = useState('asc');
   const [selected, setSelected] = useState([]);
   const [loading, setLoading] = useState(true);
   const [orderBy, setOrderBy] = useState('name');
-  const [openEdit, setOpenEdit] = useState(false);
   const [filterName, setFilterName] = useState('');
   const [categories, setCategories] = useState([]);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [openResources, setOpenResources] = useState(false);
-  const [resourceCategory, setResourceCategory] = useState(null);
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
+  const isMobile = useMediaQuery(
+    theme.breakpoints.down('md')
+  );
+
+  // ============================================================
+  // CATEGORY CREATE / EDIT STATE
+  // ============================================================
+
+  const [openEdit, setOpenEdit] = useState(false);
 
   const [selectedCategory, setSelectedCategory] =
     useState(null);
+
+  // ============================================================
+  // CATEGORY RESOURCES STATE
+  // ============================================================
+
+  const [openResources, setOpenResources] =
+    useState(false);
+
+  const [resourceCategory, setResourceCategory] =
+    useState(null);
+
+  // ============================================================
+  // NEW: CATEGORY SEO STATE
+  // ============================================================
+
+  const [openSEO, setOpenSEO] = useState(false);
+
+  const [seoCategory, setSeoCategory] =
+    useState(null);
+
+  // ============================================================
+  // INITIAL LOAD
+  // ============================================================
 
   useEffect(() => {
     fetchCategories();
   }, []);
 
+  // ============================================================
+  // FETCH CATEGORIES
+  // ============================================================
+
   const fetchCategories = async () => {
     try {
       setLoading(true);
 
-      const response =
-        await getCategories();
+      const response = await getCategories();
 
       setCategories(response.data || []);
     } catch (error) {
@@ -72,11 +115,16 @@ export default function CategoryPage() {
         'Error fetching categories:',
         error
       );
+
       setCategories([]);
     } finally {
       setLoading(false);
     }
   };
+
+  // ============================================================
+  // TABLE SORTING
+  // ============================================================
 
   const handleSort = (event, id) => {
     const isAsc =
@@ -86,14 +134,15 @@ export default function CategoryPage() {
     setOrderBy(id);
   };
 
-  const handleSelectAllClick = (
-    event
-  ) => {
+  // ============================================================
+  // SELECT ALL
+  // ============================================================
+
+  const handleSelectAllClick = (event) => {
     if (event.target.checked) {
-      const newSelecteds =
-        categories.map(
-          (n) => n.name
-        );
+      const newSelecteds = categories.map(
+        (item) => item.name
+      );
 
       setSelected(newSelecteds);
 
@@ -103,56 +152,61 @@ export default function CategoryPage() {
     setSelected([]);
   };
 
-  const handleChangePage = (
-    event,
-    newPage
-  ) => {
+  // ============================================================
+  // PAGINATION
+  // ============================================================
+
+  const handleChangePage = (event, newPage) => {
     setPage(newPage);
   };
 
-  const handleChangeRowsPerPage = (
-    event
-  ) => {
+  const handleChangeRowsPerPage = (event) => {
     setPage(0);
+
     setRowsPerPage(
-      parseInt(
-        event.target.value,
-        10
-      )
+      parseInt(event.target.value, 10)
     );
   };
 
-  const handleFilterByName = (
-    event
-  ) => {
+  // ============================================================
+  // FILTER
+  // ============================================================
+
+  const handleFilterByName = (event) => {
     setPage(0);
-    setFilterName(
-      event.target.value
-    );
+    setFilterName(event.target.value);
   };
 
-  const dataFiltered =
-    applyFilter({
-      inputData: categories,
-      comparator: getComparator(
-        order,
-        orderBy
-      ),
-      filterName,
-    });
+  // ============================================================
+  // FILTERED DATA
+  // ============================================================
+
+  const dataFiltered = applyFilter({
+    inputData: categories,
+    comparator: getComparator(
+      order,
+      orderBy
+    ),
+    filterName,
+  });
 
   const notFound =
-    !dataFiltered.length &&
-    !!filterName;
+    !dataFiltered.length && !!filterName;
+
+  // ============================================================
+  // ADD CATEGORY
+  // ============================================================
 
   const handleAddCategory = () => {
     setSelectedCategory(null);
     setOpenEdit(true);
   };
 
-  const handleEditCategory = (
-    category
-  ) => {
+  // ============================================================
+  // EDIT CATEGORY
+  // ============================================================
+
+  const handleEditCategory = (category) => {
     setSelectedCategory(category);
     setOpenEdit(true);
   };
@@ -162,61 +216,94 @@ export default function CategoryPage() {
     setSelectedCategory(null);
   };
 
-const handleSubmitCategory = async (formData) => {
-  try {
-    if (selectedCategory) {
-      await updateCategory(
-        selectedCategory.id,
-        formData
+  // ============================================================
+  // CREATE / UPDATE CATEGORY
+  // ============================================================
+
+  const handleSubmitCategory = async (formData) => {
+    try {
+      if (selectedCategory) {
+        await updateCategory(
+          selectedCategory.id,
+          formData
+        );
+      } else {
+        await createCategory(formData);
+      }
+
+      await fetchCategories();
+
+      handleCloseEdit();
+    } catch (error) {
+      console.error(
+        'Error saving category:',
+        error
       );
-    } else {
-      await createCategory(formData);
+
+      throw error;
     }
+  };
 
-    await fetchCategories();
-    handleCloseEdit();
-  } catch (error) {
-    console.error(
-      'Error saving category:',
-      error
-    );
+  // ============================================================
+  // UPDATE CATEGORY STATUS
+  // ============================================================
 
-    throw error;
-  }
-};
+  const updateCategoryStatus = async (item) => {
+    try {
+      const payload = new FormData();
 
-const updateCategoryStatus = async (item) => {
-  try {
-    const payload = new FormData();
+      payload.append(
+        'is_active',
+        String(!item.is_active)
+      );
 
-    payload.append(
-      'is_active',
-      String(!item.is_active)
-    );
+      await updateCategory(
+        item.id,
+        payload
+      );
 
-    await updateCategory(
-      item.id,
-      payload
-    );
+      await fetchCategories();
+    } catch (error) {
+      console.error(
+        'Error updating category status:',
+        error
+      );
+    }
+  };
 
-    await fetchCategories();
-  } catch (error) {
-    console.error(
-      'Error updating category status:',
-      error
-    );
-  }
-};
+  // ============================================================
+  // CATEGORY RESOURCES
+  // ============================================================
 
-const handleManageResources = (category) => {
-  setResourceCategory(category);
-  setOpenResources(true);
-};
+  const handleManageResources = (category) => {
+    setResourceCategory(category);
+    setOpenResources(true);
+  };
 
-const handleCloseResources = () => {
-  setOpenResources(false);
-  setResourceCategory(null);
-};
+  const handleCloseResources = () => {
+    setOpenResources(false);
+    setResourceCategory(null);
+  };
+
+  // ============================================================
+  // NEW: CATEGORY SEO
+  // ============================================================
+
+  const handleManageSEO = (category) => {
+    if (!category?.id) return;
+
+    setSeoCategory(category);
+    setOpenSEO(true);
+  };
+
+  const handleCloseSEO = () => {
+    setOpenSEO(false);
+    setSeoCategory(null);
+  };
+
+  // ============================================================
+  // LOADING
+  // ============================================================
 
   if (loading) {
     return (
@@ -228,8 +315,16 @@ const handleCloseResources = () => {
     );
   }
 
+  // ============================================================
+  // RENDER
+  // ============================================================
+
   return (
     <Container maxWidth={false}>
+      {/* =====================================================
+          PAGE HEADER
+      ===================================================== */}
+
       <Stack
         direction="row"
         alignItems="center"
@@ -254,18 +349,20 @@ const handleCloseResources = () => {
         )}
       </Stack>
 
+      {/* =====================================================
+          CATEGORY LIST
+      ===================================================== */}
+
       <Card>
         <CategoryTableToolbar
-          numSelected={
-            selected.length
-          }
-          filterName={
-            filterName
-          }
-          onFilterName={
-            handleFilterByName
-          }
+          numSelected={selected.length}
+          filterName={filterName}
+          onFilterName={handleFilterByName}
         />
+
+        {/* =====================================================
+            MOBILE VIEW
+        ===================================================== */}
 
         {isMobile ? (
           <Stack spacing={2} sx={{ p: 2 }}>
@@ -283,7 +380,12 @@ const handleCloseResources = () => {
                   onToggleStatus={
                     updateCategoryStatus
                   }
-                  onManageResources={handleManageResources}
+                  onManageResources={
+                    handleManageResources
+                  }
+                  onManageSEO={
+                    handleManageSEO
+                  }
                 />
               ))}
 
@@ -292,6 +394,10 @@ const handleCloseResources = () => {
             )}
           </Stack>
         ) : (
+          /* =====================================================
+             DESKTOP VIEW
+          ===================================================== */
+
           <Scrollbar>
             <TableContainer
               sx={{
@@ -313,38 +419,38 @@ const handleCloseResources = () => {
                     handleSelectAllClick
                   }
                   headLabel={[
-  {
-    id: 'name',
-    label: 'Name',
-  },
-  {
-    id: 'slug',
-    label: 'Slug',
-  },
-  {
-    id: 'parent',
-    label: 'Parent',
-  },
-  {
-    id: 'type',
-    label: 'Type',
-  },
-  {
-    id: 'silica_warning',
-    label: 'Silica Warning',
-  },
-  {
-    id: 'datasheet',
-    label: 'Datasheet',
-  },
-  {
-    id: 'status',
-    label: 'Status',
-  },
-  {
-    id: '',
-  },
-]}
+                    {
+                      id: 'name',
+                      label: 'Name',
+                    },
+                    {
+                      id: 'slug',
+                      label: 'Slug',
+                    },
+                    {
+                      id: 'parent',
+                      label: 'Parent',
+                    },
+                    {
+                      id: 'type',
+                      label: 'Type',
+                    },
+                    {
+                      id: 'silica_warning',
+                      label: 'Silica Warning',
+                    },
+                    {
+                      id: 'datasheet',
+                      label: 'Datasheet',
+                    },
+                    {
+                      id: 'status',
+                      label: 'Status',
+                    },
+                    {
+                      id: '',
+                    },
+                  ]}
                 />
 
                 <TableBody>
@@ -352,7 +458,7 @@ const handleCloseResources = () => {
                     .slice(
                       page * rowsPerPage,
                       page * rowsPerPage +
-                      rowsPerPage
+                        rowsPerPage
                     )
                     .map((row) => (
                       <CategoryTableRow
@@ -365,7 +471,12 @@ const handleCloseResources = () => {
                         onToggleStatus={
                           updateCategoryStatus
                         }
-                        onManageResources={handleManageResources}
+                        onManageResources={
+                          handleManageResources
+                        }
+                        onManageSEO={
+                          handleManageSEO
+                        }
                       />
                     ))}
 
@@ -389,18 +500,16 @@ const handleCloseResources = () => {
           </Scrollbar>
         )}
 
+        {/* =====================================================
+            PAGINATION
+        ===================================================== */}
+
         <TablePagination
           page={page}
           component="div"
-          count={
-            categories.length
-          }
-          rowsPerPage={
-            rowsPerPage
-          }
-          onPageChange={
-            handleChangePage
-          }
+          count={categories.length}
+          rowsPerPage={rowsPerPage}
+          onPageChange={handleChangePage}
           rowsPerPageOptions={[
             5,
             10,
@@ -413,26 +522,39 @@ const handleCloseResources = () => {
         />
       </Card>
 
+      {/* =====================================================
+          CATEGORY CREATE / EDIT DIALOG
+      ===================================================== */}
+
       <CategoryQuickEdit
         open={openEdit}
         currentCategory={
           selectedCategory
         }
         categories={categories}
-        onClose={
-          handleCloseEdit
-        }
-        onSubmit={
-          handleSubmitCategory
-        }
+        onClose={handleCloseEdit}
+        onSubmit={handleSubmitCategory}
       />
 
-        <CategoryResources
-  open={openResources}
-  onClose={handleCloseResources}
-  category={resourceCategory}
-/>
-      
+      {/* =====================================================
+          CATEGORY RESOURCES DIALOG
+      ===================================================== */}
+
+      <CategoryResources
+        open={openResources}
+        onClose={handleCloseResources}
+        category={resourceCategory}
+      />
+
+      {/* =====================================================
+          NEW: CATEGORY SEO DIALOG
+      ===================================================== */}
+
+      <CategorySEO
+        open={openSEO}
+        onClose={handleCloseSEO}
+        category={seoCategory}
+      />
     </Container>
   );
 }

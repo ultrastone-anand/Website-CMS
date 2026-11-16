@@ -361,3 +361,190 @@ export const deleteCategoryResource = async (id) => {
 
   return parseResourceResponse(response);
 };
+
+
+
+//
+// =====================================================
+// CATEGORY SEO APIs
+// =====================================================
+//
+
+const CATEGORY_SEO_API = `${API_URL}/category-seo`;
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+const getCategorySeoHeaders = () => {
+  const token = sessionStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+
+    ...(token && {
+      Authorization: `Bearer ${token}`,
+    }),
+  };
+};
+
+const parseCategorySeoResponse = async (response) => {
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  let data = null;
+
+  if (contentType.includes("application/json")) {
+    data = await response.json();
+  } else {
+    const text = await response.text();
+
+    data = text
+      ? { message: text }
+      : {};
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.error ||
+      `Category SEO request failed (${response.status})`
+    );
+  }
+
+  return data;
+};
+
+// =====================================================
+// GET ALL CATEGORY SEO - ADMIN
+// =====================================================
+
+export const getAllCategorySeo = async (
+  filters = {}
+) => {
+  const params = new URLSearchParams();
+
+  if (
+    filters.search !== undefined &&
+    filters.search !== null &&
+    filters.search !== ""
+  ) {
+    params.set("search", filters.search);
+  }
+
+  if (
+    filters.is_active !== undefined &&
+    filters.is_active !== null &&
+    filters.is_active !== ""
+  ) {
+    params.set(
+      "is_active",
+      String(filters.is_active)
+    );
+  }
+
+  const query = params.toString();
+
+  const url = query
+    ? `${CATEGORY_SEO_API}?${query}`
+    : CATEGORY_SEO_API;
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: getCategorySeoHeaders(),
+  });
+
+  return parseCategorySeoResponse(response);
+};
+
+// =====================================================
+// GET CATEGORY SEO BY ID - ADMIN
+// =====================================================
+
+export const getCategorySeoById = async (id) => {
+  const response = await fetch(
+    `${CATEGORY_SEO_API}/${encodeURIComponent(id)}`,
+    {
+      method: "GET",
+      headers: getCategorySeoHeaders(),
+    }
+  );
+
+  return parseCategorySeoResponse(response);
+};
+
+// =====================================================
+// GET CATEGORY SEO BY SLUG - PUBLIC
+// =====================================================
+
+export const getPublicCategorySeo = async (slug) => {
+  const response = await fetch(
+    `${CATEGORY_SEO_API}/public/${encodeURIComponent(slug)}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    }
+  );
+
+  return parseCategorySeoResponse(response);
+};
+
+// =====================================================
+// CREATE / SAVE CATEGORY SEO - ADMIN
+// =====================================================
+
+export const createCategorySeo = async (
+  categoryId,
+  payload
+) => {
+  const response = await fetch(
+    `${CATEGORY_SEO_API}/${encodeURIComponent(categoryId)}`,
+    {
+      method: "POST",
+      headers: getCategorySeoHeaders(),
+      body: JSON.stringify(payload),
+    }
+  );
+
+  return parseCategorySeoResponse(response);
+};
+
+// =====================================================
+// UPDATE CATEGORY SEO - ADMIN
+// =====================================================
+
+export const updateCategorySeo = async (
+  categoryId,
+  payload
+) => {
+  const response = await fetch(
+    `${CATEGORY_SEO_API}/${encodeURIComponent(categoryId)}`,
+    {
+      method: "PUT",
+      headers: getCategorySeoHeaders(),
+      body: JSON.stringify(payload),
+    }
+  );
+
+  return parseCategorySeoResponse(response);
+};
+
+// =====================================================
+// DELETE / CLEAR CATEGORY SEO - ADMIN
+// =====================================================
+
+export const deleteCategorySeo = async (
+  categoryId
+) => {
+  const response = await fetch(
+    `${CATEGORY_SEO_API}/${encodeURIComponent(categoryId)}`,
+    {
+      method: "DELETE",
+      headers: getCategorySeoHeaders(),
+    }
+  );
+
+  return parseCategorySeoResponse(response);
+};

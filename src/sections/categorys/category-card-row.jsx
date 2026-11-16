@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
@@ -27,10 +28,14 @@ export default function CategoryCardRow({
   onEdit,
   onToggleStatus,
   onManageResources,
+  onManageSEO,
   categories = [],
 }) {
   const [open, setOpen] = useState(null);
-  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+
+  const [imagePreviewOpen, setImagePreviewOpen] =
+    useState(false);
+
   const [imageError, setImageError] = useState(false);
 
   // ----------------------------------------------------------------------
@@ -42,6 +47,7 @@ export default function CategoryCardRow({
   );
 
   const apiUrl = import.meta.env.VITE_API_URL || '';
+
   const apiOrigin = apiUrl.replace(/\/api\/?$/, '');
 
   const getFileUrl = (url) => {
@@ -81,22 +87,30 @@ export default function CategoryCardRow({
 
   const handleEditClick = () => {
     handleCloseMenu();
-
     onEdit?.(row);
   };
 
   const handleStatusClick = () => {
     handleCloseMenu();
-
     onToggleStatus?.(row);
   };
 
-  // NEW: MANAGE RESOURCES
+  // ----------------------------------------------------------------------
+  // MANAGE RESOURCES
+  // ----------------------------------------------------------------------
 
   const handleManageResourcesClick = () => {
     handleCloseMenu();
-
     onManageResources?.(row);
+  };
+
+  // ----------------------------------------------------------------------
+  // NEW: MANAGE SEO
+  // ----------------------------------------------------------------------
+
+  const handleManageSEOClick = () => {
+    handleCloseMenu();
+    onManageSEO?.(row);
   };
 
   // ----------------------------------------------------------------------
@@ -488,6 +502,24 @@ export default function CategoryCardRow({
 
             Manage Resources
           </MenuItem>
+
+          {/* NEW: MANAGE SEO */}
+
+          <MenuItem
+            onClick={handleManageSEOClick}
+            sx={{
+              py: 1.5,
+              gap: 2,
+            }}
+          >
+            <Iconify
+              icon="solar:settings-bold"
+              width={24}
+              height={24}
+            />
+
+            Manage SEO
+          </MenuItem>
         </Popover>
       )}
 
@@ -499,7 +531,7 @@ export default function CategoryCardRow({
         maxWidth="md"
         fullWidth
         PaperProps={{
-          sx:{
+          sx: {
             overflow: 'hidden',
           },
         }}
@@ -621,4 +653,7 @@ CategoryCardRow.propTypes = {
   onToggleStatus: PropTypes.func,
 
   onManageResources: PropTypes.func,
+
+  // NEW: CATEGORY SEO CALLBACK
+  onManageSEO: PropTypes.func,
 };
