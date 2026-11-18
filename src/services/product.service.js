@@ -45,29 +45,30 @@ export const getProductsByCategory =async (slug) => {
     return data;
   };
 
-// ================= GET PRODUCT DETAIL =================
 
+ // ================= GET PRODUCT DETAIL (CMS) =================
 
-export const getProductDetail =async (slug) => {
-    const response = await fetch(
-      `${API_URL}/stones/productdetail/${slug}`,
-      {
-        method: 'GET',
-        headers: getHeaders(),
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.message ||
-          'Failed to fetch product'
-      );
+export const getProductDetail = async (slug) => {
+  const response = await fetch(
+    `${API_URL}/stones/admin/productdetail/${encodeURIComponent(slug)}`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
     }
+  );
 
-    return data;
-  };
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+        'Failed to fetch product'
+    );
+  }
+
+  return data;
+};
+
 
 // ================= CREATE PRODUCT =================
 

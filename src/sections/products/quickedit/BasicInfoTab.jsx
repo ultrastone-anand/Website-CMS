@@ -45,12 +45,22 @@ export default function BasicInfoTab({
 
 }) {
 
-    const selectedCategory = categories.find(
-        (category) => String(category.id) === String(formData.category_id)
-    );
 
-    const isUltraquartz =
-        String(selectedCategory?.slug || '').trim().toLowerCase() === 'ultraquartz';
+const selectedCategory = categories.find(
+  (category) =>
+    String(category.id) === String(formData.category_id)
+);
+
+const normalizeCategory = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]/g, '');
+
+const isUltraquartz =
+  normalizeCategory(selectedCategory?.slug) === 'ultraquartz' ||
+  normalizeCategory(selectedCategory?.name) === 'ultraquartz';
+
 
     return (
 
