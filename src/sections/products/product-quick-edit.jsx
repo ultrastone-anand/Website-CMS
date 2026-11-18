@@ -51,6 +51,7 @@ const defaultForm = {
     translucent: false,
     cut_to_size: false,
     origin_country: '',
+    vein_color: '',
     pantone_colour: '',
 
     color_enhancing: false,
