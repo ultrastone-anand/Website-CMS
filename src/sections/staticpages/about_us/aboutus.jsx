@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import React, {
   useState,
   useEffect,
@@ -7,8 +8,10 @@ import {
   Box,
   Card,
   Grid,
+  Alert,
   Button,
   Divider,
+  MenuItem,
   Container,
   TextField,
   Typography,
@@ -19,6 +22,8 @@ import {
 import {
   updatePage,
   getPageBySlug,
+  updatePageSeo,
+  getPageSeoById,
   uploadPageImage,
 } from "../../../services/pages.service";
 
@@ -278,6 +283,185 @@ const DEFAULT_FORM = {
 /* =========================================================
    COMPONENT
 ========================================================= */
+
+const SEO_FIELDS = [
+  ['meta_title', 'Meta Title', 60],
+  ['meta_description', 'Meta Description', 160, 3],
+  ['canonical_url', 'Canonical URL'],
+  ['og_title', 'Open Graph Title'],
+  ['og_description', 'Open Graph Description', null, 3],
+  ['og_image_url', 'Open Graph Image URL'],
+  ['seo_content', 'SEO Content', null, 5],
+];
+
+const PageSEOSettings = ({ pageId }) => {
+  const [seo, setSeo] = useState(null);
+  const [loadingSeo, setLoadingSeo] = useState(true);
+  const [savingSeo, setSavingSeo] = useState(false);
+  const [uploadingSeo, setUploadingSeo] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [retry, setRetry] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoadingSeo(true);
+    setSeo(null);
+    setError('');
+    setSuccess('');
+    getPageSeoById(pageId)
+      .then((response) => {
+        if (!active) return;
+        const record = response.data.page_seo || {};
+        const values = Object.fromEntries(
+          SEO_FIELDS.map(([key]) => [key, record[key] ?? ''])
+        );
+        setSeo({
+          ...values,
+          robots_index: record.robots_index || 'index',
+          robots_follow: record.robots_follow || 'follow',
+          schema_markup: typeof record.schema_markup === 'string'
+            ? record.schema_markup
+            : JSON.stringify(record.schema_markup ?? {}, null, 2),
+        });
+      })
+      .catch((err) => { if (active) setError(err.message); })
+      .finally(() => { if (active) setLoadingSeo(false); });
+    return () => { active = false; };
+  }, [pageId, retry]);
+
+  const changeSeo = (key, value) => {
+    setSeo((prev) => ({ ...prev, [key]: value }));
+    setSuccess('');
+    setError('');
+  };
+
+  const saveSeo = async () => {
+    setError('');
+    setSuccess('');
+    try {
+      const schema = JSON.parse(seo.schema_markup.trim() || '{}');
+      if (!schema || typeof schema !== 'object') {
+        throw new Error('Schema markup must be a JSON object or array.');
+      }
+      ['canonical_url', 'og_image_url'].forEach((key) => {
+        if (!seo[key].trim()) return;
+        let url;
+        try { url = new URL(seo[key].trim()); }
+        catch { throw new Error(`${key} must be a valid absolute URL.`); }
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          throw new Error(`${key} must use HTTP or HTTPS.`);
+        }
+      });
+      setSavingSeo(true);
+      await updatePageSeo(pageId, { ...seo, schema_markup: schema });
+      setSuccess('SEO settings saved successfully.');
+    } catch (err) {
+      setError(err instanceof SyntaxError ? 'Schema markup must be valid JSON.' : err.message);
+    } finally {
+      setSavingSeo(false);
+    }
+  };
+
+  const uploadOgImage = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setUploadingSeo(true);
+    setError('');
+    setSuccess('');
+    try {
+      const response = await uploadPageImage(file);
+      const url = response.data?.secure_url || response.secure_url;
+      if (!url) throw new Error('Image upload failed. URL not received.');
+      changeSeo('og_image_url', url);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadingSeo(false);
+    }
+  };
+
+  const busy = savingSeo || uploadingSeo;
+  return (
+    <Card sx={{ mb: 4 }}>
+      <CardContent>
+        <Typography variant="h6" fontWeight={600} mb={1}>SEO Settings</Typography>
+        <Typography variant="body2" color="text.secondary" mb={3}>
+          Manage search engine visibility and social sharing independently of page content.
+        </Typography>
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        {success && <Alert severity="success" sx={{ mb: 2 }}>{success}</Alert>}
+        {loadingSeo && <CircularProgress size={28} />}
+        {!loadingSeo && !seo && (
+          <Button onClick={() => setRetry((n) => n + 1)}>Retry loading SEO</Button>
+        )}
+        {!loadingSeo && seo && (
+          <>
+            <Grid container spacing={2}>
+              {SEO_FIELDS.map(([key, label, limit, rows]) => (
+                <Grid item xs={12} key={key}>
+                  <TextField fullWidth label={label} value={seo[key]}
+                    disabled={busy} multiline={Boolean(rows)} minRows={rows}
+                    onChange={(e) => changeSeo(key, e.target.value)}
+                    helperText={limit ? `${seo[key].length} characters / suggested ${limit}` : undefined}
+                  />
+                  {key === 'og_image_url' && (
+                    <Box sx={{ mt: 2 }}>
+                      <Button component="label" variant="outlined" disabled={busy}>
+                        {uploadingSeo ? 'Uploading...' : 'Upload OG Image'}
+                        <input hidden type="file" accept="image/*" onChange={uploadOgImage} />
+                      </Button>
+                    </Box>
+                  )}
+                </Grid>
+              ))}
+              <Grid item xs={12} sm={6}>
+                <TextField select fullWidth label="Robots Index" value={seo.robots_index}
+                  disabled={busy} onChange={(e) => changeSeo('robots_index', e.target.value)}>
+                  <MenuItem value="index">Index</MenuItem>
+                  <MenuItem value="noindex">Noindex</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField select fullWidth label="Robots Follow" value={seo.robots_follow}
+                  disabled={busy} onChange={(e) => changeSeo('robots_follow', e.target.value)}>
+                  <MenuItem value="follow">Follow</MenuItem>
+                  <MenuItem value="nofollow">Nofollow</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField fullWidth multiline minRows={8} label="Schema Markup (JSON-LD)"
+                  value={seo.schema_markup} disabled={busy}
+                  onChange={(e) => changeSeo('schema_markup', e.target.value)}
+                  InputProps={{ sx: { fontFamily: 'monospace' } }} />
+              </Grid>
+            </Grid>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+              <Button variant="contained" disabled={busy} onClick={saveSeo}
+                sx={{ background: '#c91f26', '&:hover': { background: '#aa1a20' } }}>
+                {savingSeo ? 'Saving SEO...' : 'Save SEO Settings'}
+              </Button>
+            </Box>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+PageSEOSettings.propTypes = {
+  pageId: PropTypes.number.isRequired,
+};
+
+const canManagePageSeo = () => {
+  try {
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
+    return [1, 6].includes(Number(user?.role_id));
+  } catch {
+    return false;
+  }
+};
 
 const Aboutus = () => {
   const [
@@ -2577,6 +2761,10 @@ const Aboutus = () => {
             </Grid>
           </CardContent>
         </Card>
+
+        {pageId && canManagePageSeo() && (
+          <PageSEOSettings key={pageId} pageId={pageId} />
+        )}
 
         {/* =================================================
             SAVE

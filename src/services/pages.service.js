@@ -1,5 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
+// ============================================================
+// HEADERS
+// ============================================================
+
 const getHeaders = () => {
   const token = sessionStorage.getItem("token");
 
@@ -21,6 +25,10 @@ const getUploadHeaders = () => {
   };
 };
 
+// ============================================================
+// RESPONSE HANDLER
+// ============================================================
+
 const parseResponse = async (
   response,
   fallbackMessage
@@ -29,7 +37,7 @@ const parseResponse = async (
 
   try {
     data = await response.json();
-  } catch (error) {
+  } catch {
     data = null;
   }
 
@@ -42,13 +50,13 @@ const parseResponse = async (
   return data;
 };
 
-// ================================
-// CMS PAGES
-// ================================
+// ============================================================
+// CMS PAGES - GET BY SLUG
+// ============================================================
 
 export const getPageBySlug = async (slug) => {
   const response = await fetch(
-    `${API_URL}/pages/${slug}`,
+    `${API_URL}/pages/${encodeURIComponent(slug)}`,
     {
       method: "GET",
       headers: getHeaders(),
@@ -60,6 +68,10 @@ export const getPageBySlug = async (slug) => {
     "Failed to fetch page"
   );
 };
+
+// ============================================================
+// CMS PAGES - CREATE
+// ============================================================
 
 export const createPage = async (payload) => {
   const response = await fetch(
@@ -76,6 +88,10 @@ export const createPage = async (payload) => {
     "Failed to create page"
   );
 };
+
+// ============================================================
+// CMS PAGES - UPDATE
+// ============================================================
 
 export const updatePage = async (
   id,
@@ -96,6 +112,10 @@ export const updatePage = async (
   );
 };
 
+// ============================================================
+// CMS PAGES - DELETE
+// ============================================================
+
 export const deletePage = async (id) => {
   const response = await fetch(
     `${API_URL}/pages/${id}`,
@@ -111,9 +131,127 @@ export const deletePage = async (id) => {
   );
 };
 
-// ================================
+// ============================================================
+// PAGE SEO - GET ALL
+// ============================================================
+
+export const getAllPageSeo = async () => {
+  const response = await fetch(
+    `${API_URL}/pages/seo`,
+    {
+      method: "GET",
+      headers: getHeaders(),
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to fetch all page SEO records"
+  );
+};
+
+// ============================================================
+// PAGE SEO - GET BY PAGE ID
+// ============================================================
+
+export const getPageSeoById = async (pageId) => {
+  const response = await fetch(
+    `${API_URL}/pages/seo/${pageId}`,
+    {
+      method: "GET",
+      headers: getHeaders(),
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to fetch page SEO details"
+  );
+};
+
+// ============================================================
+// PAGE SEO - GET PUBLIC BY SLUG
+// ============================================================
+
+export const getPublicPageSeo = async (slug) => {
+  const response = await fetch(
+    `${API_URL}/pages/seo/public/${encodeURIComponent(slug)}`,
+    {
+      method: "GET",
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to fetch public page SEO"
+  );
+};
+
+// ============================================================
+// PAGE SEO - CREATE
+// ============================================================
+
+export const createPageSeo = async (payload) => {
+  const response = await fetch(
+    `${API_URL}/pages/seo`,
+    {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to create page SEO"
+  );
+};
+
+// ============================================================
+// PAGE SEO - UPDATE OR CREATE
+// ============================================================
+
+export const updatePageSeo = async (
+  pageId,
+  payload
+) => {
+  const response = await fetch(
+    `${API_URL}/pages/seo/${pageId}`,
+    {
+      method: "PUT",
+      headers: getHeaders(),
+      body: JSON.stringify(payload),
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to save page SEO"
+  );
+};
+
+// ============================================================
+// PAGE SEO - DELETE
+// ============================================================
+
+export const deletePageSeo = async (pageId) => {
+  const response = await fetch(
+    `${API_URL}/pages/seo/${pageId}`,
+    {
+      method: "DELETE",
+      headers: getHeaders(),
+    }
+  );
+
+  return parseResponse(
+    response,
+    "Failed to delete page SEO"
+  );
+};
+
+// ============================================================
 // UPLOAD PAGE IMAGE TO R2
-// ================================
+// ============================================================
 
 export const uploadPageImage = async (file) => {
   const formData = new FormData();
@@ -135,18 +273,13 @@ export const uploadPageImage = async (file) => {
   );
 };
 
-// ================================
+// ============================================================
 // UPLOAD PAGE PDF TO BACKEND
-// ================================
+// ============================================================
 
 export const uploadPagePdf = async (file) => {
   const formData = new FormData();
 
-  /*
-   * Must match:
-   * upload.single("pdf")
-   * in the backend route.
-   */
   formData.append("pdf", file);
 
   const response = await fetch(
