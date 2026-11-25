@@ -30,6 +30,7 @@ export const HomescreenPage = lazy(() => import('src/pages/staticpages/homescree
 export const SilicaFirstPage = lazy(() => import('src/pages/staticpages/silica_first'));
 export const PrivacyPolicyPage = lazy(() => import('src/pages/staticpages/privacy_policy'));
 export const MerchandisePage = lazy(() => import('src/pages/staticpages/merchandise_display'));
+export const SeoPage = lazy(() => import('src/pages//staticpages/seo'));
 
 export default function Router() {
   const token =
@@ -222,6 +223,10 @@ export default function Router() {
         {
           path: 'homescreen',
           element: <HomescreenPage />,
+        },
+        {
+          path: 'seo',
+          element: <SeoPage />,
         },
 
         {

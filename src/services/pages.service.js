@@ -1,3 +1,4 @@
+
 const API_URL = import.meta.env.VITE_API_URL;
 
 // ============================================================
@@ -48,6 +49,20 @@ const parseResponse = async (
   }
 
   return data;
+};
+
+// ============================================================
+// SEO MODE HELPER
+// ============================================================
+
+const getSeoModeQuery = (mode = "page") => {
+  if (!["page", "record"].includes(mode)) {
+    throw new Error("Invalid SEO mode.");
+  }
+
+  return mode === "record"
+    ? "?mode=record"
+    : "";
 };
 
 // ============================================================
@@ -135,9 +150,11 @@ export const deletePage = async (id) => {
 // PAGE SEO - GET ALL
 // ============================================================
 
-export const getAllPageSeo = async () => {
+export const getAllPageSeo = async (
+  mode = "page"
+) => {
   const response = await fetch(
-    `${API_URL}/pages/seo`,
+    `${API_URL}/pages/seo${getSeoModeQuery(mode)}`,
     {
       method: "GET",
       headers: getHeaders(),
@@ -151,12 +168,15 @@ export const getAllPageSeo = async () => {
 };
 
 // ============================================================
-// PAGE SEO - GET BY PAGE ID
+// PAGE SEO - GET BY PAGE ID OR SEO RECORD ID
 // ============================================================
 
-export const getPageSeoById = async (pageId) => {
+export const getPageSeoById = async (
+  id,
+  mode = "page"
+) => {
   const response = await fetch(
-    `${API_URL}/pages/seo/${pageId}`,
+    `${API_URL}/pages/seo/${encodeURIComponent(id)}${getSeoModeQuery(mode)}`,
     {
       method: "GET",
       headers: getHeaders(),
@@ -191,9 +211,12 @@ export const getPublicPageSeo = async (slug) => {
 // PAGE SEO - CREATE
 // ============================================================
 
-export const createPageSeo = async (payload) => {
+export const createPageSeo = async (
+  payload,
+  mode = "page"
+) => {
   const response = await fetch(
-    `${API_URL}/pages/seo`,
+    `${API_URL}/pages/seo${getSeoModeQuery(mode)}`,
     {
       method: "POST",
       headers: getHeaders(),
@@ -212,11 +235,12 @@ export const createPageSeo = async (payload) => {
 // ============================================================
 
 export const updatePageSeo = async (
-  pageId,
-  payload
+  id,
+  payload,
+  mode = "page"
 ) => {
   const response = await fetch(
-    `${API_URL}/pages/seo/${pageId}`,
+    `${API_URL}/pages/seo/${encodeURIComponent(id)}${getSeoModeQuery(mode)}`,
     {
       method: "PUT",
       headers: getHeaders(),
@@ -234,9 +258,12 @@ export const updatePageSeo = async (
 // PAGE SEO - DELETE
 // ============================================================
 
-export const deletePageSeo = async (pageId) => {
+export const deletePageSeo = async (
+  id,
+  mode = "page"
+) => {
   const response = await fetch(
-    `${API_URL}/pages/seo/${pageId}`,
+    `${API_URL}/pages/seo/${encodeURIComponent(id)}${getSeoModeQuery(mode)}`,
     {
       method: "DELETE",
       headers: getHeaders(),
@@ -248,6 +275,36 @@ export const deletePageSeo = async (pageId) => {
     "Failed to delete page SEO"
   );
 };
+
+// ============================================================
+// CENTRALIZED SEO MANAGEMENT HELPERS
+// ============================================================
+
+// GET ALL SEO RECORDS
+// Includes CMS-managed and standalone pages.
+
+export const getAllSeoRecords = async () =>
+  getAllPageSeo("record");
+
+// GET SEO RECORD BY page_seo.id
+
+export const getSeoRecordById = async (seoId) =>
+  getPageSeoById(seoId, "record");
+
+// CREATE SEO RECORD
+
+export const createSeoRecord = async (payload) =>
+  createPageSeo(payload, "record");
+
+// UPDATE SEO RECORD
+
+export const updateSeoRecord = async (seoId, payload) =>
+  updatePageSeo(seoId, payload, "record");
+
+// DELETE SEO RECORD
+
+export const deleteSeoRecord = async (seoId) =>
+  deletePageSeo(seoId, "record");
 
 // ============================================================
 // UPLOAD PAGE IMAGE TO R2

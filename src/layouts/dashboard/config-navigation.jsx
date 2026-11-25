@@ -112,6 +112,10 @@ export const getNavConfig = () => {
       ),
       children: [
         {
+          title: 'SEO',
+          path: '/dashboard/seo',
+        },
+        {
           title: 'About Us',
           path: '/dashboard/aboutus',
         },
