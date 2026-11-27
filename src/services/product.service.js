@@ -24,26 +24,28 @@ const getMultipartHeaders = () => {
 
 // ================= GET PRODUCTS BY CATEGORY =================
 
-export const getProductsByCategory =async (slug) => {
-    const response = await fetch(
-      `${API_URL}/stones/${slug}`,
-      {
-        method: 'GET',
-        headers: getHeaders(),
-      }
-    );
+// ================= GET PRODUCTS BY CATEGORY - CMS ADMIN =================
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        data.message ||
-          'Failed to fetch products'
-      );
+export const getProductsByCategory = async (slug) => {
+  const response = await fetch(
+    `${API_URL}/stones/admin/category/${encodeURIComponent(slug)}`,
+    {
+      method: 'GET',
+      headers: getHeaders(),
     }
+  );
 
-    return data;
-  };
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message ||
+      'Failed to fetch products'
+    );
+  }
+
+  return data;
+};
 
 
  // ================= GET PRODUCT DETAIL (CMS) =================

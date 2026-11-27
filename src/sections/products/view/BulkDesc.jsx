@@ -43,7 +43,7 @@ import Iconify from "src/components/iconify";
 const API_BASE_URL =
     import.meta.env.VITE_API_URL 
 
-const CATEGORY_API = `${API_BASE_URL}/stones`;
+const CATEGORY_API = `${API_BASE_URL}/stones/admin/categories`;
 
 const BULK_DESCRIPTION_API =
     `${API_BASE_URL}/bulk-descriptions`;
@@ -429,78 +429,83 @@ export default function BulkDesc() {
         resetFileInput();
     };
 
-    // --------------------------------------------------------------------
-    // LOAD CATEGORIES
-    // --------------------------------------------------------------------
+// --------------------------------------------------------------------
+// LOAD CATEGORIES - CMS ADMIN
+// --------------------------------------------------------------------
 
-    useEffect(() => {
-        let isMounted = true;
+useEffect(() => {
+    let isMounted = true;
 
-        const fetchCategories = async () => {
-            setIsLoadingCategories(true);
-            setAlert(null);
+    const fetchCategories = async () => {
+        setIsLoadingCategories(true);
+        setAlert(null);
 
-            try {
-                const response = await fetch(
-                    CATEGORY_API,
-                    {
-                        method: "GET",
-                        headers: {
-                            Accept: "application/json",
-                        },
-                    }
-                );
+        try {
+            const token = sessionStorage.getItem("token");
 
-                if (!response.ok) {
-                    const message =
-                        await getApiErrorMessage(
-                            response,
-                            "Unable to load categories."
-                        );
-
-                    throw new Error(message);
+            const response = await fetch(
+                CATEGORY_API,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        ...(token && {
+                            Authorization: `Bearer ${token}`,
+                        }),
+                    },
                 }
+            );
 
-                const payload = await response.json();
-
-                if (!isMounted) {
-                    return;
-                }
-
-                const categoryList =
-                    normalizeCategories(payload);
-
-                setCategories(categoryList);
-
-                if (categoryList.length === 0) {
-                    showAlert(
-                        "warning",
-                        "No categories were found."
+            if (!response.ok) {
+                const message =
+                    await getApiErrorMessage(
+                        response,
+                        "Unable to load categories."
                     );
-                }
-            } catch (error) {
-                if (!isMounted) {
-                    return;
-                }
 
-                showAlert(
-                    "error",
-                    error.message ||
-                    "Unable to load categories."
-                );
-            } finally {
-                if (isMounted) {
-                    setIsLoadingCategories(false);
-                }
+                throw new Error(message);
             }
-        };
 
-        fetchCategories();
+            const payload = await response.json();
 
-        return () => {
-            isMounted = false;
-        };
-    }, []);
+            if (!isMounted) {
+                return;
+            }
+
+            const categoryList =
+                normalizeCategories(payload);
+
+            setCategories(categoryList);
+
+            if (categoryList.length === 0) {
+                showAlert(
+                    "warning",
+                    "No categories were found."
+                );
+            }
+        } catch (error) {
+            if (!isMounted) {
+                return;
+            }
+
+            showAlert(
+                "error",
+                error.message ||
+                "Unable to load categories."
+            );
+        } finally {
+            if (isMounted) {
+                setIsLoadingCategories(false);
+            }
+        }
+    };
+
+    fetchCategories();
+
+    return () => {
+        isMounted = false;
+    };
+}, []);
 
     // --------------------------------------------------------------------
 
@@ -521,93 +526,103 @@ export default function BulkDesc() {
     // DOWNLOAD TEMPLATE
     // --------------------------------------------------------------------
 
-    const handleDownloadTemplate =
-        async () => {
-            if (!selectedCategoryId) {
-                showAlert(
-                    "warning",
-                    "Please select a category first."
-                );
+const handleDownloadTemplate = async () => {
+    if (!selectedCategoryId) {
+        showAlert(
+            "warning",
+            "Please select a category first."
+        );
 
-                return;
+        return;
+    }
+
+    setIsDownloading(true);
+    setAlert(null);
+
+    try {
+        // Get authentication token
+        const token = sessionStorage.getItem("token");
+
+        if (!token) {
+            throw new Error(
+                "Session expired. Please login again."
+            );
+        }
+
+        const response = await fetch(
+            `${BULK_DESCRIPTION_API}/template/${selectedCategoryId}?t=${Date.now()}`,
+            {
+                method: "GET",
+                cache: "no-store",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept:
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "Cache-Control": "no-cache",
+                    Pragma: "no-cache",
+                },
             }
+        );
 
-            setIsDownloading(true);
-            setAlert(null);
-
-            try {
-                const response = await fetch(
-                    `${BULK_DESCRIPTION_API}/template/${selectedCategoryId}?t=${Date.now()}`,
-                    {
-                        method: "GET",
-                        cache: "no-store",
-                        headers: {
-                            Accept:
-                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            "Cache-Control": "no-cache",
-                            Pragma: "no-cache",
-                        },
-                    }
-                );
-
-                if (!response.ok) {
-                    const message =
-                        await getApiErrorMessage(
-                            response,
-                            "Unable to download the Excel template."
-                        );
-
-                    throw new Error(message);
-                }
-
-                const blob = await response.blob();
-
-                const fallbackFileName = `${selectedCategory?.slug ||
-                    selectedCategory?.name ||
-                    "category"
-                    }-Product-Descriptions.xlsx`;
-
-                const fileName =
-                    getDownloadFileName(
-                        response.headers.get(
-                            "content-disposition"
-                        ),
-                        fallbackFileName
-                    );
-
-                const blobUrl =
-                    window.URL.createObjectURL(blob);
-
-                const link =
-                    document.createElement("a");
-
-                link.href = blobUrl;
-                link.download = fileName;
-
-                document.body.appendChild(link);
-
-                link.click();
-                link.remove();
-
-                window.URL.revokeObjectURL(blobUrl);
-
-                showAlert(
-                    "success",
-                    `Template downloaded for ${selectedCategory?.name ||
-                    "the selected category"
-                    }.`
-                );
-            } catch (error) {
-                showAlert(
-                    "error",
-                    error.message ||
+        if (!response.ok) {
+            const message =
+                await getApiErrorMessage(
+                    response,
                     "Unable to download the Excel template."
                 );
-            } finally {
-                setIsDownloading(false);
-            }
-        };
 
+            throw new Error(message);
+        }
+
+        const blob = await response.blob();
+
+        const fallbackFileName = `${
+            selectedCategory?.slug ||
+            selectedCategory?.name ||
+            "category"
+        }-Product-Descriptions.xlsx`;
+
+        const fileName =
+            getDownloadFileName(
+                response.headers.get(
+                    "content-disposition"
+                ),
+                fallbackFileName
+            );
+
+        const blobUrl =
+            window.URL.createObjectURL(blob);
+
+        const link =
+            document.createElement("a");
+
+        link.href = blobUrl;
+        link.download = fileName;
+
+        document.body.appendChild(link);
+
+        link.click();
+        link.remove();
+
+        window.URL.revokeObjectURL(blobUrl);
+
+        showAlert(
+            "success",
+            `Template downloaded for ${
+                selectedCategory?.name ||
+                "the selected category"
+            }.`
+        );
+    } catch (error) {
+        showAlert(
+            "error",
+            error.message ||
+                "Unable to download the Excel template."
+        );
+    } finally {
+        setIsDownloading(false);
+    }
+};
     // --------------------------------------------------------------------
     // FILE SELECTION
     // --------------------------------------------------------------------

@@ -218,18 +218,18 @@ export default function ProductsView() {
         setSearchLoading(true);
 
         const response =
-          await searchProducts({
-            query:
-              normalizedQuery,
+  await searchProducts({
+    query:
+      normalizedQuery,
 
-            status:
-              binStatus
-                ? 'inactive'
-                : 'active',
+    status:
+      binStatus
+        ? 'inactive'
+        : 'all',
 
-            page: 1,
-            limit: 50,
-          });
+    page: 1,
+    limit: 50,
+  });
 
         if (
           requestId !==
@@ -774,32 +774,20 @@ export default function ProductsView() {
         );
 
         setSearchResults(
-          (previousResults) => {
-            if (!showBin) {
-              return previousResults.filter(
-                (product) =>
-                  !idsToDeactivate.includes(
-                    product.id
-                  )
-              );
+  (previousResults) =>
+    previousResults.map(
+      (product) =>
+        idsToDeactivate.includes(
+          product.id
+        )
+          ? {
+              ...product,
+              is_active: false,
+              is_published: false,
             }
-
-            return previousResults.map(
-              (product) =>
-                idsToDeactivate.includes(
-                  product.id
-                )
-                  ? {
-                    ...product,
-                    is_active:
-                      false,
-                    is_published:
-                      false,
-                  }
-                  : product
-            );
-          }
-        );
+          : product
+    )
+);
 
         setSelectedProducts([]);
 

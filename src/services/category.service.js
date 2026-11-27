@@ -12,11 +12,11 @@ const getHeaders = () => {
   };
 };
 
-// ================= GET ALL CATEGORIES =================
+// ================= GET ALL CATEGORIES - CMS ADMIN =================
 
 export const getCategories = async () => {
   const response = await fetch(
-    `${API_URL}/stones/`,
+    `${API_URL}/stones/admin/categories`,
     {
       method: 'GET',
       headers: getHeaders(),

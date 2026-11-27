@@ -22,9 +22,9 @@ import {
 } from "@mui/material";
 
 import {
-  getAllSeoRecords,
   updateSeoRecord,
   uploadPageImage,
+  getAllSeoRecords,
 } from "../../../services/pages.service";
 
 // ============================================================
